@@ -26,11 +26,7 @@ npm install
 # 2. Copy env template
 cp .env.example .env
 
-# 3. Put your app files in public/
-mkdir public
-cp /path/to/emo-detect.html public/
-
-# 4. Start backend
+# 3. Start backend
 npm start
 # → App at http://localhost:3000
 # → PeerJS at http://localhost:3000/peerjs
