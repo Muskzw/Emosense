@@ -261,6 +261,7 @@ video{display:block;background:#000}
       </div>
     </div>
     <div class="ds-note"><strong>⚠ Dataset note:</strong> face-api.js uses FER-2013 + AffectNet (<strong>~64% White, ~2% dark skin</strong>). Your EmoSense CNN trained on Zimbabwean + Chinese faces replaces this baseline for authentic cross-cultural accuracy.</div>
+    <button id="dcBtn" onclick="enableDataCollection()" style="width:100%;padding:10px;border-radius:12px;border:.5px solid var(--blue);background:rgba(91,156,246,0.1);color:var(--blue);font-family:var(--mono);font-size:12px;cursor:pointer;margin-bottom:8px;">Opt-in to Data Collection</button>
     <button class="btn-start" id="btnStart" onclick="startCall()"><svg viewBox="0 0 16 16" fill="none" width="16" height="16"><rect x="1" y="4" width="10" height="8" rx="2" fill="white"/><path d="M11 7l4-2v6l-4-2V7Z" fill="white"/></svg>Start Session</button>
   </div>
 </div>
@@ -377,6 +378,49 @@ video{display:block;background:#000}
 <script>
 const EMO={happy:{label:'HAPPY',tc:'et-h',rc:'#3dffa0',fc:'fh',lm:'cg',cv:87,co:15,bars:{H:87,N:7,S:4,A:2},ins:{title:'Happiness detected',col:'#3dffa0',body:'In <strong>Chinese business culture</strong>, an open smile with eye engagement signals <strong>genuine approval</strong>. Strong positive signal.'}},neutral:{label:'NEUTRAL',tc:'et-n',rc:'#8899bb',fc:'',lm:'cs',cv:74,co:32,bars:{H:12,N:74,S:8,A:6},ins:{title:'Neutral expression',col:'#8899bb',body:'A <strong>neutral face</strong> in Chinese business may indicate <strong>active listening</strong>. Allow space for a measured response.'}},sad:{label:'SAD',tc:'et-s',rc:'#5b9cf6',fc:'fs',lm:'cb',cv:71,co:36,bars:{H:8,N:18,S:71,A:3},ins:{title:'Concern detected',col:'#5b9cf6',body:'Sadness cues may reflect <strong>subtle disagreement</strong>. Pause and ask an open-ended question.'}},angry:{label:'ANGRY',tc:'et-a',rc:'#ff6b6b',fc:'fa',lm:'cr',cv:79,co:25,bars:{H:5,N:10,S:6,A:79},ins:{title:'Tension detected',col:'#ff6b6b',body:'Anger often surfaces as <strong>tight-lipped displeasure</strong>. Acknowledge their perspective first.'}}};
 const AUTO_SEQ=['happy','happy','neutral','happy','sad','neutral','happy','angry','neutral','happy','happy','neutral'];
+
+// ── DATA COLLECTION (opt-in only) ──────────────────────────────────────────
+let dataCollectionEnabled = false;
+
+function enableDataCollection() {
+  if (confirm(
+    'Help improve EmoSense?\n\n' +
+    'If you consent, anonymized face crops will be sent to improve ' +
+    'the EmoSense dataset for Zimbabwean and Chinese users.\n\n' +
+    'No personal data is stored. Compliant with ZW Cyber & Data Protection Act 2021.'
+  )) {
+    dataCollectionEnabled = true;
+    toast('Contributing to EmoSense dataset — thank you!');
+    g('dcBtn').style.display = 'none';
+  }
+}
+
+async function submitSample(videoElement, emotion, confidence, culture) {
+  if (!dataCollectionEnabled || confidence < 65) return;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 48; canvas.height = 48;
+  canvas.getContext('2d').drawImage(videoElement, 0, 0, 48, 48);
+  const imageB64 = canvas.toDataURL('image/png');
+
+  try {
+    await fetch('http://localhost:5000/api/collect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        image_b64: imageB64,
+        emotion,
+        confidence: confidence / 100,
+        culture,
+        session_hash: btoa(myRoomId).slice(0, 12),
+        consent: true,
+      })
+    });
+  } catch(e) {
+    // Silently fail
+  }
+}
+
 let curCtx='ZW-CN',curEmo='happy',emoAuto=true,emoOn=true,micOn=true,camOn=true;
 let callSecs=0,timerInt=null,detCount=0;
 let faceStream=null,localDetR=false,remoteDetR=false,modelsOk=false;
@@ -460,6 +504,7 @@ function setEmo(emo,jitter=false){
 }
 function setEmoReal(emo,conf,exps){
   const e=EMO[emo];curEmo=emo;detCount++;emoCounts[emo]++;g('sDet').textContent=detCount;
+  submitSample(g('remoteVid'), emo, conf, curCtx.includes('-') ? curCtx.split('-')[1] : 'INT');
   const co=Math.round(113-(conf/100)*113);
   g('rTile').style.borderColor=rgba(e.rc,.4);g('rs1').style.borderColor=e.rc;g('rs2').style.borderColor=e.rc;
   const tag=g('rTag');tag.className='etag '+e.tc;g('rTagTxt').textContent=e.label;
@@ -486,7 +531,7 @@ async function startLocalDet(vid){
   const loop=async()=>{
     if(curScreen!=='sCall'){localDetR=false;return;}
     cvs.width=vid.videoWidth||640;cvs.height=vid.videoHeight||480;ctx.clearRect(0,0,cvs.width,cvs.height);
-    try{const d=await faceapi.detectSingleFace(vid,new faceapi.TinyFaceDetectorOptions({inputSize:224})).withFaceLandmarks(true).withFaceExpressions();if(d){pts(ctx,d.landmarks.positions,'#5b9cf6',2);const top=Object.entries(d.expressions).sort((a,b)=>b[1]-a[1])[0];const me=em[top[0]]||'neutral',conf=Math.round(top[1]*100);const le=EMO[me];g('lTag').style.display='flex';g('lRing').style.display='block';g('lTag').className='etag '+le.tc;g('lTagTxt').textContent=le.label;const lep=g('lTag').querySelector('.ep');if(lep){lep.style.background=le.rc;lep.style.animation=me==='neutral'?'none':'blink 1.1s infinite';}g('lcrF').style.stroke=le.rc;g('lcrF').style.strokeDashoffset=113-(conf/100)*113;g('lcrN').textContent=conf+'%';g('lcrN').style.color=le.rc;}fpsF++;const now=Date.now();if(now-fpsL>1000){g('sFps').textContent=fpsF+'fps';fpsF=0;fpsL=now;}}catch(e){}
+    try{const d=await faceapi.detectSingleFace(vid,new faceapi.TinyFaceDetectorOptions({inputSize:224})).withFaceLandmarks(true).withFaceExpressions();if(d){pts(ctx,d.landmarks.positions,'#5b9cf6',2);const top=Object.entries(d.expressions).sort((a,b)=>b[1]-a[1])[0];const me=em[top[0]]||'neutral',conf=Math.round(top[1]*100);const le=EMO[me];g('lTag').style.display='flex';g('lRing').style.display='block';g('lTag').className='etag '+le.tc;g('lTagTxt').textContent=le.label;const lep=g('lTag').querySelector('.ep');if(lep){lep.style.background=le.rc;lep.style.animation=me==='neutral'?'none':'blink 1.1s infinite';}g('lcrF').style.stroke=le.rc;g('lcrF').style.strokeDashoffset=113-(conf/100)*113;g('lcrN').textContent=conf+'%';g('lcrN').style.color=le.rc; submitSample(vid, me, conf, curCtx.includes('-') ? curCtx.split('-')[0] : 'INT'); }fpsF++;const now=Date.now();if(now-fpsL>1000){g('sFps').textContent=fpsF+'fps';fpsF=0;fpsL=now;}}catch(e){}
     setTimeout(loop,120);
   };loop();
 }
