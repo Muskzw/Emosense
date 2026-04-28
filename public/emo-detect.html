@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 :root{--bg:#07070f;--surf:#0e0e1c;--surf2:#151524;--bd:rgba(255,255,255,0.06);--bd2:rgba(255,255,255,0.11);--bd3:rgba(255,255,255,0.2);--txt:#ededf7;--muted:rgba(255,255,255,0.4);--dim:rgba(255,255,255,0.18);--green:#3dffa0;--gd:rgba(61,255,160,0.12);--gb:rgba(61,255,160,0.28);--blue:#5b9cf6;--red:#ff6b6b;--amber:#ffb347;--slate:#8899bb;--mono:'DM Mono',monospace;--sans:'Syne',sans-serif;--st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);--sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -27,7 +28,7 @@ video{display:block;background:#000}
 .lob-bg{position:absolute;inset:0;overflow:hidden;background:#000}
 .lob-bg video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);filter:brightness(.38) saturate(.65)}
 .lob-bg canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1);opacity:.55;pointer-events:none}
-.lob-card{position:relative;z-index:2;width:min(440px,94vw);background:rgba(9,9,20,.86);border:.5px solid var(--bd2);border-radius:22px;backdrop-filter:blur(22px) saturate(1.3);padding:28px;display:flex;flex-direction:column;gap:20px;max-height:calc(100svh - 32px - var(--st) - var(--sb));overflow-y:auto;margin-top:var(--st);scrollbar-width:none}
+.lob-card{position:relative;z-index:2;width:calc(100% - 32px);max-width:440px;background:rgba(9,9,20,.86);border:.5px solid var(--bd2);border-radius:22px;backdrop-filter:blur(22px) saturate(1.3);padding:24px;display:flex;flex-direction:column;gap:20px;max-height:calc(100svh - 32px - var(--st) - var(--sb));overflow-y:auto;margin-top:var(--st);scrollbar-width:none}
 .lob-card::-webkit-scrollbar{display:none}
 .lob-logo{display:flex;align-items:center;gap:12px}
 .lob-mark{width:42px;height:42px;border-radius:12px;background:var(--gd);border:.5px solid var(--gb);display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -305,8 +306,6 @@ video{display:block;background:#000}
           <video class="tile-vid" id="lVid" autoplay muted playsinline></video>
           <canvas class="tile-cvs" id="lCvs"></canvas>
           <div class="you-b" id="youB">● YOU</div>
-          <div class="etag et-n" id="lTag" style="display:none"><div class="ep" style="background:var(--slate);animation:none"></div><span id="lTagTxt">NEUTRAL</span></div>
-          <div class="cring" id="lRing" style="display:none;width:36px;height:36px"><svg viewBox="0 0 44 44"><circle class="cr-t" cx="22" cy="22" r="18"/><circle class="cr-f" id="lcrF" cx="22" cy="22" r="18" stroke="#8899bb" stroke-dasharray="113" stroke-dashoffset="32"/></svg><div class="cr-n" id="lcrN" style="color:var(--slate);font-size:9px">74%</div></div>
           <div class="tfoot"><span class="tf-name" id="lName">You · Harare</span><span class="tf-flag">🇿🇼</span></div>
         </div>
       </div>
@@ -322,14 +321,14 @@ video{display:block;background:#000}
     <aside class="c-side">
       <div class="sb"><div class="sb-lbl">Breakdown · <span id="sbRN">Remote peer</span></div>
         <div class="emo-rows">
-          <div class="er"><div class="er-head"><span class="er-nm" style="color:var(--green)">Happiness</span><span class="er-pc" style="color:var(--green)" id="pH">87%</span></div><div class="er-track"><div class="er-fill ef-h" id="bH" style="width:87%"></div></div></div>
-          <div class="er"><div class="er-head"><span class="er-nm" style="color:var(--slate)">Neutral</span><span class="er-pc" style="color:var(--slate)" id="pN">7%</span></div><div class="er-track"><div class="er-fill ef-n" id="bN" style="width:7%"></div></div></div>
-          <div class="er"><div class="er-head"><span class="er-nm" style="color:var(--blue)">Sadness</span><span class="er-pc" style="color:var(--blue)" id="pS">4%</span></div><div class="er-track"><div class="er-fill ef-s" id="bS" style="width:4%"></div></div></div>
-          <div class="er"><div class="er-head"><span class="er-nm" style="color:var(--red)">Anger</span><span class="er-pc" style="color:var(--red)" id="pA">2%</span></div><div class="er-track"><div class="er-fill ef-a" id="bA" style="width:2%"></div></div></div>
+          <div class="er"><div class="er-head"><span class="er-nm" style="color:var(--green)">Happiness</span><span class="er-pc" style="color:var(--green)" id="pH">0%</span></div><div class="er-track"><div class="er-fill ef-h" id="bH" style="width:0%"></div></div></div>
+          <div class="er"><div class="er-head"><span class="er-nm" style="color:var(--slate)">Neutral</span><span class="er-pc" style="color:var(--slate)" id="pN">0%</span></div><div class="er-track"><div class="er-fill ef-n" id="bN" style="width:0%"></div></div></div>
+          <div class="er"><div class="er-head"><span class="er-nm" style="color:var(--blue)">Sadness</span><span class="er-pc" style="color:var(--blue)" id="pS">0%</span></div><div class="er-track"><div class="er-fill ef-s" id="bS" style="width:0%"></div></div></div>
+          <div class="er"><div class="er-head"><span class="er-nm" style="color:var(--red)">Anger</span><span class="er-pc" style="color:var(--red)" id="pA">0%</span></div><div class="er-track"><div class="er-fill ef-a" id="bA" style="width:0%"></div></div></div>
         </div>
       </div>
       <div class="sb"><div class="sb-lbl">Cultural context</div>
-        <div class="ibox" id="ibox"><div class="ib-hd"><div class="ib-dot" id="ibDot" style="background:var(--green)"></div><span class="ib-tit" id="ibTit" style="color:var(--green)">Happiness detected</span></div><div class="ib-body" id="ibBody">In <strong>Chinese business culture</strong>, an open smile signals <strong>genuine approval</strong>. Proceed confidently.</div></div>
+        <div class="ibox" id="ibox"><div class="ib-hd"><div class="ib-dot" id="ibDot" style="background:var(--slate)"></div><span class="ib-tit" id="ibTit" style="color:var(--slate)">Waiting for connection...</span></div><div class="ib-body" id="ibBody">AI analysis will begin once the remote peer connects.</div></div>
       </div>
       <div class="sb" style="border-bottom:none;padding-bottom:6px"><div class="sb-lbl">Emotion log</div></div>
       <div class="tl-area" id="tl"></div>
@@ -354,7 +353,7 @@ video{display:block;background:#000}
 </div>
 <div class="screen" id="sReport">
   <div class="rep">
-    <div class="rh"><div><div class="rh-t">Session report</div><div class="rh-m" id="rMeta">—</div></div><button class="btn-new" onclick="goLobby()">+ New session</button></div>
+    <div class="rh"><div><div class="rh-t">Session report</div><div class="rh-m" id="rMeta">—</div></div><div style="display:flex;gap:8px"><button class="btn-new" onclick="downloadPDF()">Download PDF</button><button class="btn-new" onclick="goLobby()">+ New session</button></div></div>
     <div class="r-st">
       <div class="rsc"><div class="rsc-v" style="color:var(--green)" id="rAcc">87.3%</div><div class="rsc-l">Avg accuracy</div></div>
       <div class="rsc"><div class="rsc-v" style="color:var(--blue)" id="rDet">0</div><div class="rsc-l">Detections</div></div>
@@ -459,6 +458,12 @@ async function initPeer(){
     });
     
     peer.on('open',id=>{myRoomId=id;g('myRoomId').textContent=id;});
+    peer.on('connection', conn => {
+      conn.on('data', d => {
+        if(d.name){ remoteName=d.name; g('rName').textContent=d.name; g('sbRN').textContent=d.name; }
+        conn.send({name: g('uName').value.trim()});
+      });
+    });
     peer.on('call',call=>{if(faceStream)call.answer(faceStream);handleCall(call);});
     peer.on('error',e=>{console.warn('[PeerJS]',e);if(!myRoomId){myRoomId='emo-'+Math.random().toString(36).substr(2,8);g('myRoomId').textContent=myRoomId;}});
   }catch(e){myRoomId='emo-'+Math.random().toString(36).substr(2,8);g('myRoomId').textContent=myRoomId;}
@@ -486,6 +491,9 @@ function joinRoom(){
   if(!faceStream){toast('Camera required to join');return;}
   if(!peer){toast('Connection not ready yet');return;}
   const call=peer.call(tid,faceStream);handleCall(call);toast('Connecting to peer…');
+  const conn=peer.connect(tid);
+  conn.on('open', () => conn.send({name: g('uName').value.trim()}));
+  conn.on('data', d => { if(d.name){ remoteName=d.name; g('rName').textContent=d.name; g('sbRN').textContent=d.name; } });
   startCall();
 }
 async function startCam(){
@@ -519,8 +527,8 @@ function startCall(){
 
   const M={'ZW-CN':{f1:'🇨🇳',f2:'🇿🇼',l:'ZW·CN',rf:'🇨🇳'},'ZW-ZW':{f1:'🇿🇼',f2:'🇿🇼',l:'ZW·ZW',rf:'🇿🇼'},'CN-ZW':{f1:'🇿🇼',f2:'🇨🇳',l:'CN·ZW',rf:'🇿🇼'},'INT':{f1:'🌐',f2:'🤝',l:'INT',rf:'🌐'}};
   const m=M[curCtx]||M['ZW-CN'];g('ctxF1').textContent=m.f1;g('ctxF2').textContent=m.f2;g('ctxLbl').textContent=m.l;g('rFlag').textContent=m.rf;
-  show('sCall');startTimer();startAutoEmo();
-  if(faceStream){const lv=g('lVid');lv.srcObject=faceStream;lv.onloadedmetadata=()=>{g('lTile').classList.add('has-vid');if(modelsOk)startLocalDet(lv);};}
+  show('sCall');startTimer();
+  if(faceStream){const lv=g('lVid');lv.srcObject=faceStream;lv.onloadedmetadata=()=>{g('lTile').classList.add('has-vid');};}
 }
 function startTimer(){callSecs=0;clearInterval(timerInt);timerInt=setInterval(()=>{callSecs++;g('ctimer').textContent=fmt(Math.floor(callSecs/60))+':'+fmt(callSecs%60);},1000);}
 function fmt(n){return String(n).padStart(2,'0');}
@@ -540,7 +548,8 @@ function setEmo(emo,jitter=false){
 }
 function setEmoReal(emo,conf,exps){
   const e=EMO[emo];curEmo=emo;detCount++;emoCounts[emo]++;g('sDet').textContent=detCount;
-  submitSample(g('remoteVid'), emo, conf, curCtx.includes('-') ? curCtx.split('-')[1] : 'INT');
+  const rCult = curCtx.includes('-') ? curCtx.split('-')[1] : 'INT';
+  submitSample(g('remoteVid'), emo, conf, rCult);
   const co=Math.round(113-(conf/100)*113);
   g('rTile').style.borderColor=rgba(e.rc,.4);g('rs1').style.borderColor=e.rc;g('rs2').style.borderColor=e.rc;
   const tag=g('rTag');tag.className='etag '+e.tc;g('rTagTxt').textContent=e.label;
@@ -548,7 +557,17 @@ function setEmoReal(emo,conf,exps){
   g('crF').style.stroke=e.rc;g('crF').style.strokeDashoffset=co;g('crN').textContent=conf+'%';g('crN').style.color=e.rc;
   if(e.fc){const fl=g('rFlash');fl.className='eflash '+e.fc;fl.classList.add('pop');setTimeout(()=>fl.classList.remove('pop'),750);}
   if(exps){const h=Math.round(exps.happy*100),n=Math.round(exps.neutral*100),s=Math.round(exps.sad*100),a=Math.round((exps.angry+exps.disgusted)*50);g('bH').style.width=h+'%';g('pH').textContent=h+'%';g('bN').style.width=n+'%';g('pN').textContent=n+'%';g('bS').style.width=s+'%';g('pS').textContent=s+'%';g('bA').style.width=a+'%';g('pA').textContent=a+'%';}
-  g('ibDot').style.background=e.ins.col;g('ibTit').textContent=e.ins.title;g('ibTit').style.color=e.ins.col;g('ibBody').innerHTML=e.ins.body;
+  
+  let insBody = e.ins.body;
+  if (rCult === 'ZW') {
+    if (emo === 'happy') insBody = 'In <strong>Zimbabwean culture</strong>, a smile establishes strong rapport and politeness. Good sign.';
+    else if (emo === 'neutral') insBody = 'A <strong>neutral face</strong> often indicates deep attention or indirect processing. Do not assume boredom.';
+    else if (emo === 'sad') insBody = 'May indicate <strong>subtle hesitation</strong>. Best to clarify politely.';
+    else if (emo === 'angry') insBody = 'Displays of anger are rare. Acknowledge and de-escalate immediately.';
+  } else if (rCult === 'INT') {
+    insBody = 'Using generic international emotion baselines.';
+  }
+  g('ibDot').style.background=e.ins.col;g('ibTit').textContent=e.ins.title;g('ibTit').style.color=e.ins.col;g('ibBody').innerHTML=insBody;
   addTL(emo,conf);
 }
 function addTL(emo,conf){
@@ -560,16 +579,16 @@ function addTL(emo,conf){
 function startAutoEmo(){stopAutoEmo();autoIdx=0;setEmo(AUTO_SEQ[0],true);autoTimer=setInterval(()=>{if(!emoAuto||!emoOn||peerConn)return;autoIdx=(autoIdx+1)%AUTO_SEQ.length;setEmo(AUTO_SEQ[autoIdx],true);},4500);}
 function stopAutoEmo(){clearInterval(autoTimer);autoTimer=null;}
 function toggleAuto(){emoAuto=!emoAuto;g('autoBtn').textContent='Auto: '+(emoAuto?'ON':'OFF');toast('Auto-cycle '+(emoAuto?'enabled':'paused'));}
-async function startLocalDet(vid){
-  if(!modelsOk||localDetR)return;localDetR=true;
-  const cvs=g('lCvs'),ctx=cvs.getContext('2d');
-  const em={happy:'happy',neutral:'neutral',sad:'sad',angry:'angry',disgusted:'angry',fearful:'sad',surprised:'happy'};
-  const loop=async()=>{
-    if(curScreen!=='sCall'){localDetR=false;return;}
-    cvs.width=vid.videoWidth||640;cvs.height=vid.videoHeight||480;ctx.clearRect(0,0,cvs.width,cvs.height);
-    try{const d=await faceapi.detectSingleFace(vid,new faceapi.TinyFaceDetectorOptions({inputSize:224})).withFaceLandmarks(true).withFaceExpressions();if(d){pts(ctx,d.landmarks.positions,'#5b9cf6',2);const top=Object.entries(d.expressions).sort((a,b)=>b[1]-a[1])[0];const me=em[top[0]]||'neutral',conf=Math.round(top[1]*100);const le=EMO[me];g('lTag').style.display='flex';g('lRing').style.display='block';g('lTag').className='etag '+le.tc;g('lTagTxt').textContent=le.label;const lep=g('lTag').querySelector('.ep');if(lep){lep.style.background=le.rc;lep.style.animation=me==='neutral'?'none':'blink 1.1s infinite';}g('lcrF').style.stroke=le.rc;g('lcrF').style.strokeDashoffset=113-(conf/100)*113;g('lcrN').textContent=conf+'%';g('lcrN').style.color=le.rc; submitSample(vid, me, conf, curCtx.includes('-') ? curCtx.split('-')[0] : 'INT'); }fpsF++;const now=Date.now();if(now-fpsL>1000){g('sFps').textContent=fpsF+'fps';fpsF=0;fpsL=now;}}catch(e){}
-    setTimeout(loop,120);
-  };loop();
+function downloadPDF() {
+  const element = g('sReport').querySelector('.rep');
+  const opt = {
+    margin: [10, 10, 10, 10],
+    filename: `EmoSense-Report-${Date.now()}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, logging: false },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  };
+  html2pdf().set(opt).from(element).save();
 }
 async function startRemoteDet(vid){
   if(!modelsOk||remoteDetR)return;remoteDetR=true;
@@ -585,10 +604,12 @@ async function startRemoteDet(vid){
 function toggleMic(){micOn=!micOn;const b=g('cMic');b.classList.toggle('on',micOn);b.classList.toggle('off',!micOn);if(faceStream)faceStream.getAudioTracks().forEach(t=>t.enabled=micOn);toast('Mic '+(micOn?'on':'muted'));}
 function toggleCam(){camOn=!camOn;const b=g('cCam');b.classList.toggle('on',camOn);b.classList.toggle('off',!camOn);if(faceStream)faceStream.getVideoTracks().forEach(t=>t.enabled=camOn);g('lVid').style.opacity=camOn?'1':'0';g('youB').style.display=camOn?'':'block';toast('Camera '+(camOn?'on':'off'));}
 function toggleEmo(){emoOn=!emoOn;const b=g('cEmo');b.classList.toggle('on',eoOn);b.classList.toggle('off',!emoOn);toast('Emotion AI '+(emoOn?'enabled':'paused'));}
+let remoteName = 'Remote peer';
 function goReport(){
   clearInterval(timerInt);stopAutoEmo();if(activeCall)activeCall.close();
+  if(faceStream) faceStream.getTracks().forEach(t=>t.stop());
   const dur=fmt(Math.floor(callSecs/60))+':'+fmt(callSecs%60);
-  g('rMeta').textContent=new Date().toLocaleDateString()+' · '+dur+' · '+curCtx;
+  g('rMeta').textContent=new Date().toLocaleDateString()+' · '+dur+' · '+curCtx+' · with '+remoteName;
   g('rAcc').textContent='87.3%';g('rDet').textContent=detCount;g('rDur').textContent=dur;
   const total=Object.values(emoCounts).reduce((a,b)=>a+b,0)||1,ch=g('echart');ch.innerHTML='';
   [{k:'happy',l:'Happiness',c:'ech',col:'var(--green)'},{k:'neutral',l:'Neutral',c:'ecn',col:'var(--slate)'},{k:'sad',l:'Sadness',c:'ecs',col:'var(--blue)'},{k:'angry',l:'Anger',c:'eca',col:'var(--red)'}].forEach(({k,l,c,col})=>{const pct=Math.round((emoCounts[k]/total)*100);const row=document.createElement('div');row.className='ecr';row.innerHTML=`<span class="ecl" style="color:${col}">${l}</span><div class="ect"><div class="ecf ${c}" style="width:0%">${pct}%</div></div>`;ch.appendChild(row);setTimeout(()=>row.querySelector('.ecf').style.width=pct+'%',80);});
