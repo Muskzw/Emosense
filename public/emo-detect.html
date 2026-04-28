@@ -361,6 +361,10 @@ video{display:block;background:#000}
     </div>
     <div class="rcard"><div class="rc-t">Emotion distribution</div><div class="echart" id="echart"></div></div>
     <div class="ins-r"><div class="ir-hd"><div class="ir-dot"></div><span class="ir-t">Cultural read · <span id="rCtx">ZW→CN</span></span></div><div class="ir-items" id="rIns"></div></div>
+    <div class="ins-r">
+      <div class="ir-hd"><div class="ir-dot" style="background:var(--blue)"></div><span class="ir-t">AI Follow-up Strategy</span></div>
+      <div class="ir-items"><div class="ir-item"><div class="ir-txt" id="rStrat">Generating strategy...</div></div></div>
+    </div>
     <div class="ds-card">
       <div class="ds-title">⚠ Dataset transparency & EmoSense rationale</div>
       <div class="ds-rows">
@@ -474,13 +478,14 @@ function handleCall(call){
     peerConn=true;const rv=g('remoteVid');rv.srcObject=rs;rv.style.display='block';g('remoteCvs').style.display='block';
     rv.play().catch(e=>{console.warn("Video play blocked:", e);});
     g('rWait').classList.add('gone');g('demoFace').style.display='none';
+    stopAutoEmo();updPS(true);
     rv.onloadedmetadata = () => {
       if(modelsOk)startRemoteDet(rv);
     };
   });
   call.on('close',()=>peerDisc());call.on('error',()=>peerDisc());
 }
-function peerDisc(){peerConn=false;remoteDetR=false;g('remoteVid').style.display='none';g('remoteCvs').style.display='none';g('rWait').classList.remove('gone');g('demoFace').style.display='';updPS(false);startAutoEmo();toast('Peer disconnected');}
+function peerDisc(){peerConn=false;remoteDetR=false;g('remoteVid').style.display='none';g('remoteCvs').style.display='none';g('rWait').classList.remove('gone');g('demoFace').style.display='';updPS(false);toast('Peer disconnected');}
 function updPS(ok){const b=g('psBadge'),t=g('psTxt');b.className='ps '+(ok?'ps-live':'ps-wait');t.textContent=ok?'Peer connected':'Waiting for peer…';}
 function getLink(){return window.location.href.split('?')[0]+'?join='+myRoomId;}
 function copyLink(){navigator.clipboard.writeText(getLink()).then(()=>toast('Invite link copied! Send it to your peer')).catch(()=>toast('Session ID: '+myRoomId));}
@@ -615,6 +620,23 @@ function goReport(){
   [{k:'happy',l:'Happiness',c:'ech',col:'var(--green)'},{k:'neutral',l:'Neutral',c:'ecn',col:'var(--slate)'},{k:'sad',l:'Sadness',c:'ecs',col:'var(--blue)'},{k:'angry',l:'Anger',c:'eca',col:'var(--red)'}].forEach(({k,l,c,col})=>{const pct=Math.round((emoCounts[k]/total)*100);const row=document.createElement('div');row.className='ecr';row.innerHTML=`<span class="ecl" style="color:${col}">${l}</span><div class="ect"><div class="ecf ${c}" style="width:0%">${pct}%</div></div>`;ch.appendChild(row);setTimeout(()=>row.querySelector('.ecf').style.width=pct+'%',80);});
   const CI={'ZW-CN':[{col:'#3dffa0',txt:'<strong>Happiness dominant</strong> — frequent genuine smiling indicates comfort and agreement.'},{col:'#5b9cf6',txt:'Neutral read as <strong>active listening</strong> — core Chinese business norm.'},{col:'#ffb347',txt:'<strong>Follow up while engagement is high</strong> — positive windows are optimal closing moments.'}],'ZW-ZW':[{col:'#3dffa0',txt:'<strong>High emotional alignment</strong> — shared cultural communication baseline.'},{col:'#ffb347',txt:'Shona norms favour <strong>indirect expression</strong> — neutral is not disagreement.'}],'CN-ZW':[{col:'#5b9cf6',txt:'Chinese participants <strong>suppress strong displays</strong> in formal settings — 60%+ scores are meaningful.'},{col:'#3dffa0',txt:'Happiness cues = <strong>genuine rapport</strong> — strong partnership foundation.'}],'INT':[{col:'#3dffa0',txt:'Universal baseline models applied for this session.'},{col:'#8899bb',txt:'Select a cultural pairing for higher accuracy.'}]};
   const ins=CI[curCtx]||CI['INT'],ic=g('rIns');ic.innerHTML='';ins.forEach(({col,txt})=>{const i=document.createElement('div');i.className='ir-item';i.innerHTML=`<div class="ir-d" style="background:${col}"></div><div class="ir-txt">${txt}</div>`;ic.appendChild(i);});
+  
+  // Generate AI Strategy
+  const hP = emoCounts.happy / total;
+  const aP = emoCounts.angry / total;
+  const sP = emoCounts.sad / total;
+  let strat = '';
+  if (aP > 0.15) {
+    strat = `Significant tension was detected. In your next interaction with ${remoteName}, focus on active listening and addressing underlying concerns before pushing your agenda. Keep the tone collaborative.`;
+  } else if (sP > 0.20) {
+    strat = `${remoteName} showed signs of hesitation or disengagement. Follow up with an open-ended message (e.g., "I'd love your thoughts on...") to uncover any unspoken reservations safely.`;
+  } else if (hP > 0.40) {
+    strat = `Excellent rapport established! ${remoteName} responded very positively. Capitalize on this momentum by sending a prompt follow-up summarizing next steps while the relationship is warm.`;
+  } else {
+    strat = `The session with ${remoteName} was highly analytical and neutral. Next time, consider incorporating more relationship-building time at the start of the call to build stronger personal rapport.`;
+  }
+  g('rStrat').textContent = strat;
+  
   g('rCtx').textContent={'ZW-CN':'ZW→CN','ZW-ZW':'ZW→ZW','CN-ZW':'CN→ZW','INT':'International'}[curCtx]||curCtx;
   show('sReport');
 }
