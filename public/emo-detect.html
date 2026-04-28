@@ -434,14 +434,30 @@ async function boot(){
   const bar=g('ldBar'),st=g('ldSt');
   for(const[p,m] of STEPS){await delay(240+Math.random()*150);bar.style.width=p+'%';st.textContent=m}
   try{const M='https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';await Promise.race([faceapi.nets.tinyFaceDetector.loadFromUri(M),delay(6000)]);await Promise.race([faceapi.nets.faceLandmark68TinyNet.loadFromUri(M),delay(6000)]);await Promise.race([faceapi.nets.faceExpressionNet.loadFromUri(M),delay(6000)]);modelsOk=true}catch(e){console.warn('[EmoSense] face-api sim mode')}
-  initPeer();
+  await initPeer();
   await startCam();
   const u=new URLSearchParams(window.location.search);if(u.get('join'))g('joinId').value=u.get('join');
   await delay(300);show('sLobby');
 }
-function initPeer(){
+async function initPeer(){
   try{
-    peer=new Peer(undefined,{host:'0.peerjs.com',port:443,path:'/',secure:true,config:{iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]}});
+    let iceServers = [{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}];
+    try {
+      const res = await fetch('/api/ice-config');
+      const data = await res.json();
+      if (data.iceServers) iceServers = data.iceServers;
+    } catch(e) {
+      console.warn('Failed to fetch ICE config:', e);
+    }
+    
+    peer=new Peer(undefined,{
+      host: window.location.hostname,
+      port: window.location.port || (window.location.protocol === 'https:' ? 443 : 80),
+      path: '/peerjs',
+      secure: window.location.protocol === 'https:',
+      config: { iceServers }
+    });
+    
     peer.on('open',id=>{myRoomId=id;g('myRoomId').textContent=id;});
     peer.on('call',call=>{if(faceStream)call.answer(faceStream);handleCall(call);});
     peer.on('error',e=>{console.warn('[PeerJS]',e);if(!myRoomId){myRoomId='emo-'+Math.random().toString(36).substr(2,8);g('myRoomId').textContent=myRoomId;}});
