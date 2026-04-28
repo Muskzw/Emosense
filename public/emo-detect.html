@@ -467,6 +467,7 @@ function handleCall(call){
   activeCall=call;
   call.on('stream',rs=>{
     peerConn=true;const rv=g('remoteVid');rv.srcObject=rs;rv.style.display='block';g('remoteCvs').style.display='block';
+    rv.play().catch(e=>{console.warn("Video play blocked:", e);});
     g('rWait').classList.add('gone');g('demoFace').style.display='none';
     stopAutoEmo();updPS(true);if(modelsOk)startRemoteDet(rv);
   });
@@ -483,6 +484,7 @@ function joinRoom(){
   if(!faceStream){toast('Camera required to join');return;}
   if(!peer){toast('Connection not ready yet');return;}
   const call=peer.call(tid,faceStream);handleCall(call);toast('Connecting to peer…');
+  startCall();
 }
 async function startCam(){
   const tries=[{video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:true},{video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:true},{video:{facingMode:'user'},audio:true},{video:true,audio:true},{video:true,audio:false}];
@@ -495,8 +497,24 @@ function runLobLM(vid){
 function pts(ctx,p,col,r=2){ctx.fillStyle=col;ctx.shadowColor=col;ctx.shadowBlur=7;p.forEach(pt=>{ctx.beginPath();ctx.arc(pt.x,pt.y,r,0,Math.PI*2);ctx.fill();});ctx.shadowBlur=0;}
 function show(s){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));g(s).classList.add('active');curScreen=s;}
 function selCtx(el,ctx){document.querySelectorAll('.ctx-c').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');curCtx=ctx;}
+const NAMES_ZW = ['Tinashe', 'Chipo', 'Farai', 'Tendai', 'Nyasha', 'Kudzi', 'Rutendo'];
+const NAMES_CN = ['Wei', 'Li', 'Wang', 'Zhang', 'Liu', 'Chen', 'Yang'];
+const NAMES_INT = ['Alex', 'Jordan', 'Taylor', 'Casey', 'Sam'];
+
 function startCall(){
-  const name=g('uName').value.trim()||'You';g('lName').textContent=name+' · Harare';
+  let name=g('uName').value.trim();
+  const myCult = curCtx.includes('-') ? curCtx.split('-')[0] : 'INT';
+  
+  if(!name || name==='Tinashe Moyo' || name==='You'){
+    if(myCult==='ZW') name = NAMES_ZW[Math.floor(Math.random()*NAMES_ZW.length)];
+    else if(myCult==='CN') name = NAMES_CN[Math.floor(Math.random()*NAMES_CN.length)];
+    else name = NAMES_INT[Math.floor(Math.random()*NAMES_INT.length)];
+    g('uName').value = name;
+  }
+  
+  const locSuffix = (myCult==='ZW') ? 'Harare' : (myCult==='CN' ? 'Shanghai' : 'Local');
+  g('lName').textContent = name + ' · ' + locSuffix;
+
   const M={'ZW-CN':{f1:'🇨🇳',f2:'🇿🇼',l:'ZW·CN',rf:'🇨🇳'},'ZW-ZW':{f1:'🇿🇼',f2:'🇿🇼',l:'ZW·ZW',rf:'🇿🇼'},'CN-ZW':{f1:'🇿🇼',f2:'🇨🇳',l:'CN·ZW',rf:'🇿🇼'},'INT':{f1:'🌐',f2:'🤝',l:'INT',rf:'🌐'}};
   const m=M[curCtx]||M['ZW-CN'];g('ctxF1').textContent=m.f1;g('ctxF2').textContent=m.f2;g('ctxLbl').textContent=m.l;g('rFlag').textContent=m.rf;
   show('sCall');startTimer();startAutoEmo();
