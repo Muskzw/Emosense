@@ -469,7 +469,9 @@ function handleCall(call){
     peerConn=true;const rv=g('remoteVid');rv.srcObject=rs;rv.style.display='block';g('remoteCvs').style.display='block';
     rv.play().catch(e=>{console.warn("Video play blocked:", e);});
     g('rWait').classList.add('gone');g('demoFace').style.display='none';
-    stopAutoEmo();updPS(true);if(modelsOk)startRemoteDet(rv);
+    rv.onloadedmetadata = () => {
+      if(modelsOk)startRemoteDet(rv);
+    };
   });
   call.on('close',()=>peerDisc());call.on('error',()=>peerDisc());
 }
