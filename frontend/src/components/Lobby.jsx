@@ -1,18 +1,36 @@
 import React, { useState, useEffect } from 'react';
+import { useLang, LangSwitcher } from '../context/LangContext';
+
+const PROFILE_KEY = 'emosense_profile';
+
+function loadProfile() {
+  try { return JSON.parse(localStorage.getItem(PROFILE_KEY)) || {}; } catch { return {}; }
+}
+function saveProfile(data) {
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(data));
+}
 
 export default function Lobby({ onStart, webRTC, onDash }) {
-  const [uName, setUName] = useState('Tinashe Moyo');
-  const [ctx, setCtx] = useState('ZW-CN');
+  const { t } = useLang();
+  const profile = loadProfile();
+
+  const [uName, setUName]       = useState(profile.uName || 'Tinashe Moyo');
+  const [ctx, setCtx]           = useState(profile.ctx   || 'ZW-CN');
   const [joinCode, setJoinCode] = useState('');
-  const [optIn, setOptIn] = useState(false);
+  const [optIn, setOptIn]       = useState(profile.optIn || false);
   const [roomCode, setRoomCode] = useState('');
-  const [copyLabel, setCopyLabel] = useState('Copy');
+  const [copyLabel, setCopyLabel] = useState('copy');
   const [joinError, setJoinError] = useState('');
-  const [joining, setJoining] = useState(false);
+  const [joining, setJoining]   = useState(false);
 
   const { peerId, startCamera, joinCall, localVideoRef } = webRTC;
 
   useEffect(() => { startCamera(); }, []);
+
+  // Persist profile on every change
+  useEffect(() => {
+    saveProfile({ uName, ctx, optIn });
+  }, [uName, ctx, optIn]);
 
   // Register for a room code once we have a peerId
   useEffect(() => {
@@ -20,7 +38,7 @@ export default function Lobby({ onStart, webRTC, onDash }) {
     fetch('/api/rooms', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ peerId })
+      body: JSON.stringify({ peerId }),
     })
       .then(r => r.json())
       .then(data => { if (data.code) setRoomCode(data.code); })
@@ -30,8 +48,8 @@ export default function Lobby({ onStart, webRTC, onDash }) {
   const handleCopy = () => {
     if (!roomCode) return;
     navigator.clipboard.writeText(roomCode).then(() => {
-      setCopyLabel('Copied!');
-      setTimeout(() => setCopyLabel('Copy'), 2000);
+      setCopyLabel(t('copied'));
+      setTimeout(() => setCopyLabel(t('copy')), 2000);
     });
   };
 
@@ -41,12 +59,12 @@ export default function Lobby({ onStart, webRTC, onDash }) {
     setJoinError('');
     try {
       const res = await fetch(`/api/rooms/${joinCode.trim().toLowerCase()}`);
-      if (!res.ok) { setJoinError('Room not found. Check the code and try again.'); setJoining(false); return; }
+      if (!res.ok) { setJoinError(t('roomNotFound')); setJoining(false); return; }
       const { peerId: targetPeerId } = await res.json();
       joinCall(targetPeerId, uName);
       onStart({ uName, ctx, optIn });
     } catch {
-      setJoinError('Could not reach server.');
+      setJoinError(t('serverError'));
       setJoining(false);
     }
   };
@@ -56,9 +74,14 @@ export default function Lobby({ onStart, webRTC, onDash }) {
   return (
     <div className="screen active" id="sLobby">
       <div className="lob-card">
-        <div className="lob-logo">
-          <div className="lob-title">emo<span>-detect</span></div>
-          <div className="lob-sub">Cross-Cultural AI · React</div>
+
+        {/* Header + Language Switcher */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div className="lob-logo">
+            <div className="lob-title">emo<span>-detect</span></div>
+            <div className="lob-sub">{t('appSub')}</div>
+          </div>
+          <LangSwitcher style={{ marginTop: '4px' }} />
         </div>
 
         <div className="cam-strip">
@@ -66,38 +89,38 @@ export default function Lobby({ onStart, webRTC, onDash }) {
         </div>
 
         <div className="fl">
-          <label className="fl-l">Your name</label>
+          <label className="fl-l">{t('yourName')}</label>
           <input className="fi" type="text" value={uName} onChange={e => setUName(e.target.value)} />
         </div>
 
         <div className="fl">
-          <label className="fl-l">Cultural context</label>
+          <label className="fl-l">{t('culturalCtx')}</label>
           <select className="fi" value={ctx} onChange={e => setCtx(e.target.value)}>
-            <option value="ZW-CN">Zimbabwe → China</option>
-            <option value="ZW-ZW">Zim → Zim</option>
-            <option value="INT">International</option>
+            <option value="ZW-CN">{t('ctxZWCN')}</option>
+            <option value="ZW-ZW">{t('ctxZWZW')}</option>
+            <option value="INT">{t('ctxINT')}</option>
           </select>
         </div>
 
-        {/* Room Code Display */}
+        {/* Room Code */}
         <div className="room-box">
-          <div className="rb-title">Your room code</div>
+          <div className="rb-title">{t('yourRoomCode')}</div>
           <div className="rb-create">
             <div className="rb-id" style={{
               fontSize: '15px', fontWeight: '700', letterSpacing: '0.06em',
               color: roomCode ? 'var(--green)' : 'var(--muted)',
               textTransform: 'uppercase',
             }}>
-              {roomCode || (peerId ? 'Registering...' : 'Connecting...')}
+              {roomCode || (peerId ? t('registering') : t('connecting'))}
             </div>
             <button className="rb-copy" onClick={handleCopy} disabled={!roomCode}>
-              {copyLabel}
+              {copyLabel || t('copy')}
             </button>
           </div>
 
           <div className="rb-or">
             <div className="rb-or-line" />
-            <span className="rb-or-txt">JOIN A ROOM</span>
+            <span className="rb-or-txt">{t('joinRoom')}</span>
             <div className="rb-or-line" />
           </div>
 
@@ -106,14 +129,14 @@ export default function Lobby({ onStart, webRTC, onDash }) {
               <input
                 className="fi"
                 type="text"
-                placeholder="swift-hawk-429"
+                placeholder={t('joinPlaceholder')}
                 value={joinCode}
                 onChange={e => { setJoinCode(e.target.value); setJoinError(''); }}
                 onKeyDown={e => e.key === 'Enter' && handleJoin()}
                 style={{ textTransform: 'lowercase', letterSpacing: '0.04em' }}
               />
               <button className="btn-join" onClick={handleJoin} disabled={joining || !joinCode.trim()}>
-                {joining ? '...' : 'Join'}
+                {joining ? '...' : t('join')}
               </button>
             </div>
             {joinError && (
@@ -124,10 +147,10 @@ export default function Lobby({ onStart, webRTC, onDash }) {
           </div>
         </div>
 
-        <button className="btn-start" onClick={handleStart}>Start Session</button>
+        <button className="btn-start" onClick={handleStart}>{t('startSession')}</button>
         <button className="btn-start" onClick={onDash}
           style={{ background: 'rgba(255,255,255,0.05)', color: 'white', marginTop: '-10px' }}>
-          View Dashboard
+          {t('viewDashboard')}
         </button>
 
         {/* Opt-in data collection */}
@@ -138,7 +161,7 @@ export default function Lobby({ onStart, webRTC, onDash }) {
               borderColor: optIn ? 'var(--green)' : 'rgba(255,183,71,.5)',
               background: optIn ? 'var(--gd)' : 'transparent',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-              transition: 'all .2s'
+              transition: 'all .2s',
             }}>
               {optIn && (
                 <svg viewBox="0 0 10 8" width="10" height="8" fill="none">
@@ -148,10 +171,10 @@ export default function Lobby({ onStart, webRTC, onDash }) {
             </span>
             <span>
               <strong style={{ color: optIn ? 'var(--green)' : 'var(--amber)' }}>
-                {optIn ? '✓ Contributing to EmoSense dataset' : 'Opt in to improve our AI model'}
+                {optIn ? t('optInActive') : t('optInLabel')}
               </strong>
               <span style={{ display: 'block', marginTop: '2px', fontWeight: 'normal' }}>
-                Anonymised facial data helps train our ZW-CN model. Compliant with the Cyber &amp; Data Protection Act (2021).
+                {t('optInDesc')}
               </span>
             </span>
           </label>

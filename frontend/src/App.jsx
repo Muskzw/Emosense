@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './index.css';
 import { useWebRTC } from './hooks/useWebRTC';
+import { LangProvider } from './context/LangContext';
 import Lobby from './components/Lobby';
 import CallView from './components/CallView';
 import ReportView from './components/ReportView';
@@ -37,12 +38,14 @@ export default function App() {
   };
 
   return (
-    <div className="app-container">
-      {screen === 'sLanding' && <Landing onLaunch={() => setScreen('sLobby')} />}
-      {screen === 'sLobby' && <Lobby onStart={handleStart} webRTC={webRTC} onDash={() => setScreen('sDashboard')} />}
-      {screen === 'sCall' && <CallView onEnd={handleEnd} webRTC={webRTC} sessionInfo={sessionInfo} callSecs={callSecs} />}
-      {screen === 'sReport' && <ReportView onBack={() => setScreen('sLobby')} emoCounts={emoCounts} duration={callSecs} sessionInfo={sessionInfo} timeline={timeline} />}
-      {screen === 'sDashboard' && <Dashboard onBack={() => setScreen('sLobby')} />}
-    </div>
+    <LangProvider>
+      <div className="app-container">
+        {screen === 'sLanding' && <Landing onLaunch={() => setScreen('sLobby')} />}
+        {screen === 'sLobby' && <Lobby onStart={handleStart} webRTC={webRTC} onDash={() => setScreen('sDashboard')} />}
+        {screen === 'sCall' && <CallView onEnd={handleEnd} webRTC={webRTC} sessionInfo={sessionInfo} callSecs={callSecs} />}
+        {screen === 'sReport' && <ReportView onBack={() => setScreen('sLobby')} emoCounts={emoCounts} duration={callSecs} sessionInfo={sessionInfo} timeline={timeline} />}
+        {screen === 'sDashboard' && <Dashboard onBack={() => setScreen('sLobby')} />}
+      </div>
+    </LangProvider>
   );
 }
