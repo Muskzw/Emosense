@@ -22,10 +22,11 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx)
     audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
     const loadModels = async () => {
       try {
+        const M = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
         await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-          faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-          faceapi.nets.faceExpressionNet.loadFromUri('/models')
+          faceapi.nets.tinyFaceDetector.loadFromUri(M),
+          faceapi.nets.faceLandmark68TinyNet.loadFromUri(M),
+          faceapi.nets.faceExpressionNet.loadFromUri(M)
         ]);
         setModelsLoaded(true);
       } catch (e) { console.error('FaceAPI Models failed to load', e); }
@@ -102,7 +103,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx)
       if (video.videoWidth === 0) return;
 
       const det = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.4 }))
-        .withFaceLandmarks()
+        .withFaceLandmarks(true)
         .withFaceExpressions();
 
       if (det) {

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useFaceAPI, EMO } from '../hooks/useFaceAPI';
 
 export default function CallView({ onEnd, webRTC, sessionInfo, callSecs }) {
@@ -14,6 +14,12 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs }) {
     endCall();
     onEnd(emoCounts);
   };
+
+  useEffect(() => {
+    if (localVideoRef.current && webRTC.faceStream) {
+      localVideoRef.current.srcObject = webRTC.faceStream;
+    }
+  }, [webRTC.faceStream]);
 
   const getEmoTotal = () => (emoCounts.happy + emoCounts.neutral + emoCounts.sad + emoCounts.angry) || 1;
   const getPct = (n) => ((n / getEmoTotal()) * 100).toFixed(0);
@@ -76,7 +82,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs }) {
       
       <div className="c-bot">
         <div className="cg">
-          <button className="ctrl danger" onClick={handleEnd} style={{borderRadius:'12px', padding:'10px 16px', fontWeight:'bold', border:'none', cursor:'pointer'}}>END SESSION</button>
+          <button onClick={handleEnd} style={{background: '#ff6b6b', color: 'white', borderRadius:'12px', padding:'10px 16px', fontWeight:'bold', border:'none', cursor:'pointer'}}>END SESSION</button>
         </div>
         <div className="cg">
            <div style={{fontSize:'10px', color: modelsLoaded ? '#3dffa0' : '#ffb347', fontFamily: 'monospace'}}>
