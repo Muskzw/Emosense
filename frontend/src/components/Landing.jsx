@@ -370,6 +370,7 @@ export default function Landing({ onLaunch }) {
     <div 
       className="landing-page" 
       ref={containerRef}
+      style={{ overflowY: 'auto', height: '100svh', width: '100%' }}
       dangerouslySetInnerHTML={{ __html: htmlContent }} 
     />
   );
