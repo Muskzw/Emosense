@@ -169,6 +169,56 @@ app.get('/health', (req, res) => {
   });
 });
 
+// ── ROOM CODE REGISTRY ─────────────────────────────────
+// Maps short human-readable codes (e.g. ZW-4829) to PeerJS peer IDs
+// Stored in-memory; codes expire after 2 hours
+const roomCodes = new Map(); // code -> { peerId, expiresAt }
+
+const ADJECTIVES = ['swift','bold','calm','bright','keen','wise','cool','warm','zeal','pure'];
+const NOUNS      = ['hawk','lion','crane','tiger','lotus','river','drum','stone','cloud','flame'];
+
+function generateCode() {
+  // Format: WORD-WORD-NNN  e.g. swift-hawk-429
+  const adj  = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+  const num  = Math.floor(Math.random() * 900) + 100;
+  return `${adj}-${noun}-${num}`;
+}
+
+// POST /api/rooms  { peerId }  → { code }
+app.post('/api/rooms', (req, res) => {
+  const { peerId } = req.body;
+  if (!peerId) return res.status(400).json({ error: 'peerId required' });
+
+  // Clean expired codes
+  const now = Date.now();
+  for (const [code, val] of roomCodes) {
+    if (val.expiresAt < now) roomCodes.delete(code);
+  }
+
+  // Check if this peer already has a code
+  for (const [code, val] of roomCodes) {
+    if (val.peerId === peerId) return res.json({ code });
+  }
+
+  // Generate a unique code
+  let code;
+  do { code = generateCode(); } while (roomCodes.has(code));
+
+  roomCodes.set(code, { peerId, expiresAt: now + 2 * 60 * 60 * 1000 });
+  console.log(`[Room] ${code} -> ${peerId.slice(0,8)}...`);
+  res.json({ code });
+});
+
+// GET /api/rooms/:code  → { peerId }
+app.get('/api/rooms/:code', (req, res) => {
+  const entry = roomCodes.get(req.params.code.toLowerCase());
+  if (!entry || entry.expiresAt < Date.now()) {
+    return res.status(404).json({ error: 'Room not found or expired' });
+  }
+  res.json({ peerId: entry.peerId });
+});
+
 // ── DATA COLLECTION PROXY ────────────────────────────
 // Proxies requests from the frontend to the Python backend
 // This allows Ngrok to handle both signaling and data collection seamlessly
