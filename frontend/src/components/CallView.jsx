@@ -168,7 +168,7 @@ const EMO_COLORS = {
 };
 
 export default function CallView({ onEnd, webRTC, sessionInfo, callSecs }) {
-  const { remoteName, isConnected, remoteVideoRef, localVideoRef, endCall } = webRTC;
+  const { remoteName, isConnected, remoteVideoRef, localVideoRef, endCall, faceStream, remoteStream } = webRTC;
   const svgRef = useRef(null);
   const canvasRef = useRef(null);
   const endBtnRef = useRef(null);
@@ -182,11 +182,20 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs }) {
     onEnd(emoCounts);
   };
 
+  // Attach local camera stream
   useEffect(() => {
     if (localVideoRef.current && webRTC.faceStream) {
       localVideoRef.current.srcObject = webRTC.faceStream;
     }
   }, [webRTC.faceStream]);
+
+  // Attach remote peer stream — runs AFTER React paints the video element
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.play().catch(e => console.warn('[Remote play]', e));
+    }
+  }, [remoteStream, isConnected]);
 
   const getEmoTotal = () => (emoCounts.happy + emoCounts.neutral + emoCounts.sad + emoCounts.angry) || 1;
   const getPct = (n) => ((n / getEmoTotal()) * 100).toFixed(0);

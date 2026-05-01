@@ -6,6 +6,7 @@ export function useWebRTC() {
   const [remoteName, setRemoteName] = useState('Remote peer');
   const [isConnected, setIsConnected] = useState(false);
   const [faceStream, setFaceStream] = useState(null);
+  const [remoteStream, setRemoteStream] = useState(null);
   
   const peerRef = useRef(null);
   const callRef = useRef(null);
@@ -66,14 +67,11 @@ export function useWebRTC() {
   const handleCall = (call) => {
     callRef.current = call;
     call.on('stream', rs => {
-      setIsConnected(true);
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = rs;
-        remoteVideoRef.current.play().catch(e => console.warn(e));
-      }
+      setRemoteStream(rs);      // store stream in state
+      setIsConnected(true);     // trigger re-render — useEffect in CallView will attach
     });
-    call.on('close', () => setIsConnected(false));
-    call.on('error', () => setIsConnected(false));
+    call.on('close', () => { setIsConnected(false); setRemoteStream(null); });
+    call.on('error', () => { setIsConnected(false); setRemoteStream(null); });
   };
 
   const startCamera = async () => {
@@ -108,5 +106,5 @@ export function useWebRTC() {
     setIsConnected(false);
   };
 
-  return { peerId, remoteName, isConnected, startCamera, joinCall, endCall, remoteVideoRef, localVideoRef, faceStream };
+  return { peerId, remoteName, isConnected, startCamera, joinCall, endCall, remoteVideoRef, localVideoRef, faceStream, remoteStream };
 }
