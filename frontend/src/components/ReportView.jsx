@@ -1,6 +1,19 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
-export default function ReportView({ onBack, emoCounts, duration }) {
+export default function ReportView({ onBack, emoCounts, duration, sessionInfo }) {
+  const saved = useRef(false);
+
+  useEffect(() => {
+    if (saved.current) return;
+    saved.current = true;
+    
+    fetch('/api/session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ duration, emoCounts, ctx: sessionInfo?.ctx || 'INT' })
+    }).catch(e => console.error(e));
+  }, [duration, emoCounts, sessionInfo]);
+
   const total = (emoCounts.happy + emoCounts.neutral + emoCounts.sad + emoCounts.angry) || 1;
   const getPct = (n) => ((n / total) * 100).toFixed(0);
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export default function Lobby({ onStart, webRTC }) {
+export default function Lobby({ onStart, webRTC, onDash }) {
   const [uName, setUName] = useState('Tinashe Moyo');
   const [ctx, setCtx] = useState('ZW-CN');
   const [joinId, setJoinId] = useState('');
@@ -58,6 +58,7 @@ export default function Lobby({ onStart, webRTC }) {
         </div>
 
         <button className="btn-start" onClick={handleStart}>Start Session</button>
+        <button className="btn-start" onClick={onDash} style={{background: 'rgba(255,255,255,0.05)', color: 'white', marginTop: '-10px'}}>View Dashboard</button>
       </div>
     </div>
   );

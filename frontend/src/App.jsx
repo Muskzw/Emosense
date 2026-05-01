@@ -4,6 +4,7 @@ import { useWebRTC } from './hooks/useWebRTC';
 import Lobby from './components/Lobby';
 import CallView from './components/CallView';
 import ReportView from './components/ReportView';
+import Dashboard from './components/Dashboard';
 
 export default function App() {
   const [screen, setScreen] = useState('sLobby');
@@ -34,9 +35,10 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {screen === 'sLobby' && <Lobby onStart={handleStart} webRTC={webRTC} />}
+      {screen === 'sLobby' && <Lobby onStart={handleStart} webRTC={webRTC} onDash={() => setScreen('sDashboard')} />}
       {screen === 'sCall' && <CallView onEnd={handleEnd} webRTC={webRTC} sessionInfo={sessionInfo} callSecs={callSecs} />}
-      {screen === 'sReport' && <ReportView onBack={() => setScreen('sLobby')} emoCounts={emoCounts} duration={callSecs} />}
+      {screen === 'sReport' && <ReportView onBack={() => setScreen('sLobby')} emoCounts={emoCounts} duration={callSecs} sessionInfo={sessionInfo} />}
+      {screen === 'sDashboard' && <Dashboard onBack={() => setScreen('sLobby')} />}
     </div>
   );
 }

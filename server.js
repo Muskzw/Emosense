@@ -112,33 +112,51 @@ app.get('/api/ice-config', (req, res) => {
   res.json({ iceServers });
 });
 
-// ── SESSION LOGGING ────────────────────────────────────
-// Called at end of each session — stores anonymized analytics
-const sessions = []; // In production: replace with a real DB (SQLite, Postgres)
+// ── SESSION LOGGING (SQLite) ───────────────────────────
+const sqlite3 = require('sqlite3').verbose();
+const db = new sqlite3.Database(path.join(__dirname, 'emosense.db'));
+
+db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ts TEXT,
+      duration INTEGER,
+      ctx TEXT,
+      happy INTEGER,
+      neutral INTEGER,
+      sad INTEGER,
+      angry INTEGER
+    )
+  `);
+});
 
 app.post('/api/session', (req, res) => {
-  const { duration, detections, dominant_emotion, ctx, accuracy } = req.body;
-  const session = {
-    id: Date.now(),
-    ts: new Date().toISOString(),
-    duration,
-    detections,
-    dominant_emotion,
-    ctx,          // e.g. "ZW-CN"
-    accuracy,
-    // no personal data stored — compliant with ZW Cyber & Data Protection Act 2021
-  };
-  sessions.push(session);
-  console.log('[Session]', session);
-  res.json({ ok: true, id: session.id });
+  const { duration, ctx, emoCounts } = req.body;
+  const ts = new Date().toISOString();
+  
+  const stmt = db.prepare(`INSERT INTO sessions (ts, duration, ctx, happy, neutral, sad, angry) VALUES (?, ?, ?, ?, ?, ?, ?)`);
+  stmt.run([
+    ts, 
+    duration || 0, 
+    ctx || 'INT', 
+    emoCounts?.happy || 0, 
+    emoCounts?.neutral || 0, 
+    emoCounts?.sad || 0, 
+    emoCounts?.angry || 0
+  ], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    console.log('[Session Saved]', this.lastID);
+    res.json({ ok: true, id: this.lastID });
+  });
+  stmt.finalize();
 });
 
 app.get('/api/sessions', (req, res) => {
-  // Simple auth check — add proper auth in production
-  if(req.query.key !== process.env.ADMIN_KEY) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  res.json(sessions);
+  db.all('SELECT * FROM sessions ORDER BY id DESC', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
 });
 
 // ── HEALTH CHECK ───────────────────────────────────────
@@ -147,7 +165,6 @@ app.get('/health', (req, res) => {
     status: 'ok',
     uptime: process.uptime(),
     peers: peerServer.connections ? Object.keys(peerServer.connections).length : 0,
-    sessions: sessions.length,
     ts: new Date().toISOString(),
   });
 });
