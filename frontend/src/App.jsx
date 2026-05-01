@@ -12,6 +12,7 @@ export default function App() {
   const [sessionInfo, setSessionInfo] = useState({});
   const [emoCounts, setEmoCounts] = useState({ happy: 0, neutral: 0, sad: 0, angry: 0 });
   const [callSecs, setCallSecs] = useState(0);
+  const [timeline, setTimeline] = useState([]);
   const webRTC = useWebRTC();
 
   useEffect(() => {
@@ -29,8 +30,9 @@ export default function App() {
     setScreen('sCall');
   };
 
-  const handleEnd = (finalCounts) => {
+  const handleEnd = (finalCounts, finalTimeline) => {
     setEmoCounts(finalCounts);
+    setTimeline(finalTimeline || []);
     setScreen('sReport');
   };
 
@@ -39,7 +41,7 @@ export default function App() {
       {screen === 'sLanding' && <Landing onLaunch={() => setScreen('sLobby')} />}
       {screen === 'sLobby' && <Lobby onStart={handleStart} webRTC={webRTC} onDash={() => setScreen('sDashboard')} />}
       {screen === 'sCall' && <CallView onEnd={handleEnd} webRTC={webRTC} sessionInfo={sessionInfo} callSecs={callSecs} />}
-      {screen === 'sReport' && <ReportView onBack={() => setScreen('sLobby')} emoCounts={emoCounts} duration={callSecs} sessionInfo={sessionInfo} />}
+      {screen === 'sReport' && <ReportView onBack={() => setScreen('sLobby')} emoCounts={emoCounts} duration={callSecs} sessionInfo={sessionInfo} timeline={timeline} />}
       {screen === 'sDashboard' && <Dashboard onBack={() => setScreen('sLobby')} />}
     </div>
   );

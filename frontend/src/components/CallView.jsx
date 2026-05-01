@@ -173,13 +173,13 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs }) {
   const canvasRef = useRef(null);
   const endBtnRef = useRef(null);
 
-  const { modelsLoaded, curEmo, emoCounts, detCount } = useFaceAPI(
+  const { modelsLoaded, curEmo, emoCounts, detCount, getTimeline } = useFaceAPI(
     remoteVideoRef, svgRef, canvasRef, isConnected, sessionInfo.ctx
   );
 
   const handleEnd = () => {
     endCall();
-    onEnd(emoCounts);
+    onEnd(emoCounts, getTimeline());
   };
 
   // Attach local camera stream

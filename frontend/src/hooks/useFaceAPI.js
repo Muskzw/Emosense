@@ -17,6 +17,9 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx)
   const lastEmoRef = useRef('');
   const audioCtxRef = useRef(null);
   const reqRef = useRef(null);
+  const timelineRef = useRef([]);
+  const lastTimelineSnap = useRef(0);
+  const callStartRef = useRef(0);
 
   useEffect(() => {
     audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
@@ -80,6 +83,10 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx)
 
   useEffect(() => {
     if (!isConnected || !modelsLoaded || !videoRef.current || !svgRef.current) return;
+    // Reset timeline when a new call starts
+    timelineRef.current = [];
+    lastTimelineSnap.current = 0;
+    callStartRef.current = Date.now();
 
     const video = videoRef.current;
     const svg = svgRef.current;
@@ -120,6 +127,16 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx)
         setDetCount(p => p + 1);
         setEmoCounts(p => ({ ...p, [dEmo]: (p[dEmo] || 0) + 1 }));
 
+        // Record timeline snapshot every ~2 seconds
+        const now = Date.now();
+        if (now - lastTimelineSnap.current >= 2000) {
+          timelineRef.current.push({
+            t: Math.floor((now - callStartRef.current) / 1000), // seconds since call start
+            emo: dEmo
+          });
+          lastTimelineSnap.current = now;
+        }
+
         submitSample(video, dEmo, maxConf);
 
         const dims = faceapi.matchDimensions({ width: video.videoWidth, height: video.videoHeight }, video);
@@ -142,5 +159,5 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx)
     return () => cancelAnimationFrame(reqRef.current);
   }, [isConnected, modelsLoaded, sessionCtx]);
 
-  return { modelsLoaded, curEmo, emoCounts, detCount };
+  return { modelsLoaded, curEmo, emoCounts, detCount, getTimeline: () => [...timelineRef.current] };
 }
