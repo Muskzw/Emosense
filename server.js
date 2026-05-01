@@ -45,8 +45,8 @@ app.use(cors({
 app.use(express.json());
 
 // ── STATIC FILES ───────────────────────────────────────
-// Serve your HTML files from the same directory
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve compiled React frontend in production
+app.use(express.static(path.join(__dirname, 'frontend/dist')));
 
 // ── PEERJS SIGNALING SERVER ────────────────────────────
 // This replaces 0.peerjs.com — runs on YOUR server
@@ -190,7 +190,7 @@ app.post('/api/collect', async (req, res) => {
 
 // ── CATCH-ALL → index.html ─────────────────────────────
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'frontend/dist', 'index.html'));
 });
 
 // ── START ──────────────────────────────────────────────
