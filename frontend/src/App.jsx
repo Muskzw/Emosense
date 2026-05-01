@@ -5,9 +5,10 @@ import Lobby from './components/Lobby';
 import CallView from './components/CallView';
 import ReportView from './components/ReportView';
 import Dashboard from './components/Dashboard';
+import Landing from './components/Landing';
 
 export default function App() {
-  const [screen, setScreen] = useState('sLobby');
+  const [screen, setScreen] = useState('sLanding');
   const [sessionInfo, setSessionInfo] = useState({});
   const [emoCounts, setEmoCounts] = useState({ happy: 0, neutral: 0, sad: 0, angry: 0 });
   const [callSecs, setCallSecs] = useState(0);
@@ -35,6 +36,7 @@ export default function App() {
 
   return (
     <div className="app-container">
+      {screen === 'sLanding' && <Landing onLaunch={() => setScreen('sLobby')} />}
       {screen === 'sLobby' && <Lobby onStart={handleStart} webRTC={webRTC} onDash={() => setScreen('sDashboard')} />}
       {screen === 'sCall' && <CallView onEnd={handleEnd} webRTC={webRTC} sessionInfo={sessionInfo} callSecs={callSecs} />}
       {screen === 'sReport' && <ReportView onBack={() => setScreen('sLobby')} emoCounts={emoCounts} duration={callSecs} sessionInfo={sessionInfo} />}
