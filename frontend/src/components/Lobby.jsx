@@ -107,12 +107,11 @@ export default function Lobby({ onStart, webRTC, onDash }) {
           <div className="rb-title">{t('yourRoomCode')}</div>
           <div className="rb-create">
             <div className="rb-id" style={{
-              fontSize: '15px', fontWeight: '700', letterSpacing: '0.06em',
-              color: roomCode ? 'var(--green)' : 'var(--muted)',
-              textTransform: 'uppercase',
-            }}>
-              {roomCode || (peerId ? t('registering') : t('connecting'))}
-            </div>
+            fontSize: '15px', fontWeight: '700', letterSpacing: '0.06em',
+            color: roomCode ? 'var(--green)' : 'var(--muted)',
+          }}>
+            {roomCode || (peerId ? t('registering') : t('connecting'))}
+          </div>
             <button className="rb-copy" onClick={handleCopy} disabled={!roomCode}>
               {copyLabel || t('copy')}
             </button>
@@ -133,7 +132,6 @@ export default function Lobby({ onStart, webRTC, onDash }) {
                 value={joinCode}
                 onChange={e => { setJoinCode(e.target.value); setJoinError(''); }}
                 onKeyDown={e => e.key === 'Enter' && handleJoin()}
-                style={{ textTransform: 'lowercase', letterSpacing: '0.04em' }}
               />
               <button className="btn-join" onClick={handleJoin} disabled={joining || !joinCode.trim()}>
                 {joining ? '...' : t('join')}

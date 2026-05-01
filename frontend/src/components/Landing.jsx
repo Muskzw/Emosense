@@ -319,7 +319,7 @@ const htmlContent = `<!-- NAV -->
 <!-- FOOTER -->
 <footer>
   <div class="footer-logo">emo<span>-detect</span> · EmoSense</div>
-  <div class="footer-copy">Built for Zimbabwe × China · Design Science Research 2024</div>
+  <div class="footer-copy">Built for Zimbabwe × China · EMOSENSE GROUP PROJECT @ CUT 2026</div>
   <div class="footer-links">
     <a href="#problem">Research</a>
     <a href="#datasets">Datasets</a>
@@ -341,15 +341,15 @@ export default function Landing({ onLaunch }) {
     if (node) {
       node.addEventListener('click', handleClick);
     }
-    
+
     const obs = new IntersectionObserver(entries => {
-      entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
     }, { threshold: 0.1 });
     document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 
     const barObs = new IntersectionObserver(entries => {
       entries.forEach(e => {
-        if(e.isIntersecting){
+        if (e.isIntersecting) {
           e.target.querySelectorAll('.acc-bar-fill').forEach(bar => {
             const w = bar.style.width || '0%';
             bar.style.width = '0%';
@@ -359,7 +359,7 @@ export default function Landing({ onLaunch }) {
       });
     }, { threshold: 0.3 });
     const accSection = document.querySelector('.acc-bars');
-    if(accSection) barObs.observe(accSection);
+    if (accSection) barObs.observe(accSection);
 
     return () => {
       if (node) node.removeEventListener('click', handleClick);
@@ -367,11 +367,11 @@ export default function Landing({ onLaunch }) {
   }, []);
 
   return (
-    <div 
-      className="landing-page" 
+    <div
+      className="landing-page"
       ref={containerRef}
       style={{ overflowY: 'auto', height: '100svh', width: '100%' }}
-      dangerouslySetInnerHTML={{ __html: htmlContent }} 
+      dangerouslySetInnerHTML={{ __html: htmlContent }}
     />
   );
 }

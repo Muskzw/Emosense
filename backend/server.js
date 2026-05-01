@@ -129,6 +129,16 @@ db.serialize(() => {
       angry INTEGER
     )
   `);
+  // Room codes table — survives backend restarts
+  db.run(`
+    CREATE TABLE IF NOT EXISTS room_codes (
+      code TEXT PRIMARY KEY,
+      peer_id TEXT NOT NULL,
+      expires_at INTEGER NOT NULL
+    )
+  `);
+  // Clean up expired codes on startup
+  db.run(`DELETE FROM room_codes WHERE expires_at < ?`, [Date.now()]);
 });
 
 app.post('/api/session', (req, res) => {
@@ -169,16 +179,11 @@ app.get('/health', (req, res) => {
   });
 });
 
-// ── ROOM CODE REGISTRY ─────────────────────────────────
-// Maps short human-readable codes (e.g. ZW-4829) to PeerJS peer IDs
-// Stored in-memory; codes expire after 2 hours
-const roomCodes = new Map(); // code -> { peerId, expiresAt }
-
+// ── ROOM CODE REGISTRY (SQLite-backed) ─────────────────────
 const ADJECTIVES = ['swift','bold','calm','bright','keen','wise','cool','warm','zeal','pure'];
 const NOUNS      = ['hawk','lion','crane','tiger','lotus','river','drum','stone','cloud','flame'];
 
 function generateCode() {
-  // Format: WORD-WORD-NNN  e.g. swift-hawk-429
   const adj  = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
   const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
   const num  = Math.floor(Math.random() * 900) + 100;
@@ -190,33 +195,40 @@ app.post('/api/rooms', (req, res) => {
   const { peerId } = req.body;
   if (!peerId) return res.status(400).json({ error: 'peerId required' });
 
-  // Clean expired codes
   const now = Date.now();
-  for (const [code, val] of roomCodes) {
-    if (val.expiresAt < now) roomCodes.delete(code);
-  }
+  const expiresAt = now + 2 * 60 * 60 * 1000; // 2 hours
 
-  // Check if this peer already has a code
-  for (const [code, val] of roomCodes) {
-    if (val.peerId === peerId) return res.json({ code });
-  }
+  // Clean up expired codes first
+  db.run(`DELETE FROM room_codes WHERE expires_at < ?`, [now]);
 
-  // Generate a unique code
-  let code;
-  do { code = generateCode(); } while (roomCodes.has(code));
+  // Check if this peer already has a live code
+  db.get(`SELECT code FROM room_codes WHERE peer_id = ? AND expires_at > ?`, [peerId, now], (err, row) => {
+    if (row) return res.json({ code: row.code });
 
-  roomCodes.set(code, { peerId, expiresAt: now + 2 * 60 * 60 * 1000 });
-  console.log(`[Room] ${code} -> ${peerId.slice(0,8)}...`);
-  res.json({ code });
+    // Generate a unique code
+    const tryInsert = () => {
+      const code = generateCode();
+      db.run(
+        `INSERT OR IGNORE INTO room_codes (code, peer_id, expires_at) VALUES (?, ?, ?)`,
+        [code, peerId, expiresAt],
+        function(insertErr) {
+          if (insertErr || this.changes === 0) return tryInsert(); // collision, try again
+          console.log(`[Room] ${code} -> ${peerId.slice(0,8)}...`);
+          res.json({ code });
+        }
+      );
+    };
+    tryInsert();
+  });
 });
 
 // GET /api/rooms/:code  → { peerId }
 app.get('/api/rooms/:code', (req, res) => {
-  const entry = roomCodes.get(req.params.code.toLowerCase());
-  if (!entry || entry.expiresAt < Date.now()) {
-    return res.status(404).json({ error: 'Room not found or expired' });
-  }
-  res.json({ peerId: entry.peerId });
+  const code = req.params.code.toLowerCase().trim();
+  db.get(`SELECT peer_id FROM room_codes WHERE code = ? AND expires_at > ?`, [code, Date.now()], (err, row) => {
+    if (!row) return res.status(404).json({ error: 'Room not found or expired' });
+    res.json({ peerId: row.peer_id });
+  });
 });
 
 // ── DATA COLLECTION PROXY ────────────────────────────
