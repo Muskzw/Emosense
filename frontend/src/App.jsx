@@ -18,13 +18,13 @@ export default function App() {
 
   useEffect(() => {
     let int;
-    if (screen === 'sCall') {
+    if (screen === 'sCall' && webRTC.isConnected) {
       int = setInterval(() => setCallSecs(s => s + 1), 1000);
     } else if (screen === 'sLobby') {
       setCallSecs(0);
     }
     return () => clearInterval(int);
-  }, [screen]);
+  }, [screen, webRTC.isConnected]);
 
   const handleStart = (info) => {
     setSessionInfo(info);
