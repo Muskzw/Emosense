@@ -152,6 +152,25 @@ app.get('/health', (req, res) => {
   });
 });
 
+// ── DATA COLLECTION PROXY ────────────────────────────
+// Proxies requests from the frontend to the Python backend
+// This allows Ngrok to handle both signaling and data collection seamlessly
+app.post('/api/collect', async (req, res) => {
+  try {
+    const pythonRes = await fetch('http://127.0.0.1:5000/api/collect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body)
+    });
+    if (!pythonRes.ok) throw new Error('Python server error');
+    const data = await pythonRes.json();
+    res.json(data);
+  } catch (err) {
+    console.error('[Proxy Error] Could not reach Python server:', err.message);
+    res.status(500).json({ error: 'Data collection backend offline' });
+  }
+});
+
 // ── CATCH-ALL → index.html ─────────────────────────────
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
