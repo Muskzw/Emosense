@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#07070f">
 <title>Emo-Detect · EmoSense</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
@@ -225,6 +227,11 @@ video{display:block;background:#000}
 .ds-txt{font-size:11px;line-height:1.6;color:rgba(255,255,255,.5)}.ds-txt strong{color:rgba(255,255,255,.78);font-weight:500}
 .toast{position:fixed;bottom:calc(76px + var(--sb));left:50%;transform:translateX(-50%) translateY(8px);background:var(--surf2);border:.5px solid var(--bd3);border-radius:12px;padding:10px 18px;font-size:12px;font-family:var(--mono);color:var(--txt);pointer-events:none;opacity:0;z-index:999;white-space:nowrap;transition:all .3s cubic-bezier(.23,1,.32,1)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.ctx-lbl-wrap{display:flex;align-items:center;gap:6px}
+.t-icon{width:14px;height:14px;border-radius:50%;border:1px solid var(--muted);display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--mono);color:var(--muted);cursor:help;position:relative}
+.t-icon:hover{border-color:var(--txt);color:var(--txt)}
+.t-tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:220px;background:var(--surf2);border:.5px solid var(--bd3);border-radius:8px;padding:10px 12px;font-size:10px;font-family:var(--mono);color:var(--txt);line-height:1.5;box-shadow:0 8px 24px rgba(0,0,0,0.5);opacity:0;pointer-events:none;transition:opacity 0.2s;z-index:10}
+.t-icon:hover .t-tip{opacity:1}
 </style>
 </head>
 <body>
@@ -243,7 +250,7 @@ video{display:block;background:#000}
     <div class="cam-strip"><video id="lobPre" autoplay muted playsinline></video><canvas id="lobPreC"></canvas><div class="no-cam" id="noCam"><svg viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="15" height="11" rx="2" stroke="white" stroke-width="1.5"/><path d="M17 11l5-3v8l-5-3v-2Z" stroke="white" stroke-width="1.5" stroke-linejoin="round"/></svg><span>Requesting camera…</span></div></div>
     <div class="fl"><label class="fl-l">Your name</label><input class="fi" type="text" id="uName" placeholder="e.g. Tinashe Moyo" value="Tinashe Moyo" autocomplete="off"></div>
     <div class="fl">
-      <label class="fl-l">Cultural context</label>
+      <div class="ctx-lbl-wrap"><label class="fl-l">Cultural context</label><div class="t-icon">i<div class="t-tip">AI baselines adjust based on your selection to prevent bias. E.g., a neutral expression in Chinese business often signifies active listening, not disengagement.</div></div></div>
       <div class="ctx-grid">
         <div class="ctx-c sel" onclick="selCtx(this,'ZW-CN')"><div class="ctx-flags">🇿🇼 🇨🇳</div><div class="ctx-lbl">Zimbabwe → China</div></div>
         <div class="ctx-c" onclick="selCtx(this,'ZW-ZW')"><div class="ctx-flags">🇿🇼 🇿🇼</div><div class="ctx-lbl">Zim → Zim</div></div>
@@ -539,7 +546,31 @@ function startCall(){
 }
 function startTimer(){callSecs=0;clearInterval(timerInt);timerInt=setInterval(()=>{callSecs++;g('ctimer').textContent=fmt(Math.floor(callSecs/60))+':'+fmt(callSecs%60);},1000);}
 function fmt(n){return String(n).padStart(2,'0');}
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playPop() {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1);
+  gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+  osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+}
+let lastEmo = '';
+function handleMicroInteractions(emo) {
+  if (emo !== lastEmo) {
+    if (emo === 'angry' || emo === 'sad' || emo === 'happy') {
+      try { playPop(); } catch(e){}
+      if (navigator.vibrate) navigator.vibrate([30]);
+    }
+    lastEmo = emo;
+  }
+}
 function setEmo(emo,jitter=false){
+  handleMicroInteractions(emo);
   const e=EMO[emo];curEmo=emo;detCount++;emoCounts[emo]++;g('sDet').textContent=detCount;
   const j=jitter?Math.floor(Math.random()*8)-4:0,cv=Math.min(99,Math.max(50,e.cv+j)),co=Math.max(5,e.co-j);
   g('rTile').style.borderColor=rgba(e.rc,.4);g('rs1').style.borderColor=e.rc;g('rs2').style.borderColor=e.rc;g('rFW').querySelector('.sweep').style.color=e.rc;
@@ -554,6 +585,7 @@ function setEmo(emo,jitter=false){
   addTL(emo,cv);
 }
 function setEmoReal(emo,conf,exps){
+  handleMicroInteractions(emo);
   const e=EMO[emo];curEmo=emo;detCount++;emoCounts[emo]++;g('sDet').textContent=detCount;
   const rCult = curCtx.includes('-') ? curCtx.split('-')[1] : 'INT';
   submitSample(g('remoteVid'), emo, conf, rCult);
@@ -717,6 +749,12 @@ document.addEventListener('keydown',e=>{if(curScreen!=='sCall')return;const k=e.
 const SF=[22,24,23,25,24,23,26,24];let sfi=0;
 setInterval(()=>{if(modelsOk||curScreen!=='sCall')return;sfi=(sfi+1)%SF.length;g('sFps').textContent=SF[sfi]+'fps';},900);
 boot();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js').catch(e => console.log('SW fail:', e));
+  });
+}
 </script>
 </body>
 </html>
