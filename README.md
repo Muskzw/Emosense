@@ -14,7 +14,8 @@ This project requires two terminal windows to run simultaneously.
 
 ### 1. Start the Backend (Signaling & Database)
 ```bash
-# In the root Emosense directory:
+# In the new backend/ directory:
+cd backend
 npm install
 npm start
 ```
