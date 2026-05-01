@@ -215,23 +215,33 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs }) {
 
       {/* ── REMOTE VIDEO (full screen) */}
       <div style={S.remoteFill}>
-        {!isConnected ? (
-          <div style={S.waitOrb}>
-            <div style={S.orbCircle}>
-              <svg viewBox="0 0 28 28" width="28" height="28" fill="none">
-                <circle cx="14" cy="10" r="5.5" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5"/>
-                <path d="M5 26c0-4.97 4.03-9 9-9s9 4.03 9 9" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-            </div>
-            <div style={S.orbTxt}>Waiting for peer…</div>
-          </div>
-        ) : (
-          <video ref={remoteVideoRef} style={S.remoteVid} autoPlay playsInline />
-        )}
+        {/* Always in DOM so the ref is ready when the stream arrives */}
+        <video
+          ref={remoteVideoRef}
+          style={{ ...S.remoteVid, display: isConnected ? 'block' : 'none' }}
+          autoPlay
+          playsInline
+        />
+        <svg
+          ref={svgRef}
+          style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%',
+            pointerEvents: 'none', zIndex: 4,
+            display: isConnected ? 'block' : 'none'
+          }}
+        />
         <canvas ref={canvasRef} style={{ display: 'none' }} />
-        {isConnected && (
-          <svg ref={svgRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 4 }} />
-        )}
+
+        {/* Waiting state — always in DOM, hidden when connected */}
+        <div style={{ ...S.waitOrb, display: isConnected ? 'none' : 'flex' }}>
+          <div style={S.orbCircle}>
+            <svg viewBox="0 0 28 28" width="28" height="28" fill="none">
+              <circle cx="14" cy="10" r="5.5" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5"/>
+              <path d="M5 26c0-4.97 4.03-9 9-9s9 4.03 9 9" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <div style={S.orbTxt}>Waiting for peer…</div>
+        </div>
       </div>
 
       {/* ── TOP BAR */}
