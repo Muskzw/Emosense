@@ -58,12 +58,27 @@ export default function Lobby({ onStart, webRTC, onDash }) {
     setJoining(true);
     setJoinError('');
     try {
-      const res = await fetch(`/api/rooms/${joinCode.trim().toLowerCase()}`);
+      // Strip out anything that isn't a letter, number, or hyphen
+      const cleanCode = joinCode.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+      if (!cleanCode) {
+        setJoinError(t('roomNotFound'));
+        setJoining(false);
+        return;
+      }
+      
+      const res = await fetch(`/api/rooms/${cleanCode}`);
       if (!res.ok) { setJoinError(t('roomNotFound')); setJoining(false); return; }
+      
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server returned non-JSON response');
+      }
+      
       const { peerId: targetPeerId } = await res.json();
       joinCall(targetPeerId, uName);
       onStart({ uName, ctx, optIn });
-    } catch {
+    } catch (err) {
+      console.error('[Join Error]', err);
       setJoinError(t('serverError'));
       setJoining(false);
     }

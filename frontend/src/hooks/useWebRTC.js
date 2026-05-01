@@ -67,8 +67,9 @@ export function useWebRTC() {
   const handleCall = (call) => {
     callRef.current = call;
     call.on('stream', rs => {
+      console.log('[WebRTC] Received remote stream. Tracks:', rs.getTracks().map(t => `${t.kind}:${t.readyState}`));
       setRemoteStream(rs);      // store stream in state
-      setIsConnected(true);     // trigger re-render — useEffect in CallView will attach
+      setIsConnected(true);     // trigger re-render
     });
     call.on('close', () => { setIsConnected(false); setRemoteStream(null); });
     call.on('error', () => { setIsConnected(false); setRemoteStream(null); });
