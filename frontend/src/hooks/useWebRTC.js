@@ -95,7 +95,16 @@ export function useWebRTC() {
   };
 
   const endCall = () => {
+    // Close the peer-to-peer call
     if (callRef.current) callRef.current.close();
+    // Stop ALL camera & microphone tracks — turns off the camera light
+    if (faceStream) {
+      faceStream.getTracks().forEach(track => track.stop());
+    }
+    // Clear video elements
+    if (localVideoRef.current) localVideoRef.current.srcObject = null;
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    setFaceStream(null);
     setIsConnected(false);
   };
 
