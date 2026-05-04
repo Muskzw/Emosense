@@ -14,7 +14,16 @@ export default function App() {
   const [emoCounts, setEmoCounts] = useState({ happy: 0, neutral: 0, sad: 0, angry: 0 });
   const [callSecs, setCallSecs] = useState(0);
   const [timeline, setTimeline] = useState([]);
-  const webRTC = useWebRTC();
+  const [liveData, setLiveData] = useState({ counts: { happy: 0, neutral: 0, sad: 0, angry: 0 }, timeline: [] });
+
+  const handleRemoteEnd = () => {
+    console.log('[App] Remote end detected, transitioning to report');
+    setEmoCounts(liveData.counts || { happy: 0, neutral: 0, sad: 0, angry: 0 });
+    setTimeline(liveData.timeline || []);
+    setScreen('sReport');
+  };
+
+  const webRTC = useWebRTC(handleRemoteEnd);
 
   useEffect(() => {
     let int;
@@ -22,6 +31,7 @@ export default function App() {
       int = setInterval(() => setCallSecs(s => s + 1), 1000);
     } else if (screen === 'sLobby') {
       setCallSecs(0);
+      setLiveData({ counts: { happy: 0, neutral: 0, sad: 0, angry: 0 }, timeline: [] });
     }
     return () => clearInterval(int);
   }, [screen, webRTC.isConnected]);
@@ -42,7 +52,7 @@ export default function App() {
       <div className="app-container">
         {screen === 'sLanding' && <Landing onLaunch={() => setScreen('sLobby')} />}
         {screen === 'sLobby' && <Lobby onStart={handleStart} webRTC={webRTC} onDash={() => setScreen('sDashboard')} />}
-        {screen === 'sCall' && <CallView onEnd={handleEnd} webRTC={webRTC} sessionInfo={sessionInfo} callSecs={callSecs} />}
+        {screen === 'sCall' && <CallView onEnd={handleEnd} webRTC={webRTC} sessionInfo={sessionInfo} callSecs={callSecs} onDataUpdate={setLiveData} />}
         {screen === 'sReport' && <ReportView onBack={() => setScreen('sLobby')} emoCounts={emoCounts} duration={callSecs} sessionInfo={sessionInfo} timeline={timeline} />}
         {screen === 'sDashboard' && <Dashboard onBack={() => setScreen('sLobby')} />}
       </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Peer from 'peerjs';
 
-export function useWebRTC() {
+export function useWebRTC(onRemoteEnd) {
   const [peerId, setPeerId] = useState('');
   const [remoteName, setRemoteName] = useState('Remote peer');
   const [isConnected, setIsConnected] = useState(false);
@@ -10,19 +10,19 @@ export function useWebRTC() {
   
   const peerRef = useRef(null);
   const callRef = useRef(null);
+  const connRef = useRef(null); // Keep track of data connection
   const remoteVideoRef = useRef(null);
   const localVideoRef = useRef(null);
 
   useEffect(() => {
     const initPeer = async () => {
-      let iceServers = [{urls:'stun:stun.l.google.com:19302'}];
+      let iceServers = [{urls:['stun:stun.l.google.com:19302']}];
       try {
         const res = await fetch('/api/ice-config');
         const data = await res.json();
         if (data.iceServers) iceServers = data.iceServers;
       } catch(e) { console.warn('ICE fetch failed', e); }
 
-      // We use localhost during dev, otherwise window location
       const host = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
       const port = window.location.hostname === 'localhost' ? 3000 : (window.location.port || (window.location.protocol === 'https:' ? 443 : 80));
       
@@ -36,10 +36,16 @@ export function useWebRTC() {
 
       peer.on('open', id => setPeerId(id));
       peer.on('connection', conn => {
-        conn.on('data', d => { if(d.name) setRemoteName(d.name); });
+        connRef.current = conn;
+        conn.on('data', d => { 
+          if(d.name) setRemoteName(d.name); 
+          if(d.type === 'END_SESSION') {
+            console.log('[WebRTC] Remote peer ended session');
+            if (onRemoteEnd) onRemoteEnd();
+          }
+        });
       });
       
-      // Store peer reference
       peerRef.current = peer;
     };
     initPeer();
@@ -47,11 +53,10 @@ export function useWebRTC() {
     return () => {
       if (peerRef.current) peerRef.current.destroy();
     };
-  }, []);
+  }, [onRemoteEnd]);
 
   // Handle incoming calls
   useEffect(() => {
-    // We need both the peer instance AND the local camera stream to be ready
     if (!peerRef.current || !faceStream) return;
     
     const peer = peerRef.current;
@@ -68,27 +73,20 @@ export function useWebRTC() {
       console.log('[WebRTC] Removing incoming call listener');
       peer.off('call', onCall); 
     };
-  }, [faceStream, peerId]); // peerId changes when initPeer completes
+  }, [faceStream, peerId]);
 
   const handleCall = (call) => {
     callRef.current = call;
 
-    // Monitor connection state
     const pc = call.peerConnection;
     if (pc) {
       pc.oniceconnectionstatechange = () => {
         console.log(`[WebRTC] ICE State: ${pc.iceConnectionState}`);
-        if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
-          console.warn('[WebRTC] Connection unstable or failed');
-        }
       };
     }
 
     call.on('stream', rs => {
-      console.log('[WebRTC] Received remote stream. Tracks:', rs.getTracks().map(t => `${t.kind}:${t.readyState}`));
-      if (rs.getTracks().length === 0) {
-        console.error('[WebRTC] Received stream with NO tracks!');
-      }
+      console.log('[WebRTC] Received remote stream');
       setRemoteStream(rs);
       setIsConnected(true);
     });
@@ -115,17 +113,27 @@ export function useWebRTC() {
     const call = peerRef.current.call(joinId, faceStream);
     handleCall(call);
     const conn = peerRef.current.connect(joinId);
-    conn.on('open', () => conn.send({name: userName}));
+    connRef.current = conn;
+    conn.on('open', () => conn.send({ name: userName }));
+    conn.on('data', d => {
+      if(d.type === 'END_SESSION') {
+        console.log('[WebRTC] Remote peer ended session');
+        if (onRemoteEnd) onRemoteEnd();
+      }
+    });
   };
 
   const endCall = () => {
-    // Close the peer-to-peer call
+    // Send signal to remote peer first
+    if (connRef.current && connRef.current.open) {
+      console.log('[WebRTC] Signaling remote peer to end session');
+      connRef.current.send({ type: 'END_SESSION' });
+    }
+
     if (callRef.current) callRef.current.close();
-    // Stop ALL camera & microphone tracks — turns off the camera light
     if (faceStream) {
       faceStream.getTracks().forEach(track => track.stop());
     }
-    // Clear video elements
     if (localVideoRef.current) localVideoRef.current.srcObject = null;
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
     setFaceStream(null);

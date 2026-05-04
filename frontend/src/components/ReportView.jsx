@@ -149,18 +149,37 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
     const hP = emoCounts.happy / total;
     const nP = emoCounts.neutral / total;
     const aP = emoCounts.angry / total;
+    const sP = emoCounts.sad / total;
     const ctx = sessionInfo?.ctx || 'INT';
     let strat = '';
 
     if (ctx === 'ZW-CN') {
-      if (nP > 0.6) strat = 'High neutrality detected. In Chinese business context, this often indicates polite listening rather than agreement. <strong>Strategy:</strong> Pause and ask open-ended questions to elicit true feedback.';
-      else if (hP > 0.4) strat = 'Strong positive resonance. <strong>Strategy:</strong> Capitalise on this momentum to propose next steps or finalise terms.';
-      else if (aP > 0.15) strat = 'Friction detected. <strong>Strategy:</strong> Shift tone to be more accommodating and address potential unspoken concerns immediately.';
-      else strat = 'Balanced engagement. <strong>Strategy:</strong> Continue building rapport before pushing complex deliverables.';
+      strat = `<strong>Cultural Context: Zimbabwe ↔ China (Mianzi/Face Focus)</strong><br/>`;
+      if (nP > 0.6) {
+        strat += `Detected high neutrality (60%+). In Chinese professional norms, this often indicates "Face-saving" or polite reservation. The participant may have unspoken concerns. <br/><strong>Advice:</strong> Do not press for immediate commitment. Use "soft" follow-ups like: <em>"We would value your internal perspective on this."</em>`;
+      } else if (hP > 0.4) {
+        strat += `Strong positive resonance detected. This indicates high relational harmony (Guanxi). <br/><strong>Advice:</strong> Excellent time to solidify the partnership. Acknowledge their contribution to the "mutual benefit" (win-win) of the session.`;
+      } else if (aP > 0.1 || sP > 0.1) {
+        strat += `Friction or hesitation detected. In this cross-cultural link, direct confrontation is often avoided. <br/><strong>Advice:</strong> Slow down. Shift the focus to shared goals and use a more humble, accommodating tone to restore "Face."`;
+      } else {
+        strat += `Balanced interaction. <br/><strong>Advice:</strong> Maintain formal respect and structured delivery. Avoid overly casual language which might be misinterpreted as a lack of seriousness.`;
+      }
+    } else if (ctx === 'ZW-ZW') {
+      strat = `<strong>Cultural Context: Zimbabwe ↔ Zimbabwe (Ubuntu/Respect Focus)</strong><br/>`;
+      if (hP > 0.4) {
+        strat += `Strong social harmony detected. Reflects "Ubuntu" (humanity towards others). <br/><strong>Advice:</strong> Maintain the warm rapport. Personal connection is as important as the business at hand.`;
+      } else if (nP > 0.6) {
+        strat += `Reserved engagement. Might indicate a "Wait and See" approach or respect-based listening. <br/><strong>Advice:</strong> Use inclusive language. Check in with: <em>"What is our collective thought on this direction?"</em> to encourage participation.`;
+      } else if (aP > 0.15) {
+        strat += `High emotional intensity detected. <br/><strong>Advice:</strong> De-escalate by acknowledging the person's status and the validity of their passion. Focus on community-led solutions.`;
+      } else {
+        strat += `Standard communal engagement. <br/><strong>Advice:</strong> Continue with a focus on shared values and clear, respectful communication.`;
+      }
     } else {
-      if (hP > 0.5) strat = 'Excellent rapport established. <strong>Strategy:</strong> Good time to discuss forward-looking opportunities.';
-      else if (nP > 0.5) strat = 'Engagement is reserved. <strong>Strategy:</strong> Inject more interactive elements to gauge true interest.';
-      else strat = 'Standard engagement. Maintain clear, structured communication.';
+      strat = `<strong>International Context</strong><br/>`;
+      if (hP > 0.5) strat += 'Excellent rapport established. <strong>Strategy:</strong> Good time to discuss forward-looking opportunities.';
+      else if (nP > 0.5) strat += 'Engagement is reserved. <strong>Strategy:</strong> Inject more interactive elements to gauge true interest.';
+      else strat += 'Standard engagement. Maintain clear, structured communication.';
     }
     setStrategy(strat);
 

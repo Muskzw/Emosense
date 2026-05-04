@@ -167,7 +167,7 @@ const EMO_COLORS = {
   angry: '#ff3b30',
 };
 
-export default function CallView({ onEnd, webRTC, sessionInfo, callSecs }) {
+export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataUpdate }) {
   const { remoteName, isConnected, remoteVideoRef, localVideoRef, endCall, faceStream, remoteStream } = webRTC;
   const svgRef = useRef(null);
   const canvasRef = useRef(null);
@@ -176,6 +176,13 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs }) {
   const { modelsLoaded, curEmo, emoCounts, detCount, getTimeline } = useFaceAPI(
     remoteVideoRef, svgRef, canvasRef, isConnected, sessionInfo.ctx
   );
+
+  // Sync data back to App.jsx for synchronized termination
+  useEffect(() => {
+    if (onDataUpdate && isConnected) {
+      onDataUpdate({ counts: emoCounts, timeline: getTimeline() });
+    }
+  }, [emoCounts, detCount, isConnected]);
 
   const handleEnd = () => {
     endCall();
@@ -290,7 +297,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs }) {
 
       {/* ── FLOATING HUD (Live Breakdown) */}
       <aside style={S.hud}>
-        <div style={S.hudLabel}>Live Breakdown</div>
+        <div style={S.hudLabel}>{remoteName}'s Emotions</div>
         <div style={S.emoRow}>
           {[
             { key: 'happy', label: 'Happy', count: emoCounts.happy },
