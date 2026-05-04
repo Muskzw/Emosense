@@ -34,7 +34,8 @@ export default function Lobby({ onStart, webRTC, onDash }) {
 
   // Register for a room code once we have a peerId
   useEffect(() => {
-    if (!peerId) return;
+    if (!peerId || roomCode) return; // Don't fetch if we already have a code
+    console.log('[Lobby] Fetching room code for Peer:', peerId);
     fetch('/api/rooms', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -43,7 +44,7 @@ export default function Lobby({ onStart, webRTC, onDash }) {
       .then(r => r.json())
       .then(data => { if (data.code) setRoomCode(data.code); })
       .catch(() => setRoomCode('offline'));
-  }, [peerId]);
+  }, [peerId, roomCode]);
 
   const handleCopy = () => {
     if (!roomCode) return;

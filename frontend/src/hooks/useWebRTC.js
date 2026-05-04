@@ -15,7 +15,10 @@ export function useWebRTC(onRemoteEnd) {
   const localVideoRef = useRef(null);
 
   useEffect(() => {
+    if (peerRef.current && !peerRef.current.destroyed) return; // Already initialized
+
     const initPeer = async () => {
+      console.log('[WebRTC] Initializing Peer...');
       let iceServers = [{urls:['stun:stun.l.google.com:19302']}];
       try {
         const res = await fetch('/api/ice-config');
@@ -34,7 +37,10 @@ export function useWebRTC(onRemoteEnd) {
         config: { iceServers }
       });
 
-      peer.on('open', id => setPeerId(id));
+      peer.on('open', id => {
+        console.log('[WebRTC] Peer opened with ID:', id);
+        setPeerId(id);
+      });
       peer.on('connection', conn => {
         connRef.current = conn;
         conn.on('data', d => { 
@@ -51,7 +57,8 @@ export function useWebRTC(onRemoteEnd) {
     initPeer();
     
     return () => {
-      if (peerRef.current) peerRef.current.destroy();
+      // Don't destroy on every minor re-render, only on unmount
+      // if (peerRef.current) peerRef.current.destroy();
     };
   }, [onRemoteEnd]);
 

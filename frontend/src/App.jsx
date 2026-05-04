@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './index.css';
 import { useWebRTC } from './hooks/useWebRTC';
 import { LangProvider } from './context/LangContext';
@@ -16,12 +16,12 @@ export default function App() {
   const [timeline, setTimeline] = useState([]);
   const [liveData, setLiveData] = useState({ counts: { happy: 0, neutral: 0, sad: 0, angry: 0 }, timeline: [] });
 
-  const handleRemoteEnd = () => {
+  const handleRemoteEnd = useCallback(() => {
     console.log('[App] Remote end detected, transitioning to report');
-    setEmoCounts(liveData.counts || { happy: 0, neutral: 0, sad: 0, angry: 0 });
-    setTimeline(liveData.timeline || []);
+    setEmoCounts(prev => liveData.counts || prev);
+    setTimeline(prev => liveData.timeline || prev);
     setScreen('sReport');
-  };
+  }, [liveData]);
 
   const webRTC = useWebRTC(handleRemoteEnd);
 
