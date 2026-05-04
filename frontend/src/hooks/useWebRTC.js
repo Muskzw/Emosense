@@ -51,28 +51,53 @@ export function useWebRTC() {
 
   // Handle incoming calls
   useEffect(() => {
+    // We need both the peer instance AND the local camera stream to be ready
     if (!peerRef.current || !faceStream) return;
     
     const peer = peerRef.current;
+    console.log('[WebRTC] Registering incoming call listener for Peer:', peer.id);
     
     const onCall = (call) => {
+      console.log('[WebRTC] Incoming call from:', call.peer);
       call.answer(faceStream);
       handleCall(call);
     };
     
     peer.on('call', onCall);
-    return () => { peer.off('call', onCall); };
-  }, [faceStream]);
+    return () => { 
+      console.log('[WebRTC] Removing incoming call listener');
+      peer.off('call', onCall); 
+    };
+  }, [faceStream, peerId]); // peerId changes when initPeer completes
 
   const handleCall = (call) => {
     callRef.current = call;
+
+    // Monitor connection state
+    const pc = call.peerConnection;
+    if (pc) {
+      pc.oniceconnectionstatechange = () => {
+        console.log(`[WebRTC] ICE State: ${pc.iceConnectionState}`);
+        if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
+          console.warn('[WebRTC] Connection unstable or failed');
+        }
+      };
+    }
+
     call.on('stream', rs => {
       console.log('[WebRTC] Received remote stream. Tracks:', rs.getTracks().map(t => `${t.kind}:${t.readyState}`));
-      setRemoteStream(rs);      // store stream in state
-      setIsConnected(true);     // trigger re-render
+      if (rs.getTracks().length === 0) {
+        console.error('[WebRTC] Received stream with NO tracks!');
+      }
+      setRemoteStream(rs);
+      setIsConnected(true);
     });
     call.on('close', () => { setIsConnected(false); setRemoteStream(null); });
-    call.on('error', () => { setIsConnected(false); setRemoteStream(null); });
+    call.on('error', (err) => { 
+      console.error('[WebRTC] Call error:', err);
+      setIsConnected(false); 
+      setRemoteStream(null); 
+    });
   };
 
   const startCamera = async () => {

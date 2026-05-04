@@ -79,35 +79,34 @@ peerServer.on('disconnect', (client) => {
 //   - Open Relay Project               → https://www.metered.ca/tools/openrelay/
 //
 app.get('/api/ice-config', (req, res) => {
+  const getTurnConfig = () => {
+    const url  = process.env.TURN_URL;
+    const user = process.env.TURN_USERNAME;
+    const pass = process.env.TURN_PASSWORD?.replace(/['"]/g, ''); // strip quotes
+    
+    if (!url) return [
+      {
+        urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turn:openrelay.metered.ca:443?transport=tcp'],
+        username: 'openrelayproject',
+        credential: 'openrelayproject',
+      }
+    ];
+
+    // Some browsers/networks prefer turns: (TLS)
+    const tlsUrl = url.replace('turn:', 'turns:').replace(':80', ':443');
+
+    return [
+      {
+        urls: [url, tlsUrl],
+        username: user,
+        credential: pass,
+      }
+    ];
+  };
+
   const iceServers = [
-    // STUN — free, always include
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun.cloudflare.com:3478' },
-    // TURN — relay fallback for strict NATs
-    // Replace with your Metered.ca or other TURN credentials:
-    ...(process.env.TURN_URL ? [{
-      urls: process.env.TURN_URL,
-      username: process.env.TURN_USERNAME,
-      credential: process.env.TURN_PASSWORD,
-    }] : [
-      // Open Relay fallback (no auth, less reliable but free)
-      {
-        urls: 'turn:openrelay.metered.ca:80',
-        username: 'openrelayproject',
-        credential: 'openrelayproject',
-      },
-      {
-        urls: 'turn:openrelay.metered.ca:443',
-        username: 'openrelayproject',
-        credential: 'openrelayproject',
-      },
-      {
-        urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-        username: 'openrelayproject',
-        credential: 'openrelayproject',
-      },
-    ]),
+    { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] },
+    ...getTurnConfig()
   ];
   res.json({ iceServers });
 });

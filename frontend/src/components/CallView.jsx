@@ -191,9 +191,22 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs }) {
 
   // Attach remote peer stream — runs AFTER React paints the video element
   useEffect(() => {
-    if (remoteVideoRef.current && remoteStream) {
-      remoteVideoRef.current.srcObject = remoteStream;
-      remoteVideoRef.current.play().catch(e => console.warn('[Remote play]', e));
+    const video = remoteVideoRef.current;
+    if (video && remoteStream && isConnected) {
+      console.log('[CallView] Attaching remote stream');
+      video.srcObject = remoteStream;
+      
+      const playVideo = async () => {
+        try {
+          await video.play();
+          console.log('[CallView] Remote video playing');
+        } catch (e) {
+          console.warn('[CallView] Autoplay blocked, trying muted...', e);
+          video.muted = true; // Muting often bypasses autoplay blocks
+          video.play().catch(p2 => console.error('[CallView] Even muted play failed:', p2));
+        }
+      };
+      playVideo();
     }
   }, [remoteStream, isConnected]);
 
