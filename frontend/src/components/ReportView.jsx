@@ -8,40 +8,48 @@ const EMO_COLORS = {
   angry:   { stroke: '#ff3b30', label: 'Angry',    fill: 'rgba(255,59,48,0.12)' },
 };
 
-// Build 4 SVG polyline paths from raw timeline data
-function buildChartPaths(timeline, W, H, pad) {
-  if (!timeline || timeline.length < 2) return {};
+// Build a single valence path: Happy=100, Neutral=50, Sad/Angry=0
+function buildValencePath(timeline, W, H, pad) {
+  if (!timeline || timeline.length < 2) return { pathStr: '', pts: [], maxT: 1 };
   const maxT = Math.max(...timeline.map(d => d.t), 1);
-  const EMO_KEYS = ['happy', 'neutral', 'sad', 'angry'];
 
-  // For each second bucket, count occurrences per emotion
-  const bucketSize = Math.max(1, Math.floor(maxT / 40)); // max 40 data points
+  // Group into time buckets to smooth the line
+  const bucketSize = Math.max(1, Math.floor(maxT / 40)); 
   const buckets = {};
   timeline.forEach(({ t, emo }) => {
     const b = Math.floor(t / bucketSize);
-    if (!buckets[b]) buckets[b] = { happy: 0, neutral: 0, sad: 0, angry: 0 };
-    buckets[b][emo] = (buckets[b][emo] || 0) + 1;
+    if (!buckets[b]) buckets[b] = { count: 0, score: 0 };
+    buckets[b].count++;
+    
+    let val = 50; // Neutral baseline
+    if (emo === 'happy') val = 100;
+    if (emo === 'sad' || emo === 'angry') val = 0;
+    
+    buckets[b].score += val;
   });
 
   const bKeys = Object.keys(buckets).map(Number).sort((a, b) => a - b);
   const maxBucketT = bKeys[bKeys.length - 1] || 1;
 
-  const paths = {};
-  EMO_KEYS.forEach(emo => {
-    const pts = bKeys.map(b => {
-      const total = EMO_KEYS.reduce((s, e) => s + (buckets[b][e] || 0), 0) || 1;
-      const pct = (buckets[b][emo] || 0) / total;
-      const x = pad + (b / maxBucketT) * (W - pad * 2);
-      const y = pad + (1 - pct) * (H - pad * 2);
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    });
-    paths[emo] = pts.join(' ');
+  const pts = bKeys.map(b => {
+    const avgScore = buckets[b].score / buckets[b].count;
+    const x = pad + 20 + (b / maxBucketT) * (W - pad * 2 - 20); // shift right for text
+    const y = pad + (1 - avgScore / 100) * (H - pad * 2);
+    return { x, y, score: avgScore };
   });
-  return { paths, maxT, bKeys, buckets, bucketSize };
+
+  const pathStr = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  
+  // Fill path drops down to the baseline (y = H - pad)
+  const fillStr = pts.length > 0 
+    ? `${pts[0].x.toFixed(1)},${H - pad} ` + pathStr + ` ${pts[pts.length-1].x.toFixed(1)},${H - pad}`
+    : '';
+
+  return { pathStr, fillStr, pts, maxT };
 }
 
 function TimelineChart({ timeline }) {
-  const W = 600, H = 180, pad = 24;
+  const W = 600, H = 200, pad = 24;
   const [animated, setAnimated] = useState(false);
   const svgRef = useRef(null);
 
@@ -59,15 +67,14 @@ function TimelineChart({ timeline }) {
     );
   }
 
-  const { paths, maxT } = buildChartPaths(timeline, W, H, pad);
-  const EMO_KEYS = ['happy', 'neutral', 'sad', 'angry'];
+  const { pathStr, fillStr, maxT } = buildValencePath(timeline, W, H, pad);
 
   // Tick marks for X axis
   const ticks = [];
   const tickCount = Math.min(6, Math.floor(maxT / 5) + 1);
   for (let i = 0; i <= tickCount; i++) {
     const t = Math.round((i / tickCount) * maxT);
-    const x = pad + (i / tickCount) * (W - pad * 2);
+    const x = pad + 20 + (i / tickCount) * (W - pad * 2 - 20);
     const mins = Math.floor(t / 60);
     const secs = t % 60;
     ticks.push({ x, label: mins > 0 ? `${mins}m${secs > 0 ? secs + 's' : ''}` : `${t}s` });
@@ -80,62 +87,73 @@ function TimelineChart({ timeline }) {
         viewBox={`0 0 ${W} ${H}`}
         style={{ width: '100%', height: 'auto', overflow: 'visible' }}
       >
-        {/* Grid lines */}
-        {[0, 0.25, 0.5, 0.75, 1].map(v => {
-          const y = pad + (1 - v) * (H - pad * 2);
+        <defs>
+          <linearGradient id="valLineGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#34c759" />
+            <stop offset="50%" stopColor="#8899bb" />
+            <stop offset="100%" stopColor="#ff3b30" />
+          </linearGradient>
+          <linearGradient id="valFillGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#34c759" stopOpacity="0.25" />
+            <stop offset="50%" stopColor="#8899bb" stopOpacity="0.05" />
+            <stop offset="100%" stopColor="#ff3b30" stopOpacity="0.0" />
+          </linearGradient>
+        </defs>
+
+        {/* Horizontal zones / Grid lines */}
+        {[
+          { v: 100, label: 'Happy', color: '#34c759' },
+          { v: 50,  label: 'Neutral', color: '#8899bb' },
+          { v: 0,   label: 'Sad/Angry', color: '#ff3b30' }
+        ].map(({ v, label, color }) => {
+          const y = pad + (1 - v / 100) * (H - pad * 2);
           return (
-            <line key={v} x1={pad} y1={y} x2={W - pad} y2={y}
-              stroke="rgba(255,255,255,0.06)" strokeWidth="1" strokeDasharray="4 4" />
+            <g key={label}>
+              <line x1={pad + 20} y1={y} x2={W - pad} y2={y}
+                stroke="rgba(255,255,255,0.08)" strokeWidth="1" strokeDasharray="4 4" />
+              <text x={pad + 10} y={y + 3}
+                textAnchor="end" fill={color} fontSize="10" fontFamily="system-ui" fontWeight="600" opacity="0.8">
+                {label}
+              </text>
+            </g>
           );
         })}
 
-        {/* Y axis labels */}
-        {[0, 50, 100].map(v => (
-          <text key={v} x={pad - 6} y={pad + (1 - v / 100) * (H - pad * 2) + 4}
-            textAnchor="end" fill="rgba(255,255,255,0.3)" fontSize="9" fontFamily="monospace">
-            {v}%
-          </text>
-        ))}
-
         {/* X axis ticks */}
         {ticks.map(({ x, label }) => (
-          <text key={label} x={x} y={H - 4}
+          <text key={label} x={x} y={H - 2}
             textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="9" fontFamily="monospace">
             {label}
           </text>
         ))}
 
-        {/* Emotion lines */}
-        {EMO_KEYS.map(emo => {
-          if (!paths[emo]) return null;
-          const { stroke } = EMO_COLORS[emo];
-          return (
-            <polyline
-              key={emo}
-              points={paths[emo]}
-              fill="none"
-              stroke={stroke}
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity={animated ? 0.85 : 0}
-              style={{ transition: `opacity 0.8s ease ${EMO_KEYS.indexOf(emo) * 0.15}s` }}
-            />
-          );
-        })}
-      </svg>
+        {/* Filled Area */}
+        {fillStr && (
+          <polygon
+            points={fillStr}
+            fill="url(#valFillGrad)"
+            opacity={animated ? 1 : 0}
+            style={{ transition: 'opacity 1s ease' }}
+          />
+        )}
 
-      {/* Legend */}
-      <div style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', marginTop: '12px' }}>
-        {EMO_KEYS.map(emo => (
-          <div key={emo} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div style={{ width: '20px', height: '2.5px', borderRadius: '2px', background: EMO_COLORS[emo].stroke }} />
-            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>
-              {EMO_COLORS[emo].label}
-            </span>
-          </div>
-        ))}
-      </div>
+        {/* Emotion Line */}
+        {pathStr && (
+          <polyline
+            points={pathStr}
+            fill="none"
+            stroke="url(#valLineGrad)"
+            strokeWidth="3.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ 
+              transition: 'stroke-dashoffset 1.5s ease-in-out',
+              strokeDasharray: 2000,
+              strokeDashoffset: animated ? 0 : 2000
+            }}
+          />
+        )}
+      </svg>
     </div>
   );
 }
