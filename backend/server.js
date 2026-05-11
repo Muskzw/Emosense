@@ -111,61 +111,82 @@ app.get('/api/ice-config', (req, res) => {
   res.json({ iceServers });
 });
 
-// ── SESSION LOGGING (SQLite) ───────────────────────────
-const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database(path.join(__dirname, 'emosense.db'));
+// ── SESSION LOGGING (Postgres/Supabase) ───────────────────
+const { Pool } = require('pg');
 
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS sessions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      ts TEXT,
-      duration INTEGER,
-      ctx TEXT,
-      happy INTEGER,
-      neutral INTEGER,
-      sad INTEGER,
-      angry INTEGER
-    )
-  `);
-  // Room codes table — survives backend restarts
-  db.run(`
-    CREATE TABLE IF NOT EXISTS room_codes (
-      code TEXT PRIMARY KEY,
-      peer_id TEXT NOT NULL,
-      expires_at INTEGER NOT NULL
-    )
-  `);
-  // Clean up expired codes on startup
-  db.run(`DELETE FROM room_codes WHERE expires_at < ?`, [Date.now()]);
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
 });
 
-app.post('/api/session', (req, res) => {
+pool.connect((err, client, release) => {
+  if (err) return console.error('[Postgres] Error connecting to DB', err.stack);
+  console.log('[Postgres] Connected successfully.');
+  release();
+});
+
+const initDb = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        id SERIAL PRIMARY KEY,
+        ts TEXT,
+        duration INTEGER,
+        ctx TEXT,
+        happy INTEGER,
+        neutral INTEGER,
+        sad INTEGER,
+        angry INTEGER
+      )
+    `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS room_codes (
+        code TEXT PRIMARY KEY,
+        peer_id TEXT NOT NULL,
+        expires_at BIGINT NOT NULL
+      )
+    `);
+    // Clean up expired codes on startup
+    await pool.query(`DELETE FROM room_codes WHERE expires_at < $1`, [Date.now()]);
+    console.log('[Postgres] Tables initialized.');
+  } catch (err) {
+    console.error('[Postgres] Init Error:', err);
+  }
+};
+initDb();
+
+app.post('/api/session', async (req, res) => {
   const { duration, ctx, emoCounts } = req.body;
   const ts = new Date().toISOString();
   
-  const stmt = db.prepare(`INSERT INTO sessions (ts, duration, ctx, happy, neutral, sad, angry) VALUES (?, ?, ?, ?, ?, ?, ?)`);
-  stmt.run([
-    ts, 
-    duration || 0, 
-    ctx || 'INT', 
-    emoCounts?.happy || 0, 
-    emoCounts?.neutral || 0, 
-    emoCounts?.sad || 0, 
-    emoCounts?.angry || 0
-  ], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    console.log('[Session Saved]', this.lastID);
-    res.json({ ok: true, id: this.lastID });
-  });
-  stmt.finalize();
+  try {
+    const result = await pool.query(
+      `INSERT INTO sessions (ts, duration, ctx, happy, neutral, sad, angry) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+      [
+        ts, 
+        duration || 0, 
+        ctx || 'INT', 
+        emoCounts?.happy || 0, 
+        emoCounts?.neutral || 0, 
+        emoCounts?.sad || 0, 
+        emoCounts?.angry || 0
+      ]
+    );
+    console.log('[Session Saved]', result.rows[0].id);
+    res.json({ ok: true, id: result.rows[0].id });
+  } catch (err) {
+    console.error('[Session Error]', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.get('/api/sessions', (req, res) => {
-  db.all('SELECT * FROM sessions ORDER BY id DESC', [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
+app.get('/api/sessions', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM sessions ORDER BY id DESC');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── HEALTH CHECK ───────────────────────────────────────
@@ -190,44 +211,50 @@ function generateCode() {
 }
 
 // POST /api/rooms  { peerId }  → { code }
-app.post('/api/rooms', (req, res) => {
+app.post('/api/rooms', async (req, res) => {
   const { peerId } = req.body;
   if (!peerId) return res.status(400).json({ error: 'peerId required' });
 
   const now = Date.now();
   const expiresAt = now + 2 * 60 * 60 * 1000; // 2 hours
 
-  // Clean up expired codes first
-  db.run(`DELETE FROM room_codes WHERE expires_at < ?`, [now]);
+  try {
+    // Clean up expired codes first
+    await pool.query(`DELETE FROM room_codes WHERE expires_at < $1`, [now]);
 
-  // Check if this peer already has a live code
-  db.get(`SELECT code FROM room_codes WHERE peer_id = ? AND expires_at > ?`, [peerId, now], (err, row) => {
-    if (row) return res.json({ code: row.code });
+    // Check if this peer already has a live code
+    const existing = await pool.query(`SELECT code FROM room_codes WHERE peer_id = $1 AND expires_at > $2`, [peerId, now]);
+    if (existing.rows.length > 0) return res.json({ code: existing.rows[0].code });
 
     // Generate a unique code
-    const tryInsert = () => {
+    const tryInsert = async () => {
       const code = generateCode();
-      db.run(
-        `INSERT OR IGNORE INTO room_codes (code, peer_id, expires_at) VALUES (?, ?, ?)`,
-        [code, peerId, expiresAt],
-        function(insertErr) {
-          if (insertErr || this.changes === 0) return tryInsert(); // collision, try again
-          console.log(`[Room] ${code} -> ${peerId.slice(0,8)}...`);
-          res.json({ code });
-        }
+      const insertRes = await pool.query(
+        `INSERT INTO room_codes (code, peer_id, expires_at) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+        [code, peerId, expiresAt]
       );
+      if (insertRes.rowCount === 0) return tryInsert(); // collision, try again
+      
+      console.log(`[Room] ${code} -> ${peerId.slice(0,8)}...`);
+      res.json({ code });
     };
-    tryInsert();
-  });
+    await tryInsert();
+  } catch (err) {
+    console.error('[Room Error]', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // GET /api/rooms/:code  → { peerId }
-app.get('/api/rooms/:code', (req, res) => {
+app.get('/api/rooms/:code', async (req, res) => {
   const code = req.params.code.toLowerCase().trim();
-  db.get(`SELECT peer_id FROM room_codes WHERE code = ? AND expires_at > ?`, [code, Date.now()], (err, row) => {
-    if (!row) return res.status(404).json({ error: 'Room not found or expired' });
-    res.json({ peerId: row.peer_id });
-  });
+  try {
+    const result = await pool.query(`SELECT peer_id FROM room_codes WHERE code = $1 AND expires_at > $2`, [code, Date.now()]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Room not found or expired' });
+    res.json({ peerId: result.rows[0].peer_id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ── DATA COLLECTION PROXY ────────────────────────────
