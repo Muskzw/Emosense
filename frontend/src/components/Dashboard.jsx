@@ -36,8 +36,8 @@ export default function Dashboard({ onBack }) {
   });
   const empScore = (totalPos + totalNeg) > 0 ? Math.round((totalPos / (totalPos + totalNeg)) * 100) : 0;
 
-  // For the chart, take up to the last 10 sessions
-  const chartSessions = [...sessions].reverse().slice(0, 10).reverse();
+  // For the chart, take up to the last 10 sessions (newest first from API, so slice then reverse for chronological display)
+  const chartSessions = sessions.slice(0, 10).reverse();
 
   return (
     <div className="screen active" style={{ 

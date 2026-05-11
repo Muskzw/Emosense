@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import html2pdf from 'html2pdf.js';
 
 const EMO_COLORS = {
@@ -359,11 +359,11 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
                         return (
                           <div key={i} onClick={() => handleSeek(hl.relativeSecs)} style={{
                             padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)',
-                            borderLeft: `3px solid ${EMO[hl.emotion]?.c || '#fff'}`, cursor: 'pointer',
+                            borderLeft: `3px solid ${EMO_COLORS[hl.emotion]?.stroke || '#fff'}`, cursor: 'pointer',
                             transition: 'background 0.2s'
                           }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                              <span style={{ fontSize: '12px', fontWeight: 'bold', color: EMO[hl.emotion]?.c || '#fff' }}>{EMO[hl.emotion]?.n || hl.emotion}</span>
+                              <span style={{ fontSize: '12px', fontWeight: 'bold', color: EMO_COLORS[hl.emotion]?.stroke || '#fff' }}>{EMO_COLORS[hl.emotion]?.label || hl.emotion}</span>
                               <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>{m}:{s}</span>
                             </div>
                             <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', fontStyle: 'italic' }}>"{hl.text}"</div>
