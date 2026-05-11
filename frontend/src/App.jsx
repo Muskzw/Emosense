@@ -7,6 +7,7 @@ import CallView from './components/CallView';
 import ReportView from './components/ReportView';
 import Dashboard from './components/Dashboard';
 import Landing from './components/Landing';
+import MirrorRoom from './components/MirrorRoom';
 
 export default function App() {
   const [screen, setScreen] = useState('sLanding');
@@ -43,7 +44,7 @@ export default function App() {
 
   const handleStart = (info) => {
     setSessionInfo(info);
-    setScreen('sCall');
+    setScreen('sMirror');
   };
 
   const handleEnd = (finalCounts, finalTimeline, finalTriggers) => {
@@ -58,6 +59,7 @@ export default function App() {
       <div className="app-container">
         {screen === 'sLanding' && <Landing onLaunch={() => setScreen('sLobby')} />}
         {screen === 'sLobby' && <Lobby onStart={handleStart} webRTC={webRTC} onDash={() => setScreen('sDashboard')} />}
+        {screen === 'sMirror' && <MirrorRoom webRTC={webRTC} sessionInfo={sessionInfo} onJoin={() => setScreen('sCall')} onBack={() => setScreen('sLobby')} />}
         {screen === 'sCall' && <CallView onEnd={handleEnd} webRTC={webRTC} sessionInfo={sessionInfo} callSecs={callSecs} onDataUpdate={setLiveData} onVideoReady={setVideoUrl} />}
         {screen === 'sReport' && <ReportView onBack={() => setScreen('sLobby')} emoCounts={emoCounts} duration={callSecs} sessionInfo={sessionInfo} timeline={timeline} voiceTriggers={voiceTriggers} videoData={videoUrl} />}
         {screen === 'sDashboard' && <Dashboard onBack={() => setScreen('sLobby')} />}

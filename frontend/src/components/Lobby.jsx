@@ -66,8 +66,8 @@ export default function Lobby({ onStart, webRTC, onDash }) {
         throw new Error('Server returned non-JSON response');
       }
       const { peerId: targetPeerId } = await res.json();
-      joinCall(targetPeerId, uName);
-      onStart({ uName, ctx, optIn });
+      // Defer joinCall to MirrorRoom. Just pass targetPeerId to sessionInfo.
+      onStart({ uName, ctx, optIn, targetPeerId });
     } catch (err) {
       console.error('[Join Error]', err);
       setJoinError(t('serverError'));
