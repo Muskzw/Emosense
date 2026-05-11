@@ -32,6 +32,8 @@ const translations = {
     optInDesc:      'Anonymised facial data helps train our ZW-CN model.',
     roomNotFound:   'Room not found. Check the code and try again.',
     serverError:    'Could not reach server.',
+    heroTagline:    'Bridging the cultural gap.',
+    heroDescription:'EmoSense provides real-time, culturally-aware emotion detection for Zimbabwean and Chinese business interactions. Our AI is trained on local datasets to ensure high accuracy where global models fail.',
     // Call
     liveBreakdown:  'Live Breakdown',
     happy:          'Happy',
@@ -80,6 +82,8 @@ const translations = {
     optInDesc:      'Data isina zita inobatsira kudzidzisa modeli yedu yeZW-CN.',
     roomNotFound:   'Imba haikuwanikwa. Tarisa kodi wobva wazvidza.',
     serverError:    'Haigoni kubata server.',
+    heroTagline:    'Kugadzirisa gaka rechiitiko.',
+    heroDescription:'EmoSense inopa ongororo yechiitiko chemazuva ose ichitarisa kune veZimbabwe neChina. AI yedu yakadzidziswa pane data remuno kuti ive nehunyanzvi hwakakwirira.',
     // Call
     liveBreakdown:  'Ongororo Yazvino',
     happy:          'Mufaro',
@@ -128,6 +132,8 @@ const translations = {
     optInDesc:      '匿名面部数据有助于训练我们的ZW-CN模型。',
     roomNotFound:   '未找到房间，请检查代码后重试。',
     serverError:    '无法连接服务器。',
+    heroTagline:    '架起文化沟通的桥梁。',
+    heroDescription:'EmoSense 为津巴布韦和中国的商务互动提供实时的、具备文化敏感性的情感检测。我们的 AI 基于本地数据集训练，确保在全球模型失效的情况下仍能保持高准确率。',
     // Call
     liveBreakdown:  '实时分析',
     happy:          '快乐',
