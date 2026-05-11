@@ -183,6 +183,60 @@ const EMO_COLORS = {
   angry: '#ff3b30',
 };
 
+function LiveTurnGraph({ timeline }) {
+  if (!timeline || timeline.length < 2) {
+    return <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '16px 0' }}>Detecting initial turns...</div>;
+  }
+
+  const W = 188, H = 80, pad = 6;
+  const maxIdx = Math.max(timeline.length - 1, 1);
+  const pts = timeline.map((d, i) => {
+    let val = 50;
+    if (d.emo === 'happy') val = 100;
+    if (d.emo === 'sad' || d.emo === 'angry') val = 0;
+    const x = pad + (i / maxIdx) * (W - pad * 2);
+    const y = pad + (1 - val / 100) * (H - pad * 2);
+    return { x, y };
+  });
+
+  const pathStr = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+
+  return (
+    <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '12px', padding: '10px 6px', position: 'relative' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '80px', overflow: 'visible' }}>
+        <defs>
+          <linearGradient id="liveLine" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#34c759" />
+            <stop offset="50%" stopColor="#8899bb" />
+            <stop offset="100%" stopColor="#ff3b30" />
+          </linearGradient>
+        </defs>
+        
+        {/* Y-axis guidelines */}
+        {[
+          { v: 100, l: 'Pos' },
+          { v: 50, l: 'Neu' },
+          { v: 0, l: 'Neg' }
+        ].map(({ v, l }) => {
+          const y = pad + (1 - v / 100) * (H - pad * 2);
+          return (
+            <g key={l}>
+              <line x1={0} y1={y} x2={W} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+              <text x={0} y={y - 4} fill="rgba(255,255,255,0.3)" fontSize="8" fontFamily="system-ui">{l}</text>
+            </g>
+          );
+        })}
+
+        {/* Emotion line */}
+        <polyline points={pathStr} fill="none" stroke="url(#liveLine)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        
+        {/* Current dot */}
+        <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="3.5" fill="#fff" boxShadow="0 0 4px #fff" />
+      </svg>
+    </div>
+  );
+}
+
 export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataUpdate }) {
   const { 
     remoteName, isConnected, remoteVideoRef, localVideoRef, endCall, 
@@ -417,31 +471,8 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
 
       {/* ── FLOATING HUD (Live Breakdown) */}
       <aside style={S.hud}>
-        <div style={S.hudLabel}>{remoteName}'s Emotions</div>
-        <div style={S.emoRow}>
-          {[
-            { key: 'happy', label: 'Happy', count: emoCounts.happy },
-            { key: 'neutral', label: 'Neutral', count: emoCounts.neutral },
-            { key: 'sad', label: 'Sad', count: emoCounts.sad },
-            { key: 'angry', label: 'Angry', count: emoCounts.angry },
-          ].map(({ key, label, count }) => (
-            <div key={key} style={S.emoItem}>
-              <div style={S.emoHead}>
-                <span style={S.emoName}>{label}</span>
-                <span style={S.emoPct}>{getPct(count)}%</span>
-              </div>
-              <div style={S.emoTrack}>
-                <div style={{
-                  height: '100%', borderRadius: '999px',
-                  background: EMO_COLORS[key],
-                  width: `${getPct(count)}%`,
-                  transition: 'width 0.6s ease',
-                  boxShadow: `0 0 8px ${EMO_COLORS[key]}`,
-                }} />
-              </div>
-            </div>
-          ))}
-        </div>
+        <div style={S.hudLabel}>{remoteName}'s Emotion Turns</div>
+        <LiveTurnGraph timeline={getTimeline()} />
         <div style={S.hudDivider} />
         <div style={S.statsRow}>
           <div style={{ textAlign: 'left' }}>

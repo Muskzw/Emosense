@@ -8,34 +8,21 @@ const EMO_COLORS = {
   angry:   { stroke: '#ff3b30', label: 'Angry',    fill: 'rgba(255,59,48,0.12)' },
 };
 
-// Build a single valence path: Happy=100, Neutral=50, Sad/Angry=0
+// Build a single valence path based on sequential Turns
 function buildValencePath(timeline, W, H, pad) {
   if (!timeline || timeline.length < 2) return { pathStr: '', pts: [], maxT: 1 };
-  const maxT = Math.max(...timeline.map(d => d.t), 1);
+  
+  // We treat each data point in the timeline as a "Turn"
+  const maxIdx = Math.max(timeline.length - 1, 1);
 
-  // Group into time buckets to smooth the line
-  const bucketSize = Math.max(1, Math.floor(maxT / 40)); 
-  const buckets = {};
-  timeline.forEach(({ t, emo }) => {
-    const b = Math.floor(t / bucketSize);
-    if (!buckets[b]) buckets[b] = { count: 0, score: 0 };
-    buckets[b].count++;
-    
+  const pts = timeline.map((d, i) => {
     let val = 50; // Neutral baseline
-    if (emo === 'happy') val = 100;
-    if (emo === 'sad' || emo === 'angry') val = 0;
-    
-    buckets[b].score += val;
-  });
+    if (d.emo === 'happy') val = 100;
+    if (d.emo === 'sad' || d.emo === 'angry') val = 0;
 
-  const bKeys = Object.keys(buckets).map(Number).sort((a, b) => a - b);
-  const maxBucketT = bKeys[bKeys.length - 1] || 1;
-
-  const pts = bKeys.map(b => {
-    const avgScore = buckets[b].score / buckets[b].count;
-    const x = pad + 20 + (b / maxBucketT) * (W - pad * 2 - 20); // shift right for text
-    const y = pad + (1 - avgScore / 100) * (H - pad * 2);
-    return { x, y, score: avgScore };
+    const x = pad + 20 + (i / maxIdx) * (W - pad * 2 - 20); // shift right for text
+    const y = pad + (1 - val / 100) * (H - pad * 2);
+    return { x, y, score: val };
   });
 
   const pathStr = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
@@ -45,7 +32,7 @@ function buildValencePath(timeline, W, H, pad) {
     ? `${pts[0].x.toFixed(1)},${H - pad} ` + pathStr + ` ${pts[pts.length-1].x.toFixed(1)},${H - pad}`
     : '';
 
-  return { pathStr, fillStr, pts, maxT };
+  return { pathStr, fillStr, pts, maxTurns: timeline.length };
 }
 
 function TimelineChart({ timeline }) {
@@ -58,26 +45,27 @@ function TimelineChart({ timeline }) {
     return () => clearTimeout(timer);
   }, []);
 
-  if (!timeline || timeline.length < 3) {
+  if (!timeline || timeline.length < 2) {
     return (
       <div style={{ textAlign: 'center', padding: '32px', color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', fontSize: '12px' }}>
-        Not enough data to render timeline.<br/>
-        <span style={{ fontSize: '10px' }}>Calls need at least 6 seconds of detection.</span>
+        Not enough data to render turn graph.<br/>
+        <span style={{ fontSize: '10px' }}>Requires at least 2 interaction turns.</span>
       </div>
     );
   }
 
-  const { pathStr, fillStr, maxT } = buildValencePath(timeline, W, H, pad);
+  const { pathStr, fillStr, maxTurns } = buildValencePath(timeline, W, H, pad);
 
-  // Tick marks for X axis
+  // Tick marks for X axis (Turns)
   const ticks = [];
-  const tickCount = Math.min(6, Math.floor(maxT / 5) + 1);
+  const tickCount = Math.min(6, maxTurns);
   for (let i = 0; i <= tickCount; i++) {
-    const t = Math.round((i / tickCount) * maxT);
+    const turnNum = Math.max(1, Math.round((i / tickCount) * maxTurns));
     const x = pad + 20 + (i / tickCount) * (W - pad * 2 - 20);
-    const mins = Math.floor(t / 60);
-    const secs = t % 60;
-    ticks.push({ x, label: mins > 0 ? `${mins}m${secs > 0 ? secs + 's' : ''}` : `${t}s` });
+    // Don't duplicate ticks if there are very few turns
+    if (!ticks.find(t => t.label === `Turn ${turnNum}`)) {
+      ticks.push({ x, label: `Turn ${turnNum}` });
+    }
   }
 
   return (
