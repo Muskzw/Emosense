@@ -251,6 +251,34 @@ video{display:block;background:#000}
 .t-tip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);width:220px;background:var(--surf2);border:.5px solid var(--bd3);border-radius:8px;padding:10px 12px;font-size:10px;font-family:var(--mono);color:var(--txt);line-height:1.5;box-shadow:0 8px 24px rgba(0,0,0,0.5);opacity:0;pointer-events:none;transition:opacity 0.2s;z-index:10}
 .t-icon:hover .t-tip{opacity:1}
 
+/* ── Hero emotion line chart (desktop only) ─────────── */
+.hero-chart-wrap { display:none; } /* hidden on mobile */
+.hero-chart-label{font-size:9px;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+.hero-chart{width:100%;background:rgba(255,255,255,.025);border:.5px solid rgba(255,255,255,.07);border-radius:12px;padding:12px 14px;overflow:hidden;position:relative}
+.hero-chart-svg{width:100%;height:80px;display:block}
+/* Lines */
+.chart-line{fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.chart-happy{stroke:#3dffa0}
+.chart-neutral{stroke:#5b9cf6}
+.chart-sad{stroke:#ffb347;opacity:.7}
+.chart-angry{stroke:#ff6b6b;opacity:.5}
+/* Gradient fills */
+.chart-fill{stroke:none}
+.chart-fill-happy{fill:url(#grd-green)}
+.chart-fill-neutral{fill:url(#grd-blue)}
+/* Animated vertical scan cursor */
+.chart-cursor{stroke:rgba(255,255,255,.15);stroke-width:.8;animation:chart-scan 4s linear infinite}
+@keyframes chart-scan{0%{transform:translateX(0)}100%{transform:translateX(320px)}}
+/* Pulsing peak dot */
+.chart-dot{animation:dot-pulse 2s ease-in-out infinite}
+@keyframes dot-pulse{0%,100%{r:3;opacity:1}50%{r:5;opacity:.6}}
+/* Legend */
+.hero-chart-legend{display:flex;align-items:center;gap:14px;margin-top:10px;flex-wrap:wrap}
+.hcl{font-size:10px;font-family:var(--mono);display:flex;align-items:center;gap:5px;color:var(--muted)}
+.hcl::before{content:'';width:16px;height:2px;border-radius:1px;flex-shrink:0}
+.hcl-green::before{background:#3dffa0}.hcl-blue::before{background:#5b9cf6}.hcl-amber::before{background:#ffb347}.hcl-red::before{background:#ff6b6b}
+.hcl-acc{font-size:10px;font-family:var(--mono);color:rgba(61,255,160,.5);margin-left:auto}
+
 /* ── DESKTOP ≥ 1024px ─────────────────────────────── */
 @media (min-width: 1024px) {
 
@@ -317,6 +345,9 @@ video{display:block;background:#000}
   .lhs-val { font-size: clamp(18px, 1.8vw, 24px); font-weight: 700; font-family: var(--mono); color: var(--green); }
   .lhs-lbl { font-size: 10px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--dim); margin-top: 2px; }
   .lhs-div { width: 1px; height: 28px; background: var(--bd2); flex-shrink: 0; }
+
+  /* Show the line chart on desktop */
+  .hero-chart-wrap { display: block; }
 
   /* ── Right: form card ── */
   .lob-card {
