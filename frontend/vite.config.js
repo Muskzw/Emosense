@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    allowedHosts: ["appliance-staleness-implode.ngrok-free.dev", "localhost"],
     proxy: {
       '/api': 'http://localhost:3000',
       '/models': 'http://localhost:3000',

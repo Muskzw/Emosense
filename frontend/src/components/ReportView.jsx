@@ -146,9 +146,68 @@ function TimelineChart({ timeline }) {
   );
 }
 
-export default function ReportView({ onBack, emoCounts, duration, sessionInfo, timeline, voiceTriggers }) {
+export default function ReportView({ onBack, emoCounts, duration, sessionInfo, timeline, voiceTriggers, videoData }) {
   const saved = useRef(false);
   const [strategy, setStrategy] = useState('');
+  
+  // Highlight Reel Logic
+  const videoRef = useRef(null);
+  const [isPlayingHighlights, setIsPlayingHighlights] = useState(false);
+  const highlightTimeoutsRef = useRef([]);
+
+  // Filter valid triggers that happened AFTER recording started
+  const validHighlights = useMemo(() => {
+    if (!videoData || !voiceTriggers) return [];
+    return voiceTriggers
+      .filter(t => t.time >= videoData.startTime)
+      .map(t => ({ ...t, relativeSecs: (t.time - videoData.startTime) / 1000 }));
+  }, [videoData, voiceTriggers]);
+
+  const handleSeek = (secs) => {
+    if (videoRef.current) {
+      stopHighlightReel();
+      videoRef.current.currentTime = Math.max(0, secs - 2); // Start 2s before the trigger
+      videoRef.current.play().catch(e => console.error(e));
+    }
+  };
+
+  const playHighlightReel = () => {
+    if (!videoRef.current || validHighlights.length === 0) return;
+    setIsPlayingHighlights(true);
+    
+    highlightTimeoutsRef.current.forEach(clearTimeout);
+    highlightTimeoutsRef.current = [];
+
+    let currentHighlightIdx = 0;
+    
+    const playNext = () => {
+      if (currentHighlightIdx >= validHighlights.length) {
+        setIsPlayingHighlights(false);
+        videoRef.current.pause();
+        return;
+      }
+      
+      const hl = validHighlights[currentHighlightIdx];
+      videoRef.current.currentTime = Math.max(0, hl.relativeSecs - 2);
+      videoRef.current.play().catch(e => console.error(e));
+      
+      // Play for 6 seconds (2s before, 4s after trigger)
+      const t = setTimeout(() => {
+        currentHighlightIdx++;
+        playNext();
+      }, 6000);
+      highlightTimeoutsRef.current.push(t);
+    };
+    
+    playNext();
+  };
+
+  const stopHighlightReel = () => {
+    setIsPlayingHighlights(false);
+    highlightTimeoutsRef.current.forEach(clearTimeout);
+    highlightTimeoutsRef.current = [];
+    if (videoRef.current) videoRef.current.pause();
+  };
 
   useEffect(() => {
     const total = (emoCounts.happy + emoCounts.neutral + emoCounts.sad + emoCounts.angry) || 1;
@@ -244,6 +303,79 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
         </div>
 
         <div id="report-content" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+          {/* Highlight Reel Player */}
+          {videoData && (
+            <div style={{ ...cardStyle, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: 0, fontSize: '18px', color: 'white', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '20px' }}>🎬</span> Session Recording
+                </h3>
+                {validHighlights.length > 0 && (
+                  <button onClick={isPlayingHighlights ? stopHighlightReel : playHighlightReel} style={{
+                    background: isPlayingHighlights ? 'rgba(255,59,48,0.2)' : 'rgba(52,199,89,0.2)',
+                    color: isPlayingHighlights ? '#ff3b30' : '#34c759',
+                    border: `1px solid ${isPlayingHighlights ? 'rgba(255,59,48,0.4)' : 'rgba(52,199,89,0.4)'}`,
+                    padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer',
+                    display: 'flex', gap: '6px', alignItems: 'center', transition: 'all 0.2s'
+                  }}>
+                    {isPlayingHighlights ? '■ Stop Highlights' : '▶ Play Highlight Reel'}
+                  </button>
+                )}
+              </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1px', background: 'rgba(255,255,255,0.08)' }}>
+                {/* Video Player */}
+                <div style={{ background: '#000', position: 'relative', display: 'flex' }}>
+                  <video 
+                    ref={videoRef}
+                    src={videoData.url} 
+                    controls 
+                    style={{ width: '100%', maxHeight: '400px', objectFit: 'contain' }}
+                  />
+                  {isPlayingHighlights && (
+                    <div style={{
+                      position: 'absolute', top: '16px', left: '16px', background: 'rgba(0,0,0,0.6)', 
+                      backdropFilter: 'blur(4px)', padding: '6px 12px', borderRadius: '6px',
+                      color: 'white', fontSize: '12px', fontWeight: 'bold', display: 'flex', gap: '6px', alignItems: 'center'
+                    }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ff3b30', animation: 'pulse 1.5s infinite' }} />
+                      AUTOPLAYING HIGHLIGHTS
+                    </div>
+                  )}
+                </div>
+
+                {/* Highlight Markers */}
+                <div style={{ background: 'rgba(20,20,30,0.95)', overflowY: 'auto', maxHeight: '400px', padding: '12px' }}>
+                  <h4 style={{ color: 'rgba(255,255,255,0.5)', margin: '0 0 12px 4px', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Emotional Peaks ({validHighlights.length})</h4>
+                  
+                  {validHighlights.length === 0 ? (
+                    <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px', padding: '12px 4px' }}>No significant emotional peaks recorded after the video started.</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {validHighlights.map((hl, i) => {
+                        const m = Math.floor(hl.relativeSecs / 60);
+                        const s = Math.floor(hl.relativeSecs % 60).toString().padStart(2, '0');
+                        return (
+                          <div key={i} onClick={() => handleSeek(hl.relativeSecs)} style={{
+                            padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)',
+                            borderLeft: `3px solid ${EMO[hl.emotion]?.c || '#fff'}`, cursor: 'pointer',
+                            transition: 'background 0.2s'
+                          }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                              <span style={{ fontSize: '12px', fontWeight: 'bold', color: EMO[hl.emotion]?.c || '#fff' }}>{EMO[hl.emotion]?.n || hl.emotion}</span>
+                              <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>{m}:{s}</span>
+                            </div>
+                            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', fontStyle: 'italic' }}>"{hl.text}"</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Stats row */}
           <div className="r-st">

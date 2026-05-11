@@ -17,6 +17,8 @@ export default function App() {
   const [voiceTriggers, setVoiceTriggers] = useState([]);
   const [liveData, setLiveData] = useState({ counts: { happy: 0, neutral: 0, sad: 0, angry: 0 }, timeline: [], voiceTriggers: [] });
 
+  const [videoUrl, setVideoUrl] = useState(null);
+
   const handleRemoteEnd = useCallback(() => {
     console.log('[App] Remote end detected, transitioning to report');
     setEmoCounts(prev => liveData.counts || prev);
@@ -33,6 +35,7 @@ export default function App() {
       int = setInterval(() => setCallSecs(s => s + 1), 1000);
     } else if (screen === 'sLobby') {
       setCallSecs(0);
+      setVideoUrl(null);
       setLiveData({ counts: { happy: 0, neutral: 0, sad: 0, angry: 0 }, timeline: [], voiceTriggers: [] });
     }
     return () => clearInterval(int);
@@ -55,8 +58,8 @@ export default function App() {
       <div className="app-container">
         {screen === 'sLanding' && <Landing onLaunch={() => setScreen('sLobby')} />}
         {screen === 'sLobby' && <Lobby onStart={handleStart} webRTC={webRTC} onDash={() => setScreen('sDashboard')} />}
-        {screen === 'sCall' && <CallView onEnd={handleEnd} webRTC={webRTC} sessionInfo={sessionInfo} callSecs={callSecs} onDataUpdate={setLiveData} />}
-        {screen === 'sReport' && <ReportView onBack={() => setScreen('sLobby')} emoCounts={emoCounts} duration={callSecs} sessionInfo={sessionInfo} timeline={timeline} voiceTriggers={voiceTriggers} />}
+        {screen === 'sCall' && <CallView onEnd={handleEnd} webRTC={webRTC} sessionInfo={sessionInfo} callSecs={callSecs} onDataUpdate={setLiveData} onVideoReady={setVideoUrl} />}
+        {screen === 'sReport' && <ReportView onBack={() => setScreen('sLobby')} emoCounts={emoCounts} duration={callSecs} sessionInfo={sessionInfo} timeline={timeline} voiceTriggers={voiceTriggers} videoData={videoUrl} />}
         {screen === 'sDashboard' && <Dashboard onBack={() => setScreen('sLobby')} />}
       </div>
     </LangProvider>

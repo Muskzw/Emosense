@@ -237,7 +237,7 @@ function LiveTurnGraph({ timeline }) {
   );
 }
 
-export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataUpdate }) {
+export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataUpdate, onVideoReady }) {
   const { 
     remoteName, isConnected, remoteVideoRef, localVideoRef, endCall, 
     faceStream, remoteStream, sendData, peerTranscripts, 
@@ -246,6 +246,9 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
   const svgRef = useRef(null);
   const canvasRef = useRef(null);
   const endBtnRef = useRef(null);
+  const compositorRef = useRef(null);
+  const recordLoopRef = useRef(null);
+  const isRecordingRef = useRef(false);
 
   const { modelsLoaded, curEmo, emoCounts, detCount, getTimeline } = useFaceAPI(
     remoteVideoRef, svgRef, canvasRef, isConnected, sessionInfo.ctx
@@ -258,6 +261,10 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
   const { finalTranscripts } = useSpeech(isConnected);
   const voiceTriggersRef = useRef([]);
 
+  // Subtitles
+  const [activeSubtitle, setActiveSubtitle] = useState(null);
+  const subtitleTimeoutRef = useRef(null);
+
   useEffect(() => {
     if (finalTranscripts.length > 0 && isConnected) {
       const last = finalTranscripts[finalTranscripts.length - 1];
@@ -269,7 +276,13 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
     if (peerTranscripts.length === 0) return;
     const last = peerTranscripts[peerTranscripts.length - 1];
     
-    // Wait 1.5s for emotional reaction to set in
+    // Live Subtitles
+    const currentE = curEmoRef.current;
+    setActiveSubtitle({ text: last.text, emotion: currentE });
+    if (subtitleTimeoutRef.current) clearTimeout(subtitleTimeoutRef.current);
+    subtitleTimeoutRef.current = setTimeout(() => setActiveSubtitle(null), 4000);
+
+    // Wait 1.5s for emotional reaction to set in for the highlight reel
     const timer = setTimeout(() => {
       const e = curEmoRef.current;
       if (e && e !== 'neutral') {
@@ -279,11 +292,65 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
     return () => clearTimeout(timer);
   }, [peerTranscripts]);
 
+  // Live Coaching Engine
+  const [coachingToast, setCoachingToast] = useState(null);
+  const neutralDurationRef = useRef(0);
+  const lastCoachingTimeRef = useRef(Date.now());
+
+  useEffect(() => {
+    if (!isConnected || !sessionInfo.ctx) return;
+    const interval = setInterval(() => {
+      const now = Date.now();
+      if (now - lastCoachingTimeRef.current < 60000) return; // Cool-down between toasts
+
+      if (curEmoRef.current === 'neutral') {
+        neutralDurationRef.current += 1000;
+      } else {
+        neutralDurationRef.current = 0;
+      }
+
+      if (sessionInfo.ctx === 'ZW-CN' && neutralDurationRef.current >= 30000) {
+        setCoachingToast({
+          title: "High Neutrality Detected",
+          msg: "In Chinese business culture, prolonged neutrality often indicates Face-saving (Mianzi). Avoid pushing for a hard 'yes' right now. Use soft follow-ups.",
+          color: "#8899bb",
+          icon: "🎭"
+        });
+        neutralDurationRef.current = 0;
+        lastCoachingTimeRef.current = now;
+        setTimeout(() => setCoachingToast(null), 10000);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isConnected, sessionInfo.ctx]);
+
+  useEffect(() => {
+    if (peerTranscripts.length === 0) return;
+    const last = peerTranscripts[peerTranscripts.length - 1].text.toLowerCase();
+    const now = Date.now();
+    if (now - lastCoachingTimeRef.current < 20000) return; // Short cool-down for keyword triggers
+
+    if (curEmoRef.current === 'angry' || curEmoRef.current === 'sad') {
+      if (last.includes('price') || last.includes('cost') || last.includes('timeline') || last.includes('delay') || last.includes('wait')) {
+        setCoachingToast({
+          title: "Friction on Sensitive Topic",
+          msg: "Negative emotion detected alongside a constraint keyword. Avoid direct confrontation. De-escalate and shift focus to shared goals.",
+          color: "#ff3b30",
+          icon: "⚠️"
+        });
+        lastCoachingTimeRef.current = now;
+        setTimeout(() => setCoachingToast(null), 10000);
+      }
+    }
+  }, [peerTranscripts]);
+
+
   // Session Recording
   const [isRecording, setIsRecording] = useState(false);
   const [waitingConsent, setWaitingConsent] = useState(false);
   const mediaRecorderRef = useRef(null);
   const recordedChunks = useRef([]);
+  const recordingStartTimeRef = useRef(0);
 
   const handleRecordClick = () => {
     if (isRecording) {
@@ -303,27 +370,83 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
 
   const startRecording = () => {
     try {
-      const mr = new MediaRecorder(remoteStream, { mimeType: 'video/webm' });
+      const compositor = compositorRef.current;
+      const remoteVideo = remoteVideoRef.current;
+      
+      // Ensure canvas size matches video
+      if (compositor && remoteVideo && remoteVideo.videoWidth > 0) {
+        compositor.width = remoteVideo.videoWidth;
+        compositor.height = remoteVideo.videoHeight;
+      }
+
+      isRecordingRef.current = true;
+
+      // Start compositor loop to bake UI into video
+      const drawFrame = () => {
+        if (!isRecordingRef.current) return;
+        if (compositor && remoteVideo && remoteVideo.readyState >= 2) {
+          const ctx = compositor.getContext('2d');
+          const w = compositor.width;
+          const h = compositor.height;
+          
+          // Draw video frame
+          ctx.drawImage(remoteVideo, 0, 0, w, h);
+          
+          // Draw Emotion Overlay HUD
+          const e = curEmoRef.current;
+          const eConf = EMO[e] || EMO.neutral;
+          
+          ctx.save();
+          // Pill background
+          ctx.fillStyle = 'rgba(10, 10, 15, 0.85)';
+          ctx.beginPath();
+          ctx.roundRect(w - 200, 30, 170, 50, 25);
+          ctx.fill();
+          
+          // Status Dot
+          ctx.fillStyle = eConf.c;
+          ctx.beginPath();
+          ctx.arc(w - 170, 55, 8, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Emotion Text
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(eConf.n.toUpperCase(), w - 150, 56);
+          ctx.restore();
+        }
+        recordLoopRef.current = requestAnimationFrame(drawFrame);
+      };
+      drawFrame();
+
+      // Capture stream from canvas at 30 FPS
+      const canvasStream = compositor.captureStream(30);
+      
+      // Get audio from remote stream
+      const audioTracks = remoteStream ? remoteStream.getAudioTracks() : [];
+      
+      // Combine them
+      const combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...audioTracks]);
+
+      const mr = new MediaRecorder(combinedStream, { mimeType: 'video/webm' });
       mr.ondataavailable = e => { if (e.data.size > 0) recordedChunks.current.push(e.data); };
       mr.onstop = () => {
         const blob = new Blob(recordedChunks.current, { type: 'video/webm' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        a.download = `EmoSense_Session_${Date.now()}.webm`;
-        document.body.appendChild(a);
-        a.click();
-        URL.revokeObjectURL(url);
+        if (onVideoReady) onVideoReady({ url, startTime: recordingStartTimeRef.current });
         recordedChunks.current = [];
       };
       mr.start();
+      recordingStartTimeRef.current = Date.now();
       mediaRecorderRef.current = mr;
       setIsRecording(true);
     } catch(e) { console.error('Recording failed:', e); }
   };
 
   const stopRecording = () => {
+    isRecordingRef.current = false;
+    if (recordLoopRef.current) cancelAnimationFrame(recordLoopRef.current);
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
@@ -389,6 +512,10 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           from { opacity: 0; transform: translateY(12px); }
           to   { opacity: 1; transform: translateY(0); }
         }
+        @keyframes fadeInDown {
+          from { opacity: 0; transform: translate(-50%, -20px); }
+          to   { opacity: 1; transform: translate(-50%, 0); }
+        }
         @keyframes ping {
           0%   { transform: scale(1); opacity: 1; }
           75%, 100% { transform: scale(2.2); opacity: 0; }
@@ -414,6 +541,8 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           }}
         />
         <canvas ref={canvasRef} style={{ display: 'none' }} />
+        {/* Hidden compositor canvas for augmented recording */}
+        <canvas ref={compositorRef} style={{ display: 'none' }} />
 
         {/* Waiting state — always in DOM, hidden when connected */}
         <div style={{ ...S.waitOrb, display: isConnected ? 'none' : 'flex' }}>
@@ -485,6 +614,50 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           </div>
         </div>
       </aside>
+
+      {/* ── COACHING TOAST */}
+      {coachingToast && (
+        <div style={{
+          position: 'absolute', top: '76px', left: '50%', transform: 'translateX(-50%)', zIndex: 40,
+          background: 'rgba(20,20,30,0.85)', backdropFilter: 'blur(30px)',
+          border: `1px solid ${coachingToast.color}55`, borderRadius: '14px',
+          padding: '16px 20px', width: '380px', maxWidth: '90%',
+          boxShadow: `0 24px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1), 0 0 20px ${coachingToast.color}22`,
+          display: 'flex', gap: '14px', alignItems: 'flex-start',
+          animation: 'fadeInDown 0.5s cubic-bezier(0.34,1.56,0.64,1)',
+        }}>
+          <div style={{ fontSize: '24px' }}>{coachingToast.icon}</div>
+          <div>
+            <div style={{ fontSize: '13px', fontWeight: '700', color: coachingToast.color, marginBottom: '4px', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {coachingToast.title}
+              <span style={{ fontSize: '8px', background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', color: '#1a1a2e', padding: '2px 5px', borderRadius: '4px', letterSpacing: '0' }}>AI COACH</span>
+            </div>
+            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.5' }}>
+              {coachingToast.msg}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── LIVE SUBTITLES */}
+      {activeSubtitle && (
+        <div style={{
+          position: 'absolute', bottom: '110px', left: '50%', transform: 'translateX(-50%)', zIndex: 45,
+          textAlign: 'center', width: '100%', pointerEvents: 'none'
+        }}>
+          <span style={{
+            display: 'inline-block', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
+            padding: '10px 20px', borderRadius: '12px', maxWidth: '80%',
+            fontSize: '22px', fontWeight: '500', color: EMO_COLORS[activeSubtitle.emotion] || 'white',
+            textShadow: '0 2px 8px rgba(0,0,0,0.8)', letterSpacing: '0.01em', lineHeight: '1.4',
+            border: `1px solid ${EMO_COLORS[activeSubtitle.emotion]}44`,
+            boxShadow: `0 8px 32px rgba(0,0,0,0.4), 0 0 24px ${EMO_COLORS[activeSubtitle.emotion]}22`,
+            animation: 'fadeInUp 0.3s ease-out'
+          }}>
+            {activeSubtitle.text}
+          </span>
+        </div>
+      )}
 
       {/* ── LOCAL PIP */}
       <div style={S.localPip}>
