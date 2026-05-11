@@ -15,11 +15,16 @@ export default function Dashboard({ onBack }) {
     fetch('/api/sessions')
       .then(r => r.json())
       .then(data => {
-        setSessions(data);
+        if (Array.isArray(data)) {
+          setSessions(data);
+        } else {
+          console.error('[Dashboard] Backend error:', data);
+          setSessions([]);
+        }
         setLoading(false);
       })
       .catch(e => {
-        console.error(e);
+        console.error('[Dashboard] Fetch error:', e);
         setLoading(false);
       });
   }, []);
