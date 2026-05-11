@@ -158,7 +158,7 @@ function TimelineChart({ timeline }) {
   );
 }
 
-export default function ReportView({ onBack, emoCounts, duration, sessionInfo, timeline }) {
+export default function ReportView({ onBack, emoCounts, duration, sessionInfo, timeline, voiceTriggers }) {
   const saved = useRef(false);
   const [strategy, setStrategy] = useState('');
 
@@ -308,6 +308,40 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
               ))}
             </div>
           </div>
+
+          {/* AI Voice Analytics */}
+          {voiceTriggers && voiceTriggers.length > 0 && (
+            <div style={{ ...cardStyle, border: '1px solid rgba(255,215,0,0.3)', background: 'rgba(255,215,0,0.02)' }}>
+              <div className="rc-t" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                AI Voice Analytics
+                <span style={{ fontSize: '9px', fontWeight: '800', background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', color: '#1a1a2e', padding: '2px 6px', borderRadius: '4px' }}>PRO</span>
+              </div>
+              <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {voiceTriggers.map((trig, i) => {
+                   const { stroke } = EMO_COLORS[trig.emotion] || EMO_COLORS.neutral;
+                   let advice = "Maintain standard communication.";
+                   if (trig.emotion === 'angry') advice = "Try to remain neutral and de-escalate when they bring this up.";
+                   if (trig.emotion === 'sad') advice = "Show empathy and pause to listen deeply.";
+                   if (trig.emotion === 'happy') advice = "Great alignment! Reinforce this topic in future meetings.";
+                   
+                   return (
+                     <div key={i} style={{ padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', borderLeft: `3px solid ${stroke}` }}>
+                       <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.9)' }}>
+                         When they said: <span style={{ fontStyle: 'italic', color: 'rgba(255,255,255,0.6)' }}>"{trig.text}"</span>
+                       </div>
+                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
+                         <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>They showed:</span>
+                         <span style={{ fontSize: '11px', fontWeight: '700', color: stroke, textTransform: 'uppercase' }}>{trig.emotion}</span>
+                       </div>
+                       <div style={{ fontSize: '11px', color: 'rgba(255,215,0,0.8)', marginTop: '8px', background: 'rgba(255,215,0,0.05)', padding: '6px 8px', borderRadius: '6px' }}>
+                         <strong>Advice:</strong> {advice}
+                       </div>
+                     </div>
+                   );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* AI Strategy */}
           <div style={{ ...cardStyle, border: '1px solid rgba(52,199,89,0.2)', background: 'rgba(52,199,89,0.04)' }}>

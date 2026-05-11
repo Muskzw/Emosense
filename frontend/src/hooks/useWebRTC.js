@@ -7,6 +7,9 @@ export function useWebRTC(onRemoteEnd) {
   const [isConnected, setIsConnected] = useState(false);
   const [faceStream, setFaceStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
+  const [peerTranscripts, setPeerTranscripts] = useState([]);
+  const [recordConsentReq, setRecordConsentReq] = useState(false);
+  const [recordAllowed, setRecordAllowed] = useState(false);
   
   const peerRef = useRef(null);
   const callRef = useRef(null);
@@ -41,15 +44,20 @@ export function useWebRTC(onRemoteEnd) {
         console.log('[WebRTC] Peer opened with ID:', id);
         setPeerId(id);
       });
+      const handleData = (d) => {
+        if(d.name) setRemoteName(d.name); 
+        if(d.type === 'END_SESSION') {
+          console.log('[WebRTC] Remote peer ended session');
+          if (onRemoteEnd) onRemoteEnd();
+        }
+        if(d.type === 'transcript') setPeerTranscripts(prev => [...prev, d]);
+        if(d.type === 'record_request') setRecordConsentReq(true);
+        if(d.type === 'record_allow') setRecordAllowed(true);
+      };
+
       peer.on('connection', conn => {
         connRef.current = conn;
-        conn.on('data', d => { 
-          if(d.name) setRemoteName(d.name); 
-          if(d.type === 'END_SESSION') {
-            console.log('[WebRTC] Remote peer ended session');
-            if (onRemoteEnd) onRemoteEnd();
-          }
-        });
+        conn.on('data', handleData);
       });
       
       peerRef.current = peer;
@@ -122,12 +130,24 @@ export function useWebRTC(onRemoteEnd) {
     const conn = peerRef.current.connect(joinId);
     connRef.current = conn;
     conn.on('open', () => conn.send({ name: userName }));
-    conn.on('data', d => {
+    
+    const handleData = (d) => {
+      if(d.name) setRemoteName(d.name); 
       if(d.type === 'END_SESSION') {
         console.log('[WebRTC] Remote peer ended session');
         if (onRemoteEnd) onRemoteEnd();
       }
-    });
+      if(d.type === 'transcript') setPeerTranscripts(prev => [...prev, d]);
+      if(d.type === 'record_request') setRecordConsentReq(true);
+      if(d.type === 'record_allow') setRecordAllowed(true);
+    };
+    conn.on('data', handleData);
+  };
+
+  const sendData = (dataObj) => {
+    if (connRef.current && connRef.current.open) {
+      connRef.current.send(dataObj);
+    }
   };
 
   const endCall = () => {
@@ -147,5 +167,5 @@ export function useWebRTC(onRemoteEnd) {
     setIsConnected(false);
   };
 
-  return { peerId, remoteName, isConnected, startCamera, joinCall, endCall, remoteVideoRef, localVideoRef, faceStream, remoteStream };
+  return { peerId, remoteName, isConnected, startCamera, joinCall, endCall, remoteVideoRef, localVideoRef, faceStream, remoteStream, sendData, peerTranscripts, recordConsentReq, setRecordConsentReq, recordAllowed };
 }

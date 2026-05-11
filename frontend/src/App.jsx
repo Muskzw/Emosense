@@ -14,12 +14,14 @@ export default function App() {
   const [emoCounts, setEmoCounts] = useState({ happy: 0, neutral: 0, sad: 0, angry: 0 });
   const [callSecs, setCallSecs] = useState(0);
   const [timeline, setTimeline] = useState([]);
-  const [liveData, setLiveData] = useState({ counts: { happy: 0, neutral: 0, sad: 0, angry: 0 }, timeline: [] });
+  const [voiceTriggers, setVoiceTriggers] = useState([]);
+  const [liveData, setLiveData] = useState({ counts: { happy: 0, neutral: 0, sad: 0, angry: 0 }, timeline: [], voiceTriggers: [] });
 
   const handleRemoteEnd = useCallback(() => {
     console.log('[App] Remote end detected, transitioning to report');
     setEmoCounts(prev => liveData.counts || prev);
     setTimeline(prev => liveData.timeline || prev);
+    setVoiceTriggers(prev => liveData.voiceTriggers || prev);
     setScreen('sReport');
   }, [liveData]);
 
@@ -31,7 +33,7 @@ export default function App() {
       int = setInterval(() => setCallSecs(s => s + 1), 1000);
     } else if (screen === 'sLobby') {
       setCallSecs(0);
-      setLiveData({ counts: { happy: 0, neutral: 0, sad: 0, angry: 0 }, timeline: [] });
+      setLiveData({ counts: { happy: 0, neutral: 0, sad: 0, angry: 0 }, timeline: [], voiceTriggers: [] });
     }
     return () => clearInterval(int);
   }, [screen, webRTC.isConnected]);
@@ -41,9 +43,10 @@ export default function App() {
     setScreen('sCall');
   };
 
-  const handleEnd = (finalCounts, finalTimeline) => {
+  const handleEnd = (finalCounts, finalTimeline, finalTriggers) => {
     setEmoCounts(finalCounts);
     setTimeline(finalTimeline || []);
+    setVoiceTriggers(finalTriggers || []);
     setScreen('sReport');
   };
 
@@ -53,7 +56,7 @@ export default function App() {
         {screen === 'sLanding' && <Landing onLaunch={() => setScreen('sLobby')} />}
         {screen === 'sLobby' && <Lobby onStart={handleStart} webRTC={webRTC} onDash={() => setScreen('sDashboard')} />}
         {screen === 'sCall' && <CallView onEnd={handleEnd} webRTC={webRTC} sessionInfo={sessionInfo} callSecs={callSecs} onDataUpdate={setLiveData} />}
-        {screen === 'sReport' && <ReportView onBack={() => setScreen('sLobby')} emoCounts={emoCounts} duration={callSecs} sessionInfo={sessionInfo} timeline={timeline} />}
+        {screen === 'sReport' && <ReportView onBack={() => setScreen('sLobby')} emoCounts={emoCounts} duration={callSecs} sessionInfo={sessionInfo} timeline={timeline} voiceTriggers={voiceTriggers} />}
         {screen === 'sDashboard' && <Dashboard onBack={() => setScreen('sLobby')} />}
       </div>
     </LangProvider>

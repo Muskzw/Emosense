@@ -1,5 +1,6 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useFaceAPI, EMO } from '../hooks/useFaceAPI';
+import { useSpeech } from '../hooks/useSpeech';
 
 const S = {
   // ── Layout
@@ -135,9 +136,23 @@ const S = {
   // ── BOTTOM BAR
   botBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 30,
-    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: '16px 24px 28px',
     background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)',
+  },
+  centerControls: {
+    display: 'flex', alignItems: 'center', gap: '16px',
+  },
+  recordBtn: {
+    padding: '14px 24px', borderRadius: '999px',
+    background: 'rgba(255,255,255,0.1)',
+    backdropFilter: 'blur(20px)',
+    border: '1px solid rgba(255,255,255,0.2)',
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)',
+    color: 'white', fontSize: '15px', fontWeight: '700',
+    cursor: 'pointer', letterSpacing: '-0.01em',
+    transition: 'all 0.2s ease',
+    display: 'flex', alignItems: 'center', gap: '8px'
   },
   endBtn: {
     padding: '14px 32px', borderRadius: '999px',
@@ -150,6 +165,7 @@ const S = {
     transition: 'all 0.2s ease',
   },
   aiStatus: {
+    position: 'absolute', right: '24px',
     display: 'flex', alignItems: 'center', gap: '7px',
     padding: '8px 14px', borderRadius: '999px',
     background: 'rgba(255,255,255,0.07)',
@@ -168,7 +184,11 @@ const EMO_COLORS = {
 };
 
 export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataUpdate }) {
-  const { remoteName, isConnected, remoteVideoRef, localVideoRef, endCall, faceStream, remoteStream } = webRTC;
+  const { 
+    remoteName, isConnected, remoteVideoRef, localVideoRef, endCall, 
+    faceStream, remoteStream, sendData, peerTranscripts, 
+    recordConsentReq, setRecordConsentReq, recordAllowed 
+  } = webRTC;
   const svgRef = useRef(null);
   const canvasRef = useRef(null);
   const endBtnRef = useRef(null);
@@ -177,16 +197,96 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
     remoteVideoRef, svgRef, canvasRef, isConnected, sessionInfo.ctx
   );
 
+  const curEmoRef = useRef('neutral');
+  useEffect(() => { curEmoRef.current = curEmo; }, [curEmo]);
+
+  // AI Voice Analytics 
+  const { finalTranscripts } = useSpeech(isConnected);
+  const voiceTriggersRef = useRef([]);
+
+  useEffect(() => {
+    if (finalTranscripts.length > 0 && isConnected) {
+      const last = finalTranscripts[finalTranscripts.length - 1];
+      sendData({ type: 'transcript', text: last.text, time: last.timestamp });
+    }
+  }, [finalTranscripts]);
+
+  useEffect(() => {
+    if (peerTranscripts.length === 0) return;
+    const last = peerTranscripts[peerTranscripts.length - 1];
+    
+    // Wait 1.5s for emotional reaction to set in
+    const timer = setTimeout(() => {
+      const e = curEmoRef.current;
+      if (e && e !== 'neutral') {
+        voiceTriggersRef.current.push({ text: last.text, emotion: e, time: last.time });
+      }
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [peerTranscripts]);
+
+  // Session Recording
+  const [isRecording, setIsRecording] = useState(false);
+  const [waitingConsent, setWaitingConsent] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const recordedChunks = useRef([]);
+
+  const handleRecordClick = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      sendData({ type: 'record_request' });
+      setWaitingConsent(true);
+    }
+  };
+
+  useEffect(() => {
+    if (recordAllowed && !isRecording && remoteStream) {
+      setWaitingConsent(false);
+      startRecording();
+    }
+  }, [recordAllowed, remoteStream]);
+
+  const startRecording = () => {
+    try {
+      const mr = new MediaRecorder(remoteStream, { mimeType: 'video/webm' });
+      mr.ondataavailable = e => { if (e.data.size > 0) recordedChunks.current.push(e.data); };
+      mr.onstop = () => {
+        const blob = new Blob(recordedChunks.current, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `EmoSense_Session_${Date.now()}.webm`;
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(url);
+        recordedChunks.current = [];
+      };
+      mr.start();
+      mediaRecorderRef.current = mr;
+      setIsRecording(true);
+    } catch(e) { console.error('Recording failed:', e); }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+  };
+
   // Sync data back to App.jsx for synchronized termination
   useEffect(() => {
     if (onDataUpdate && isConnected) {
-      onDataUpdate({ counts: emoCounts, timeline: getTimeline() });
+      onDataUpdate({ counts: emoCounts, timeline: getTimeline(), voiceTriggers: voiceTriggersRef.current });
     }
   }, [emoCounts, detCount, isConnected]);
 
   const handleEnd = () => {
+    stopRecording();
     endCall();
-    onEnd(emoCounts, getTimeline());
+    onEnd(emoCounts, getTimeline(), voiceTriggersRef.current);
   };
 
   // Attach local camera stream
@@ -271,6 +371,26 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           </div>
           <div style={S.orbTxt}>Waiting for peer…</div>
         </div>
+
+        {/* Recording Consent Modal */}
+        {recordConsentReq && (
+          <div style={{
+            position: 'absolute', top: '100px', left: '50%', transform: 'translateX(-50%)', zIndex: 50,
+            background: 'rgba(20,20,30,0.95)', border: '1px solid rgba(255,59,48,0.4)', borderRadius: '16px',
+            padding: '24px', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,59,48,0.2)'
+          }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,59,48,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+               <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: '#ff3b30' }} />
+            </div>
+            <h3 style={{ color: 'white', margin: '0 0 8px', fontSize: '18px' }}>Session Recording</h3>
+            <p style={{ color: 'rgba(255,255,255,0.7)', margin: '0 0 20px', fontSize: '14px' }}>{remoteName} is requesting to record this session.</p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button style={{ padding: '8px 24px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: 'white', cursor: 'pointer' }} onClick={() => setRecordConsentReq(false)}>Deny</button>
+              <button style={{ padding: '8px 24px', borderRadius: '8px', border: 'none', background: '#ff3b30', color: 'white', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => { sendData({ type: 'record_allow' }); setRecordConsentReq(false); }}>Allow Recording</button>
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* ── TOP BAR */}
@@ -343,16 +463,32 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
 
       {/* ── BOTTOM BAR */}
       <div style={S.botBar}>
-        <button
-          ref={endBtnRef}
-          className="end-btn"
-          onClick={handleEnd}
-          style={S.endBtn}
-          onMouseEnter={e => e.currentTarget.style.boxShadow = '0 12px 40px rgba(255,59,48,0.5), inset 0 1px 0 rgba(255,255,255,0.2)'}
-          onMouseLeave={e => e.currentTarget.style.boxShadow = '0 8px 32px rgba(255,59,48,0.35), inset 0 1px 0 rgba(255,255,255,0.2)'}
-        >
-          End Session
-        </button>
+        <div style={S.centerControls}>
+          <button
+            style={{ ...S.recordBtn, border: isRecording ? '1px solid rgba(255,59,48,0.5)' : S.recordBtn.border }}
+            onClick={handleRecordClick}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          >
+            {isRecording ? (
+               <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: '#ff3b30', animation: 'ping 1.5s infinite' }} />
+            ) : (
+               <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ff3b30' }} />
+            )}
+            {isRecording ? 'Stop Recording' : (waitingConsent ? 'Waiting...' : 'Record')}
+            {!isRecording && !waitingConsent && <span style={{ fontSize: '9px', fontWeight: '800', background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', color: '#1a1a2e', padding: '2px 6px', borderRadius: '4px', marginLeft: '4px' }}>PRO</span>}
+          </button>
+          <button
+            ref={endBtnRef}
+            className="end-btn"
+            onClick={handleEnd}
+            style={S.endBtn}
+            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 12px 40px rgba(255,59,48,0.5), inset 0 1px 0 rgba(255,255,255,0.2)'}
+            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 8px 32px rgba(255,59,48,0.35), inset 0 1px 0 rgba(255,255,255,0.2)'}
+          >
+            End Session
+          </button>
+        </div>
         <div style={S.aiStatus}>
           <div style={{ position: 'relative', width: '8px', height: '8px', flexShrink: 0 }}>
             <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: modelsLoaded ? '#34c759' : '#ffb347' }} />

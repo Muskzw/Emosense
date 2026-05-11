@@ -22,6 +22,7 @@ export default function Lobby({ onStart, webRTC, onDash }) {
   const [copyLabel, setCopyLabel] = useState('copy');
   const [joinError, setJoinError] = useState('');
   const [joining, setJoining]   = useState(false);
+  const [showProModal, setShowProModal] = useState(false);
 
   const { peerId, startCamera, joinCall, localVideoRef } = webRTC;
 
@@ -96,6 +97,16 @@ export default function Lobby({ onStart, webRTC, onDash }) {
           <div className="lob-logo">
             <div className="lob-title">emo<span>-detect</span></div>
             <div className="lob-sub">{t('appSub')}</div>
+            <button 
+              onClick={() => setShowProModal(true)}
+              style={{
+                marginTop: '6px', padding: '4px 10px', borderRadius: '999px',
+                background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                border: 'none', color: '#1a1a2e', fontSize: '10px', fontWeight: '800',
+                letterSpacing: '0.05em', cursor: 'pointer', boxShadow: '0 2px 10px rgba(255, 215, 0, 0.4)'
+              }}>
+              UPGRADE TO PRO
+            </button>
           </div>
           <LangSwitcher style={{ marginTop: '4px' }} />
         </div>
@@ -193,6 +204,66 @@ export default function Lobby({ onStart, webRTC, onDash }) {
             </span>
           </label>
         </div>
+
+        {/* Pro Subscription Modal Mockup */}
+        {showProModal && (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)'
+          }}>
+            <div style={{
+              background: 'linear-gradient(180deg, rgba(30,30,40,0.95) 0%, rgba(20,20,30,0.95) 100%)',
+              border: '1px solid rgba(255,215,0,0.3)', borderRadius: '24px',
+              padding: '32px', width: '90%', maxWidth: '400px',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,215,0,0.2)',
+              position: 'relative'
+            }}>
+              <button 
+                onClick={() => setShowProModal(false)}
+                style={{ position: 'absolute', top: '16px', right: '16px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '20px', cursor: 'pointer' }}
+              >✕</button>
+              
+              <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                <div style={{ 
+                  display: 'inline-block', padding: '6px 14px', borderRadius: '999px', background: 'rgba(255,215,0,0.15)', 
+                  color: '#FFD700', fontSize: '11px', fontWeight: '700', letterSpacing: '0.1em', marginBottom: '12px' 
+                }}>EMOSENSE PRO</div>
+                <h2 style={{ color: 'white', fontSize: '24px', fontWeight: '800', margin: '0 0 8px 0' }}>Unlock AI Voice Analytics</h2>
+                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px', margin: 0, lineHeight: 1.5 }}>
+                  Take your cross-cultural communication to the next level with premium features.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+                {[
+                  'Advanced AI Voice Analytics & Triggers',
+                  'One-Click Session Recording (.webm)',
+                  'Unlimited Historical Session Reports',
+                  'Priority PeerJS Routing (Low Latency)'
+                ].map((feat, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#34c759', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg viewBox="0 0 10 8" width="10" height="8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </div>
+                    <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>{feat}</span>
+                  </div>
+                ))}
+              </div>
+
+              <button style={{
+                width: '100%', padding: '16px', borderRadius: '14px',
+                background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                border: 'none', color: '#1a1a2e', fontSize: '15px', fontWeight: '700',
+                cursor: 'pointer', boxShadow: '0 8px 24px rgba(255, 215, 0, 0.3)'
+              }} onClick={() => setShowProModal(false)}>
+                Start 7-Day Free Trial
+              </button>
+              <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
+                $12.99/month after trial. Cancel anytime.
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>
