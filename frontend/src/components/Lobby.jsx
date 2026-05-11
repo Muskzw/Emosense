@@ -14,29 +14,26 @@ export default function Lobby({ onStart, webRTC, onDash }) {
   const { t } = useLang();
   const profile = loadProfile();
 
-  const [uName, setUName]       = useState(profile.uName || 'Tinashe Moyo');
-  const [ctx, setCtx]           = useState(profile.ctx   || 'ZW-CN');
-  const [joinCode, setJoinCode] = useState('');
-  const [optIn, setOptIn]       = useState(profile.optIn || false);
-  const [roomCode, setRoomCode] = useState('');
+  const [uName, setUName]         = useState(profile.uName || 'Tinashe Moyo');
+  const [ctx, setCtx]             = useState(profile.ctx   || 'ZW-CN');
+  const [joinCode, setJoinCode]   = useState('');
+  const [optIn, setOptIn]         = useState(profile.optIn || false);
+  const [roomCode, setRoomCode]   = useState('');
   const [copyLabel, setCopyLabel] = useState('copy');
   const [joinError, setJoinError] = useState('');
-  const [joining, setJoining]   = useState(false);
+  const [joining, setJoining]     = useState(false);
   const [showProModal, setShowProModal] = useState(false);
 
   const { peerId, startCamera, joinCall, localVideoRef } = webRTC;
 
   useEffect(() => { startCamera(); }, []);
 
-  // Persist profile on every change
   useEffect(() => {
     saveProfile({ uName, ctx, optIn });
   }, [uName, ctx, optIn]);
 
-  // Register for a room code once we have a peerId
   useEffect(() => {
-    if (!peerId || roomCode) return; // Don't fetch if we already have a code
-    console.log('[Lobby] Fetching room code for Peer:', peerId);
+    if (!peerId || roomCode) return;
     fetch('/api/rooms', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -60,22 +57,14 @@ export default function Lobby({ onStart, webRTC, onDash }) {
     setJoining(true);
     setJoinError('');
     try {
-      // Strip out anything that isn't a letter, number, or hyphen
       const cleanCode = joinCode.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
-      if (!cleanCode) {
-        setJoinError(t('roomNotFound'));
-        setJoining(false);
-        return;
-      }
-      
+      if (!cleanCode) { setJoinError(t('roomNotFound')); setJoining(false); return; }
       const res = await fetch(`/api/rooms/${cleanCode}`);
       if (!res.ok) { setJoinError(t('roomNotFound')); setJoining(false); return; }
-      
       const contentType = res.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         throw new Error('Server returned non-JSON response');
       }
-      
       const { peerId: targetPeerId } = await res.json();
       joinCall(targetPeerId, uName);
       onStart({ uName, ctx, optIn });
@@ -90,70 +79,69 @@ export default function Lobby({ onStart, webRTC, onDash }) {
 
   return (
     <div className="screen active" id="sLobby">
-      <div className="lobby-container">
-        
-        {/* Left Column: Branding/Hero */}
+
+      {/* ── Desktop two-column layout ── */}
+      <div className="lob-desktop-wrap">
+
+        {/* LEFT: hero branding */}
         <div className="lob-hero">
-          <div className="lob-hero-inner">
-            <div className="lob-hero-logo">
-              <div className="lob-mark">
-                <svg viewBox="0 0 16 16" fill="none">
-                  <circle cx="8" cy="5.5" r="2.8" stroke="#3dffa0" strokeWidth="1.2"/>
-                  <path d="M2.5 14c0-3.04 2.46-5.5 5.5-5.5s5.5 2.46 5.5 5.5" stroke="#3dffa0" strokeWidth="1.2" strokeLinecap="round"/>
-                </svg>
-              </div>
-              <div className="lob-title">{t('appName')}<span>.</span></div>
+          <div className="lob-hero-logo">
+            <div className="lob-mark">
+              <svg viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="5.5" r="2.8" stroke="#3dffa0" strokeWidth="1.2"/>
+                <path d="M2.5 14c0-3.04 2.46-5.5 5.5-5.5s5.5 2.46 5.5 5.5" stroke="#3dffa0" strokeWidth="1.2" strokeLinecap="round"/>
+              </svg>
             </div>
-            
-            <h1 className="lob-hero-tagline">{t('heroTagline')}</h1>
-            <p className="lob-hero-desc">{t('heroDescription')}</p>
-            
-            <div className="lob-hero-stats">
-              <div className="lhs">
-                <div className="lhs-val">87.3%</div>
-                <div className="lhs-lbl">Accuracy</div>
-              </div>
-              <div className="lhs-div" />
-              <div className="lhs">
-                <div className="lhs-val">Real-time</div>
-                <div className="lhs-lbl">Inference</div>
-              </div>
+            <span className="lob-hero-brand">emo<span>-detect</span></span>
+          </div>
+
+          <h1 className="lob-hero-tagline">{t('heroTagline')}</h1>
+          <p className="lob-hero-desc">{t('heroDescription')}</p>
+
+          <div className="lob-hero-stats">
+            <div className="lhs">
+              <div className="lhs-val">87.3%</div>
+              <div className="lhs-lbl">Accuracy</div>
+            </div>
+            <div className="lhs-div" />
+            <div className="lhs">
+              <div className="lhs-val" style={{ color: 'var(--blue)' }}>Real-time</div>
+              <div className="lhs-lbl">Inference</div>
+            </div>
+            <div className="lhs-div" />
+            <div className="lhs">
+              <div className="lhs-val" style={{ color: 'var(--amber)' }}>&lt;5%</div>
+              <div className="lhs-lbl">ZW vs CN gap</div>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Form Card */}
+        {/* RIGHT: form card */}
         <div className="lob-card">
 
-          {/* Header + Language Switcher */}
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-            <div className="lob-logo">
+          {/* Card header */}
+          <div className="lob-card-hdr">
+            <div>
               <div className="lob-title">emo<span>-detect</span></div>
               <div className="lob-sub">{t('appSub')}</div>
-              <button 
-                onClick={() => setShowProModal(true)}
-                style={{
-                  marginTop: '6px', padding: '4px 10px', borderRadius: '999px',
-                  background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-                  border: 'none', color: '#1a1a2e', fontSize: '10px', fontWeight: '800',
-                  letterSpacing: '0.05em', cursor: 'pointer', boxShadow: '0 2px 10px rgba(255, 215, 0, 0.4)'
-                }}>
+              <button className="pro-badge" onClick={() => setShowProModal(true)}>
                 UPGRADE TO PRO
               </button>
             </div>
-            <LangSwitcher style={{ marginTop: '4px' }} />
+            <LangSwitcher />
           </div>
 
+          {/* Camera preview */}
           <div className="cam-strip">
             <video ref={localVideoRef} autoPlay muted playsInline />
           </div>
 
-          <div className="lob-form-grid">
+          {/* Name + Context */}
+          <div className="lob-fields">
             <div className="fl">
               <label className="fl-l">{t('yourName')}</label>
               <input className="fi" type="text" value={uName} onChange={e => setUName(e.target.value)} />
             </div>
-
             <div className="fl">
               <label className="fl-l">{t('culturalCtx')}</label>
               <select className="fi" value={ctx} onChange={e => setCtx(e.target.value)}>
@@ -164,16 +152,13 @@ export default function Lobby({ onStart, webRTC, onDash }) {
             </div>
           </div>
 
-          {/* Room Code */}
+          {/* Room section */}
           <div className="room-box">
-            <div className="rb-title">{t('yourRoomCode')}</div>
-            
-            <div className="room-grid-desktop">
-              <div className="rb-create">
-                <div className="rb-id" style={{
-                  fontSize: '15px', fontWeight: '700', letterSpacing: '0.06em',
-                  color: roomCode ? 'var(--green)' : 'var(--muted)',
-                }}>
+            <div className="room-cols">
+              {/* Your room code */}
+              <div className="room-col">
+                <div className="rb-title">{t('yourRoomCode')}</div>
+                <div className="rb-id" style={{ color: roomCode ? 'var(--green)' : 'var(--muted)' }}>
                   {roomCode || (peerId ? t('registering') : t('connecting'))}
                 </div>
                 <button className="rb-copy" onClick={handleCopy} disabled={!roomCode}>
@@ -181,53 +166,44 @@ export default function Lobby({ onStart, webRTC, onDash }) {
                 </button>
               </div>
 
-              <div className="rb-or">
-                <div className="rb-or-line" />
-                <span className="rb-or-txt">{t('joinRoom')}</span>
-                <div className="rb-or-line" />
+              {/* Divider */}
+              <div className="room-divider">
+                <div className="room-div-line" />
+                <span className="room-div-or">OR</span>
+                <div className="room-div-line" />
               </div>
 
-              <div className="rb-join" style={{ flexDirection: 'column', gap: '6px' }}>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    className="fi"
-                    type="text"
-                    placeholder={t('joinPlaceholder')}
-                    value={joinCode}
-                    onChange={e => { setJoinCode(e.target.value); setJoinError(''); }}
-                    onKeyDown={e => e.key === 'Enter' && handleJoin()}
-                  />
-                  <button className="btn-join" onClick={handleJoin} disabled={joining || !joinCode.trim()}>
-                    {joining ? '...' : t('join')}
-                  </button>
-                </div>
+              {/* Join a room */}
+              <div className="room-col">
+                <div className="rb-title">{t('joinRoom')}</div>
+                <input
+                  className="fi"
+                  type="text"
+                  placeholder={t('joinPlaceholder')}
+                  value={joinCode}
+                  onChange={e => { setJoinCode(e.target.value); setJoinError(''); }}
+                  onKeyDown={e => e.key === 'Enter' && handleJoin()}
+                />
+                <button className="btn-join full-w" onClick={handleJoin} disabled={joining || !joinCode.trim()}>
+                  {joining ? '...' : t('join')}
+                </button>
                 {joinError && (
-                  <div style={{ fontSize: '11px', color: 'var(--red)', fontFamily: 'monospace', paddingLeft: '4px' }}>
-                    ⚠ {joinError}
-                  </div>
+                  <div className="join-err">⚠ {joinError}</div>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="lob-actions-desktop">
+          {/* Action buttons */}
+          <div className="lob-actions">
             <button className="btn-start" onClick={handleStart}>{t('startSession')}</button>
-            <button className="btn-start" onClick={onDash}
-              style={{ background: 'rgba(255,255,255,0.05)', color: 'white' }}>
-              {t('viewDashboard')}
-            </button>
+            <button className="btn-dash" onClick={onDash}>{t('viewDashboard')}</button>
           </div>
 
-          {/* Opt-in data collection */}
+          {/* Opt-in */}
           <div className="ds-note" style={{ cursor: 'pointer' }} onClick={() => setOptIn(v => !v)}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-              <span style={{
-                width: '18px', height: '18px', borderRadius: '5px', border: '1.5px solid',
-                borderColor: optIn ? 'var(--green)' : 'rgba(255,183,71,.5)',
-                background: optIn ? 'var(--gd)' : 'transparent',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                transition: 'all .2s',
-              }}>
+              <span className={`opt-box ${optIn ? 'opt-on' : ''}`}>
                 {optIn && (
                   <svg viewBox="0 0 10 8" width="10" height="8" fill="none">
                     <path d="M1 4l3 3 5-6" stroke="#3dffa0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -245,68 +221,38 @@ export default function Lobby({ onStart, webRTC, onDash }) {
             </label>
           </div>
 
-          {/* Pro Subscription Modal Mockup */}
-          {showProModal && (
-            <div style={{
-              position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)'
-            }}>
-              <div style={{
-                background: 'linear-gradient(180deg, rgba(30,30,40,0.95) 0%, rgba(20,20,30,0.95) 100%)',
-                border: '1px solid rgba(255,215,0,0.3)', borderRadius: '24px',
-                padding: '32px', width: '90%', maxWidth: '400px',
-                boxShadow: '0 20px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,215,0,0.2)',
-                position: 'relative'
-              }}>
-                <button 
-                  onClick={() => setShowProModal(false)}
-                  style={{ position: 'absolute', top: '16px', right: '16px', background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: '20px', cursor: 'pointer' }}
-                >✕</button>
-                
-                <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                  <div style={{ 
-                    display: 'inline-block', padding: '6px 14px', borderRadius: '999px', background: 'rgba(255,215,0,0.15)', 
-                    color: '#FFD700', fontSize: '11px', fontWeight: '700', letterSpacing: '0.1em', marginBottom: '12px' 
-                  }}>EMOSENSE PRO</div>
-                  <h2 style={{ color: 'white', fontSize: '24px', fontWeight: '800', margin: '0 0 8px 0' }}>Unlock AI Voice Analytics</h2>
-                  <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '14px', margin: 0, lineHeight: 1.5 }}>
-                    Take your cross-cultural communication to the next level with premium features.
-                  </p>
-                </div>
+        </div>{/* /lob-card */}
+      </div>{/* /lob-desktop-wrap */}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-                  {[
-                    'Advanced AI Voice Analytics & Triggers',
-                    'One-Click Session Recording (.webm)',
-                    'Unlimited Historical Session Reports',
-                    'Priority PeerJS Routing (Low Latency)'
-                  ].map((feat, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#34c759', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <svg viewBox="0 0 10 8" width="10" height="8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                      </div>
-                      <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>{feat}</span>
-                    </div>
-                  ))}
+      {/* Pro Modal */}
+      {showProModal && (
+        <div className="modal-bg" onClick={() => setShowProModal(false)}>
+          <div className="modal-box" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowProModal(false)}>✕</button>
+            <div className="modal-badge">EMOSENSE PRO</div>
+            <h2 className="modal-title">Unlock AI Voice Analytics</h2>
+            <p className="modal-sub">Take your cross-cultural communication to the next level with premium features.</p>
+            <div className="modal-feats">
+              {[
+                'Advanced AI Voice Analytics & Triggers',
+                'One-Click Session Recording (.webm)',
+                'Unlimited Historical Session Reports',
+                'Priority PeerJS Routing (Low Latency)',
+              ].map((f, i) => (
+                <div key={i} className="modal-feat">
+                  <div className="feat-check">
+                    <svg viewBox="0 0 10 8" width="10" height="8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </div>
+                  <span>{f}</span>
                 </div>
-
-                <button style={{
-                  width: '100%', padding: '16px', borderRadius: '14px',
-                  background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
-                  border: 'none', color: '#1a1a2e', fontSize: '15px', fontWeight: '700',
-                  cursor: 'pointer', boxShadow: '0 8px 24px rgba(255, 215, 0, 0.3)'
-                }} onClick={() => setShowProModal(false)}>
-                  Start 7-Day Free Trial
-                </button>
-                <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
-                  $12.99/month after trial. Cancel anytime.
-                </div>
-              </div>
+              ))}
             </div>
-          )}
-
+            <button className="modal-cta" onClick={() => setShowProModal(false)}>Start 7-Day Free Trial</button>
+            <div className="modal-fine">$12.99/month after trial. Cancel anytime.</div>
+          </div>
         </div>
-      </div>
+      )}
+
     </div>
   );
 }
