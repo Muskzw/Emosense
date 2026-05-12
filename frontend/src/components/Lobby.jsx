@@ -11,14 +11,40 @@ function saveProfile(data) {
   localStorage.setItem(PROFILE_KEY, JSON.stringify(data));
 }
 
+/**
+ * Derive a friendly display name from an email address.
+ * e.g. "john.doe@gmail.com" → "John Doe"
+ *      "tinashe_moyo@outlook.com" → "Tinashe Moyo"
+ */
+function nameFromEmail(email) {
+  if (!email) return '';
+  const local = email.split('@')[0];          // e.g. "john.doe"
+  return local
+    .replace(/[._\-+]/g, ' ')               // replace separators with spaces
+    .replace(/\d+/g, '')                     // strip trailing digits (e.g. john123)
+    .trim()
+    .split(' ')
+    .filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+}
+
 export default function Lobby({ onStart, webRTC, onDash, session }) {
   const { t } = useLang();
   const profile = loadProfile();
 
-  // Pre-fill name from Supabase user metadata, fallback to saved profile
-  const authName = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.display_name || '';
-  const [uName, setUName]         = useState(profile.uName || authName || '');
-  const [ctx, setCtx]             = useState(profile.ctx   || 'ZW-CN');
+  // Pre-fill name: prefer Supabase metadata → saved profile → derive from email
+  const authName =
+    session?.user?.user_metadata?.full_name ||
+    session?.user?.user_metadata?.display_name ||
+    nameFromEmail(session?.user?.email) ||
+    '';
+  const [uName, setUName]   = useState(profile.uName || authName || '');
+  const [ctx, setCtx]       = useState(profile.ctx   || '');
+  // Sync authName into uName once on first load if profile was empty
+  React.useEffect(() => {
+    if (!profile.uName && authName && !uName) setUName(authName);
+  }, [authName]);
   const [joinId, setJoinId]       = useState('');
   const [optIn, setOptIn]         = useState(profile.optIn || false);
   const [roomId, setRoomId]       = useState('');
@@ -228,12 +254,14 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
               <input className="fi" type="text" value={uName} onChange={e => setUName(e.target.value)} />
             </div>
             <div className="fl">
-              <label className="fl-l">{t('culturalCtx')}</label>
-              <select className="fi" value={ctx} onChange={e => setCtx(e.target.value)}>
-                <option value="ZW-CN">{t('ctxZWCN')}</option>
-                <option value="ZW-ZW">{t('ctxZWZW')}</option>
-                <option value="INT">{t('ctxINT')}</option>
-              </select>
+              <label className="fl-l">Your Country</label>
+              <input
+                className="fi"
+                type="text"
+                placeholder="e.g. Zimbabwe, China, USA…"
+                value={ctx}
+                onChange={e => setCtx(e.target.value)}
+              />
             </div>
           </div>
 

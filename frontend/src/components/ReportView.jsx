@@ -215,10 +215,14 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
     const nP = emoCounts.neutral / total;
     const aP = emoCounts.angry / total;
     const sP = emoCounts.sad / total;
-    const ctx = sessionInfo?.ctx || 'INT';
+    const ctx = sessionInfo?.ctx || '';
+    const ctxLower = ctx.toLowerCase();
+    const isChina = /china|chinese|cn\b|beijing|shanghai/.test(ctxLower);
+    const isZimbabwe = /zimbabwe|zimbabwean|zw\b|harare|bulawayo|shona|ndebele/.test(ctxLower);
+    const ctxLabel = ctx || 'International';
     let strat = '';
 
-    if (ctx === 'ZW-CN') {
+    if (isChina && isZimbabwe) {
       strat = `<strong>Cultural Context: Zimbabwe ↔ China (Mianzi/Face Focus)</strong><br/>`;
       if (nP > 0.6) {
         strat += `Detected high neutrality (60%+). In Chinese professional norms, this often indicates "Face-saving" or polite reservation. The participant may have unspoken concerns. <br/><strong>Advice:</strong> Do not press for immediate commitment. Use "soft" follow-ups like: <em>"We would value your internal perspective on this."</em>`;
@@ -229,8 +233,8 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
       } else {
         strat += `Balanced interaction. <br/><strong>Advice:</strong> Maintain formal respect and structured delivery. Avoid overly casual language which might be misinterpreted as a lack of seriousness.`;
       }
-    } else if (ctx === 'ZW-ZW') {
-      strat = `<strong>Cultural Context: Zimbabwe ↔ Zimbabwe (Ubuntu/Respect Focus)</strong><br/>`;
+    } else if (isZimbabwe) {
+      strat = `<strong>Cultural Context: Zimbabwe (Ubuntu/Respect Focus)</strong><br/>`;
       if (hP > 0.4) {
         strat += `Strong social harmony detected. Reflects "Ubuntu" (humanity towards others). <br/><strong>Advice:</strong> Maintain the warm rapport. Personal connection is as important as the business at hand.`;
       } else if (nP > 0.6) {
@@ -240,11 +244,20 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
       } else {
         strat += `Standard communal engagement. <br/><strong>Advice:</strong> Continue with a focus on shared values and clear, respectful communication.`;
       }
+    } else if (isChina) {
+      strat = `<strong>Cultural Context: China (Guanxi/Face Focus)</strong><br/>`;
+      if (nP > 0.6) {
+        strat += `High neutrality detected — a common sign of Face-saving etiquette. <br/><strong>Advice:</strong> Avoid direct pressure. Allow space for indirect communication.`;
+      } else if (hP > 0.4) {
+        strat += `Strong positive engagement. Guanxi (relationship-building) is working well. <br/><strong>Advice:</strong> Reinforce trust with a follow-up summary or gesture of appreciation.`;
+      } else {
+        strat += `Standard engagement. <br/><strong>Advice:</strong> Maintain formal respect and be patient with decision timelines.`;
+      }
     } else {
-      strat = `<strong>International Context</strong><br/>`;
+      strat = `<strong>Session — ${ctxLabel}</strong><br/>`;
       if (hP > 0.5) strat += 'Excellent rapport established. <strong>Strategy:</strong> Good time to discuss forward-looking opportunities.';
       else if (nP > 0.5) strat += 'Engagement is reserved. <strong>Strategy:</strong> Inject more interactive elements to gauge true interest.';
-      else strat += 'Standard engagement. Maintain clear, structured communication.';
+      else strat += 'Standard engagement detected. Maintain clear, structured communication.';
     }
     setStrategy(strat);
 
