@@ -512,8 +512,8 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
   const timerStr = `${String(Math.floor(callSecs / 60)).padStart(2, '0')}:${String(callSecs % 60).padStart(2, '0')}`;
 
   return (
-    <div style={S.root}>
-      {/* Keyframe injection */}
+    <div style={S.root} className="cv-root">
+      {/* Keyframe & Layout Styles */}
       <style>{`
         @keyframes orbPulse {
           0%, 100% { transform: scale(1); box-shadow: 0 0 40px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.25); }
@@ -532,62 +532,220 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           75%, 100% { transform: scale(2.2); opacity: 0; }
         }
         .end-btn:active { transform: scale(0.96) !important; }
+
+        /* ── DESKTOP RETHINK (1024px+) ── */
+        @media (min-width: 1024px) {
+          .cv-root {
+            background: radial-gradient(circle at center, #1e1e35 0%, #08080c 100%) !important;
+            display: flex !important;
+            flex-direction: column !important;
+          }
+          .cv-desktop-main {
+            display: flex !important;
+            flex: 1 !important;
+            padding: 40px 40px 110px !important; /* bottom padding for botbar */
+            gap: 30px !important;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+          }
+          .cv-stage {
+            flex: 1 !important;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+          }
+          .cv-video-card {
+            width: 100% !important;
+            aspect-ratio: 16/9 !important;
+            background: #000 !important;
+            border-radius: 32px !important;
+            overflow: hidden !important;
+            position: relative !important;
+            border: 1px solid rgba(255,255,255,0.12) !important;
+            box-shadow: 0 40px 120px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05) !important;
+          }
+          .cv-sidebar {
+            width: 360px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 20px !important;
+          }
+          .cv-side-card {
+            background: rgba(255,255,255,0.04) !important;
+            backdrop-filter: blur(40px) saturate(180%) !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            border-radius: 24px !important;
+            padding: 24px !important;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
+          }
+          .cv-pip {
+            position: absolute !important;
+            bottom: 24px !important;
+            left: 24px !important;
+            right: auto !important;
+            top: auto !important;
+            width: 240px !important;
+            height: 160px !important;
+            border-radius: 20px !important;
+            border: 2px solid rgba(255,255,255,0.2) !important;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.6) !important;
+          }
+          .cv-botbar {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            height: 90px !important;
+            background: rgba(10,10,15,0.92) !important;
+            backdrop-filter: blur(30px) !important;
+            border-top: 1px solid rgba(255,255,255,0.08) !important;
+            padding: 0 40px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            z-index: 100 !important;
+          }
+          .cv-timer-wrap {
+            text-align: center;
+            margin-bottom: 10px;
+          }
+          .cv-timer-val {
+            font-size: 38px !important;
+            font-weight: 800 !important;
+            background: linear-gradient(to bottom, #fff 0%, #aaa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-variant-numeric: tabular-nums;
+          }
+          .cv-hud {
+            position: static !important;
+            width: 100% !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            backdrop-filter: none !important;
+          }
+          .cv-topbar {
+            position: absolute !important;
+            top: 20px !important;
+            left: 20px !important;
+            right: 20px !important;
+            padding: 0 !important;
+          }
+          .cv-desktop-timer-hide { display: none !important; }
+          .cv-ai-status { position: static !important; margin-top: auto; }
+        }
       `}</style>
 
-      {/* ── REMOTE VIDEO (full screen) */}
-      <div style={S.remoteFill}>
-        {/* Always in DOM so the ref is ready when the stream arrives */}
-        <video
-          ref={remoteVideoRef}
-          style={{ ...S.remoteVid, display: isConnected ? 'block' : 'none' }}
-          autoPlay
-          playsInline
-        />
-        <svg
-          ref={svgRef}
-          style={{
-            position: 'absolute', inset: 0, width: '100%', height: '100%',
-            pointerEvents: 'none', zIndex: 4,
-            display: isConnected ? 'block' : 'none'
-          }}
-        />
-        <canvas ref={canvasRef} style={{ display: 'none' }} />
-        {/* Hidden compositor canvas for augmented recording */}
-        <canvas ref={compositorRef} style={{ display: 'none' }} />
+      {/* ── DESKTOP CONTENT WRAPPER ── */}
+      <div className="cv-desktop-main">
+        
+        {/* LEFT: MAIN STAGE */}
+        <main className="cv-stage">
+          <div className="cv-video-card">
+            {/* Remote Video Container */}
+            <div style={S.remoteFill}>
+              <video
+                ref={remoteVideoRef}
+                style={{ ...S.remoteVid, display: isConnected ? 'block' : 'none' }}
+                autoPlay
+                playsInline
+              />
+              <svg
+                ref={svgRef}
+                style={{
+                  position: 'absolute', inset: 0, width: '100%', height: '100%',
+                  pointerEvents: 'none', zIndex: 4,
+                  display: isConnected ? 'block' : 'none'
+                }}
+              />
+              <canvas ref={canvasRef} style={{ display: 'none' }} />
+              <canvas ref={compositorRef} style={{ display: 'none' }} />
 
-        {/* Waiting state — always in DOM, hidden when connected */}
-        <div style={{ ...S.waitOrb, display: isConnected ? 'none' : 'flex' }}>
-          <div style={S.orbCircle}>
-            <svg viewBox="0 0 28 28" width="28" height="28" fill="none">
-              <circle cx="14" cy="10" r="5.5" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5"/>
-              <path d="M5 26c0-4.97 4.03-9 9-9s9 4.03 9 9" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
-            </svg>
-          </div>
-          <div style={S.orbTxt}>Waiting for peer…</div>
-        </div>
-
-        {/* Recording Consent Modal */}
-        {recordConsentReq && (
-          <div style={{
-            position: 'absolute', top: '100px', left: '50%', transform: 'translateX(-50%)', zIndex: 50,
-            background: 'rgba(20,20,30,0.95)', border: '1px solid rgba(255,59,48,0.4)', borderRadius: '16px',
-            padding: '24px', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,59,48,0.2)'
-          }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,59,48,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-               <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: '#ff3b30' }} />
+              {/* Waiting State */}
+              <div style={{ ...S.waitOrb, display: isConnected ? 'none' : 'flex' }}>
+                <div style={S.orbCircle}>
+                  <svg viewBox="0 0 28 28" width="28" height="28" fill="none">
+                    <circle cx="14" cy="10" r="5.5" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5"/>
+                    <path d="M5 26c0-4.97 4.03-9 9-9s9 4.03 9 9" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <div style={S.orbTxt}>Waiting for peer…</div>
+              </div>
             </div>
-            <h3 style={{ color: 'white', margin: '0 0 8px', fontSize: '18px' }}>Session Recording</h3>
-            <p style={{ color: 'rgba(255,255,255,0.7)', margin: '0 0 20px', fontSize: '14px' }}>{remoteName} is requesting to record this session.</p>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <button style={{ padding: '8px 24px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: 'white', cursor: 'pointer' }} onClick={() => setRecordConsentReq(false)}>Deny</button>
-              <button style={{ padding: '8px 24px', borderRadius: '8px', border: 'none', background: '#ff3b30', color: 'white', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => { sendData({ type: 'record_allow' }); setRecordConsentReq(false); }}>Allow Recording</button>
+
+            {/* Local PiP (moved inside card for desktop) */}
+            <div className="cv-pip" style={S.localPip}>
+              <video ref={localVideoRef} style={S.localVid} autoPlay muted playsInline />
+              <div style={S.localLabel}>You</div>
+            </div>
+
+            {/* Video Overlays (Subtitles) */}
+            {activeSubtitle && (
+              <div className="cv-subtitle" style={{
+                position: 'absolute', bottom: '40px', left: '50%', transform: 'translateX(-50%)', zIndex: 45,
+                textAlign: 'center', width: '90%', pointerEvents: 'none'
+              }}>
+                <span style={{
+                  display: 'inline-block', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)',
+                  padding: '12px 24px', borderRadius: '14px', maxWidth: '100%',
+                  fontSize: '22px', fontWeight: '500', color: EMO_COLORS[activeSubtitle.emotion] || 'white',
+                  border: `1px solid ${EMO_COLORS[activeSubtitle.emotion]}44`,
+                  animation: 'fadeInUp 0.3s ease-out'
+                }}>
+                  {activeSubtitle.text}
+                </span>
+              </div>
+            )}
+          </div>
+        </main>
+
+        {/* RIGHT: SIDEBAR */}
+        <aside className="cv-sidebar">
+          
+          {/* Timer Card */}
+          <div className="cv-side-card cv-timer-wrap">
+            <div style={S.statLbl}>Session Duration</div>
+            <div className="cv-timer-val">{timerStr}</div>
+            <div style={{ ...S.ctxBadge, display: 'inline-block', marginTop: '10px' }}>{sessionInfo.ctx}</div>
+          </div>
+
+          {/* AI Insights Card */}
+          <div className="cv-side-card" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div style={S.hudLabel}>{remoteName}'s Emotion Turns</div>
+            <div className="cv-hud" style={S.hud}>
+              <LiveTurnGraph timeline={getTimeline()} />
+              <div style={S.hudDivider} />
+              <div style={S.statsRow}>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={S.statVal}>{detCount}</div>
+                  <div style={S.statLbl}>Scans</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ ...S.statVal, color: curE.c }}>{curE.n}</div>
+                  <div style={S.statLbl}>Current</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="cv-ai-status" style={S.aiStatus}>
+              <div style={{ position: 'relative', width: '8px', height: '8px', flexShrink: 0 }}>
+                <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: modelsLoaded ? '#34c759' : '#ffb347' }} />
+                {modelsLoaded && (
+                  <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#34c759', animation: 'ping 1.8s ease-out infinite' }} />
+                )}
+              </div>
+              {modelsLoaded ? 'AI Engine Active' : 'Loading Models…'}
             </div>
           </div>
-        )}
-
+        </aside>
       </div>
 
-      {/* ── TOP BAR */}
+      {/* ── TOP BAR (Mobile only timer shown here) ── */}
       <div className="cv-topbar" style={S.topBar}>
         <div style={S.topLeft}>
           <div style={S.logoMark}>
@@ -603,30 +761,11 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             </div>
           )}
         </div>
-
-        <div style={S.timer}>{timerStr}</div>
-
-        <div style={S.ctxBadge}>{sessionInfo.ctx}</div>
+        <div className="cv-desktop-timer-hide" style={S.timer}>{timerStr}</div>
+        <div className="cv-desktop-timer-hide" style={S.ctxBadge}>{sessionInfo.ctx}</div>
       </div>
 
-      {/* ── FLOATING HUD (Live Breakdown) — hidden on mobile via .cv-hud */}
-      <aside className="cv-hud" style={S.hud}>
-        <div style={S.hudLabel}>{remoteName}'s Emotion Turns</div>
-        <LiveTurnGraph timeline={getTimeline()} />
-        <div style={S.hudDivider} />
-        <div style={S.statsRow}>
-          <div style={{ textAlign: 'left' }}>
-            <div style={S.statVal}>{detCount}</div>
-            <div style={S.statLbl}>Scans</div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ ...S.statVal, color: curE.c }}>{curE.n}</div>
-            <div style={S.statLbl}>Current</div>
-          </div>
-        </div>
-      </aside>
-
-      {/* ── MOBILE COMPACT EMOTION PILL (visible only on mobile via .cv-emo-strip) */}
+      {/* ── MOBILE EMOTION STRIP ── */}
       <div className="cv-emo-strip" style={S.mobileEmoStrip}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: '8px',
@@ -640,7 +779,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
         </div>
       </div>
 
-      {/* ── COACHING TOAST */}
+      {/* ── COACHING TOAST ── */}
       {coachingToast && (
         <div style={{
           position: 'absolute', top: '76px', left: '50%', transform: 'translateX(-50%)', zIndex: 40,
@@ -664,71 +803,58 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
         </div>
       )}
 
-      {/* ── LIVE SUBTITLES */}
-      {activeSubtitle && (
-        <div className="cv-subtitle" style={{
-          position: 'absolute', bottom: '130px', left: '50%', transform: 'translateX(-50%)', zIndex: 45,
-          textAlign: 'center', width: '100%', pointerEvents: 'none'
-        }}>
-          <span style={{
-            display: 'inline-block', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
-            padding: '10px 20px', borderRadius: '12px', maxWidth: '80%',
-            fontSize: '20px', fontWeight: '500', color: EMO_COLORS[activeSubtitle.emotion] || 'white',
-            textShadow: '0 2px 8px rgba(0,0,0,0.8)', letterSpacing: '0.01em', lineHeight: '1.4',
-            border: `1px solid ${EMO_COLORS[activeSubtitle.emotion]}44`,
-            boxShadow: `0 8px 32px rgba(0,0,0,0.4), 0 0 24px ${EMO_COLORS[activeSubtitle.emotion]}22`,
-            animation: 'fadeInUp 0.3s ease-out'
-          }}>
-            {activeSubtitle.text}
-          </span>
-        </div>
-      )}
-
-      {/* ── LOCAL PIP — .cv-pip class targets mobile override */}
-      <div className="cv-pip" style={S.localPip}>
-        <video ref={localVideoRef} style={S.localVid} autoPlay muted playsInline />
-        <div style={S.localLabel}>You</div>
-      </div>
-
-      {/* ── BOTTOM BAR */}
+      {/* ── BOTTOM CONTROL BAR ── */}
       <div className="cv-botbar" style={S.botBar}>
         <div className="cv-controls" style={S.centerControls}>
           <button
             className="cv-record-btn"
             style={{ ...S.recordBtn, border: isRecording ? '1px solid rgba(255,59,48,0.5)' : S.recordBtn.border }}
             onClick={handleRecordClick}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
-            onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
           >
             {isRecording ? (
                <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: '#ff3b30', animation: 'ping 1.5s infinite' }} />
             ) : (
                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ff3b30' }} />
             )}
-            {isRecording ? 'Stop Recording' : (waitingConsent ? 'Waiting...' : 'Record')}
+            {isRecording ? 'Stop Recording' : (waitingConsent ? 'Waiting...' : 'Record Session')}
             {!isRecording && !waitingConsent && <span style={{ fontSize: '9px', fontWeight: '800', background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', color: '#1a1a2e', padding: '2px 6px', borderRadius: '4px', marginLeft: '4px' }}>PRO</span>}
           </button>
+          
           <button
             ref={endBtnRef}
             className="end-btn cv-end-btn"
             onClick={handleEnd}
             style={S.endBtn}
-            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 12px 40px rgba(255,59,48,0.5), inset 0 1px 0 rgba(255,255,255,0.2)'}
-            onMouseLeave={e => e.currentTarget.style.boxShadow = '0 8px 32px rgba(255,59,48,0.35), inset 0 1px 0 rgba(255,255,255,0.2)'}
           >
             End Session
           </button>
         </div>
-        <div className="cv-ai-status" style={S.aiStatus}>
-          <div style={{ position: 'relative', width: '8px', height: '8px', flexShrink: 0 }}>
-            <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: modelsLoaded ? '#34c759' : '#ffb347' }} />
-            {modelsLoaded && (
-              <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#34c759', animation: 'ping 1.8s ease-out infinite' }} />
-            )}
-          </div>
-          {modelsLoaded ? 'AI Active' : 'Loading AI…'}
-        </div>
       </div>
+
+      {/* ── CONSENT MODAL (Absolute center) ── */}
+      {recordConsentReq && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 200,
+          background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div style={{
+            background: 'rgba(20,20,30,0.95)', border: '1px solid rgba(255,59,48,0.4)', borderRadius: '24px',
+            padding: '32px', textAlign: 'center', maxWidth: '400px', width: '90%',
+            boxShadow: '0 20px 80px rgba(0,0,0,0.8)'
+          }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(255,59,48,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+               <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#ff3b30' }} />
+            </div>
+            <h3 style={{ color: 'white', margin: '0 0 10px', fontSize: '20px', fontWeight: '700' }}>Recording Request</h3>
+            <p style={{ color: 'rgba(255,255,255,0.7)', margin: '0 0 24px', fontSize: '15px', lineHeight: '1.5' }}>{remoteName} wants to record this session for analysis. Do you consent?</p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'white', cursor: 'pointer', fontWeight: '600' }} onClick={() => setRecordConsentReq(false)}>Deny</button>
+              <button style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#ff3b30', color: 'white', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => { sendData({ type: 'record_allow' }); setRecordConsentReq(false); }}>Allow</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
