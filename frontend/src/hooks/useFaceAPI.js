@@ -10,7 +10,7 @@ export const EMO = {
 
 const CMAP = { happy: 'cg', neutral: 'cs', sad: 'cb', angry: 'cr' };
 
-export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx) {
+export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx, optIn = false) {
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [curEmo, setCurEmo]             = useState('neutral');
   const [emoCounts, setEmoCounts]       = useState({ happy: 0, neutral: 0, sad: 0, angry: 0 });
@@ -64,17 +64,40 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx)
 
   // ── Data collection ───────────────────────────────────────────
   const submitSample = (video, emo, conf) => {
+    if (!optIn || conf < 0.65) return;
+    
+    // Only send a sample ~10% of the time to avoid overloading server
+    if (Math.random() > 0.1) return;
+
     if (!canvasRef.current) return;
     const canvas = canvasRef.current;
     const ctx2d  = canvas.getContext('2d', { willReadFrequently: true });
-    canvas.width = 160; canvas.height = 120;
-    ctx2d.drawImage(video, 0, 0, 160, 120);
-    const b64   = canvas.toDataURL('image/jpeg', 0.7);
-    const rCult = sessionCtx?.includes('-') ? sessionCtx.split('-')[1] : 'INT';
+    
+    // Dataset expects 48x48
+    canvas.width = 48; canvas.height = 48;
+    ctx2d.drawImage(video, 0, 0, 48, 48);
+    
+    const getCultureCode = (c) => {
+      const s = String(c || '').toLowerCase();
+      if (s.includes('china') || s.includes('chinese') || s.includes('cn')) return 'CN';
+      if (s.includes('zimbabwe') || s.includes('zw')) return 'ZW';
+      return 'INT';
+    };
+
+    const b64 = canvas.toDataURL('image/png');
+    const culture = getCultureCode(sessionCtx);
+
     fetch('/api/collect', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: b64, emotion: emo, confidence: conf, context: rCult }),
+      body: JSON.stringify({ 
+        image_b64: b64, 
+        emotion: emo, 
+        confidence: conf, 
+        culture: culture,
+        session_hash: 'anon_' + Math.random().toString(36).slice(2, 8),
+        consent: true 
+      }),
     }).catch(() => {});
   };
 

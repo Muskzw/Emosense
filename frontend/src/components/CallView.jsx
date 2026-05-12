@@ -262,7 +262,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
   const isRecordingRef = useRef(false);
 
   const { modelsLoaded, curEmo, emoCounts, detCount, getTimeline } = useFaceAPI(
-    remoteVideoRef, svgRef, canvasRef, isConnected, sessionInfo.ctx
+    remoteVideoRef, svgRef, canvasRef, isConnected, sessionInfo.ctx, sessionInfo.optIn
   );
 
   const curEmoRef = useRef('neutral');

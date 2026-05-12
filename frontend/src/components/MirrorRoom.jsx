@@ -9,7 +9,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
   const [micLevel, setMicLevel] = useState(0);
 
   const { modelsLoaded, curEmo } = useFaceAPI(
-    localVideoRef, svgRef, canvasRef, true, sessionInfo.ctx
+    localVideoRef, svgRef, canvasRef, true, sessionInfo.ctx, sessionInfo.optIn
   );
 
   useEffect(() => {
