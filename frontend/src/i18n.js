@@ -10,7 +10,7 @@ export const LANGUAGES = [
 const translations = {
   en: {
     // Lobby
-    appName:        'emo-detect',
+    appName:        'EmoSense',
     appSub:         'Cross-Cultural AI',
     yourName:       'Your name',
     culturalCtx:    'Cultural context',
@@ -60,7 +60,7 @@ const translations = {
   },
   sn: {
     // Lobby
-    appName:        'emo-detect',
+    appName:        'EmoSense',
     appSub:         'AI yeMamiriro eMunhu',
     yourName:       'Zita rako',
     culturalCtx:    'Nzira yechiChinji',
@@ -110,7 +110,7 @@ const translations = {
   },
   zh: {
     // Lobby
-    appName:        'emo-detect',
+    appName:        'EmoSense',
     appSub:         '跨文化情感AI',
     yourName:       '您的姓名',
     culturalCtx:    '文化背景',
