@@ -1,4 +1,5 @@
 :root {
+  color-scheme: dark;
   --bg: #0a0a0c;
   --surf: #16161e;
   --surf2: #1c1c26;
@@ -26,6 +27,7 @@
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:var(--sans);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
 #root{width:100%;height:100%}
 button,input{font-family:inherit;outline:none}
+::selection{background:rgba(46,204,113,0.25);color:var(--txt)}
 video{display:block;background:#000}
 .screen{position:fixed;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .3s ease;overflow:hidden}
 .screen.active{opacity:1;pointer-events:all}
@@ -61,9 +63,9 @@ video{display:block;background:#000}
 .lob-fields{display:flex;flex-direction:column;gap:14px}
 .fl{display:flex;flex-direction:column;gap:6px}
 .fl-l{font-size:10px;font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
-.fi{background:rgba(255,255,255,.05);border:.5px solid var(--bd2);border-radius:12px;padding:11px 14px;color:var(--txt);font-size:14px;font-family:var(--mono);transition:border-color .2s;width:100%}
+.fi{background:rgba(255,255,255,.05);border:.5px solid var(--bd2);border-radius:12px;padding:11px 14px;color:var(--txt);font-size:14px;font-family:var(--mono);transition:border-color .2s;width:100%;caret-color:var(--green);cursor:text;-webkit-text-fill-color:var(--txt)}
 
-.fi:focus{border-color:var(--gb)}.fi::placeholder{color:var(--muted)}
+.fi:focus{border-color:var(--gb);box-shadow:0 0 0 3px rgba(46,204,113,0.12)}.fi::placeholder{color:var(--muted);-webkit-text-fill-color:var(--muted)}
 .ctx-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .ctx-c{border-radius:12px;border:.5px solid var(--bd2);background:rgba(255,255,255,.04);padding:12px 14px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;gap:4px;-webkit-tap-highlight-color:transparent}
 .ctx-c:hover{border-color:var(--bd3);background:rgba(255,255,255,.07)}.ctx-c.sel{border-color:var(--gb);background:var(--gd)}
@@ -420,4 +422,60 @@ video{display:block;background:#000}
   .lob-actions { flex-direction: row; gap: 12px; }
   .btn-start { flex: 1.2; }
   .btn-dash { flex: 1; }
+}
+
+/* ── CALL VIEW MOBILE (≤ 640px) ─────────────────────────── */
+@media (max-width: 640px) {
+  /* Hide the desktop HUD sidebar — replaced by compact bottom strip */
+  .cv-hud { display: none !important; }
+
+  /* PIP — move to bottom-left so it doesn't clash with controls */
+  .cv-pip {
+    bottom: calc(90px + var(--sb)) !important;
+    right: auto !important;
+    left: 12px !important;
+    width: 80px !important;
+    height: 108px !important;
+    border-radius: 16px !important;
+  }
+
+  /* Top bar — tighten padding */
+  .cv-topbar { padding: 10px 14px 0 !important; }
+
+  /* Bottom bar — stack end/record buttons, safe-area aware */
+  .cv-botbar {
+    padding: 10px 14px calc(14px + var(--sb)) !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+  .cv-controls {
+    width: 100% !important;
+    gap: 8px !important;
+  }
+  .cv-record-btn {
+    flex: 1 !important;
+    padding: 11px 14px !important;
+    font-size: 13px !important;
+  }
+  .cv-end-btn {
+    flex: 1 !important;
+    padding: 11px 18px !important;
+    font-size: 13px !important;
+  }
+  .cv-ai-status {
+    position: static !important;
+    align-self: center !important;
+    font-size: 10px !important;
+    padding: 5px 10px !important;
+  }
+
+  /* Compact mobile emotion strip */
+  .cv-emo-strip { display: flex !important; }
+
+  /* Subtitles — smaller text on mobile */
+  .cv-subtitle span {
+    font-size: 16px !important;
+    padding: 8px 14px !important;
+  }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './index.css';
 import { useWebRTC } from './hooks/useWebRTC';
 import { LangProvider } from './context/LangContext';
@@ -19,6 +19,9 @@ export default function App() {
   const [timeline, setTimeline] = useState([]);
   const [voiceTriggers, setVoiceTriggers] = useState([]);
   const [liveData, setLiveData] = useState({ counts: { happy: 0, neutral: 0, sad: 0, angry: 0 }, timeline: [], voiceTriggers: [] });
+  // Keep a ref always pointing at the latest liveData so handleRemoteEnd never reads a stale closure
+  const liveDataRef = useRef({ counts: { happy: 0, neutral: 0, sad: 0, angry: 0 }, timeline: [], voiceTriggers: [] });
+  useEffect(() => { liveDataRef.current = liveData; }, [liveData]);
 
   const [videoUrl, setVideoUrl] = useState(null);
   const [session, setSession] = useState(null);
@@ -39,11 +42,12 @@ export default function App() {
 
   const handleRemoteEnd = useCallback(() => {
     console.log('[App] Remote end detected, transitioning to report');
-    setEmoCounts(prev => liveData.counts || prev);
-    setTimeline(prev => liveData.timeline || prev);
-    setVoiceTriggers(prev => liveData.voiceTriggers || prev);
+    const d = liveDataRef.current;
+    setEmoCounts(d.counts || { happy: 0, neutral: 0, sad: 0, angry: 0 });
+    setTimeline(d.timeline || []);
+    setVoiceTriggers(d.voiceTriggers || []);
     setScreen('sReport');
-  }, [liveData]);
+  }, []); // no deps needed — reads from ref
 
   const webRTC = useWebRTC(handleRemoteEnd);
 

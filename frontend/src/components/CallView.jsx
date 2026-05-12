@@ -8,6 +8,7 @@ const S = {
     position: 'fixed', inset: 0, overflow: 'hidden',
     background: 'radial-gradient(ellipse at top, #1a1a2e 0%, #0a0a0f 100%)',
     fontFamily: 'system-ui, -apple-system, "SF Pro Display", sans-serif',
+    colorScheme: 'dark',
   },
   // ── Remote video — edge-to-edge
   remoteFill: {
@@ -41,7 +42,7 @@ const S = {
   topBar: {
     position: 'absolute', top: 0, left: 0, right: 0, zIndex: 30,
     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    padding: '18px 24px 0',
+    padding: 'max(18px, calc(12px + env(safe-area-inset-top))) 20px 0',
     pointerEvents: 'none',
   },
   topLeft: {
@@ -68,12 +69,12 @@ const S = {
     pointerEvents: 'none',
   },
   ctxBadge: {
-    padding: '5px 12px', borderRadius: '999px',
+    padding: '5px 10px', borderRadius: '999px',
     background: 'rgba(255,255,255,0.1)',
     backdropFilter: 'blur(20px)',
     border: '1px solid rgba(255,255,255,0.18)',
     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.15)',
-    fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.7)',
+    fontSize: '10px', fontWeight: '500', color: 'rgba(255,255,255,0.7)',
     pointerEvents: 'all',
   },
   livePill: {
@@ -86,7 +87,7 @@ const S = {
     letterSpacing: '0.06em',
     pointerEvents: 'all',
   },
-  // ── LOCAL PIP — bottom-right glassy pill
+  // ── LOCAL PIP — bottom-right glassy pill (overridden on mobile via .cv-pip class)
   localPip: {
     position: 'absolute', bottom: '110px', right: '18px',
     width: '110px', height: '150px', borderRadius: '28px',
@@ -103,7 +104,7 @@ const S = {
     fontSize: '10px', color: 'rgba(255,255,255,0.6)', fontWeight: '500',
     letterSpacing: '0.04em', textShadow: '0 1px 4px rgba(0,0,0,0.8)',
   },
-  // ── HUD SIDEBAR — floating glassy panel
+  // ── HUD SIDEBAR — floating glassy panel (hidden on mobile via .cv-hud class)
   hud: {
     position: 'absolute', top: '80px', right: '18px',
     width: '220px', borderRadius: '20px',
@@ -137,42 +138,52 @@ const S = {
   botBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 30,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: '16px 24px 28px',
-    background: 'linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)',
+    padding: '16px 20px calc(24px + env(safe-area-inset-bottom))',
+    background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%)',
   },
   centerControls: {
     display: 'flex', alignItems: 'center', gap: '16px',
   },
   recordBtn: {
-    padding: '14px 24px', borderRadius: '999px',
+    padding: '13px 22px', borderRadius: '999px',
     background: 'rgba(255,255,255,0.1)',
     backdropFilter: 'blur(20px)',
     border: '1px solid rgba(255,255,255,0.2)',
     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)',
-    color: 'white', fontSize: '15px', fontWeight: '700',
+    color: 'white', fontSize: '14px', fontWeight: '700',
     cursor: 'pointer', letterSpacing: '-0.01em',
     transition: 'all 0.2s ease',
-    display: 'flex', alignItems: 'center', gap: '8px'
+    display: 'flex', alignItems: 'center', gap: '8px',
+    whiteSpace: 'nowrap',
   },
   endBtn: {
-    padding: '14px 32px', borderRadius: '999px',
+    padding: '13px 28px', borderRadius: '999px',
     background: 'rgba(255,59,48,0.85)',
     backdropFilter: 'blur(20px)',
     border: '1px solid rgba(255,255,255,0.2)',
     boxShadow: '0 8px 32px rgba(255,59,48,0.35), inset 0 1px 0 rgba(255,255,255,0.2)',
-    color: 'white', fontSize: '15px', fontWeight: '700',
+    color: 'white', fontSize: '14px', fontWeight: '700',
     cursor: 'pointer', letterSpacing: '-0.01em',
     transition: 'all 0.2s ease',
+    whiteSpace: 'nowrap',
   },
   aiStatus: {
-    position: 'absolute', right: '24px',
+    position: 'absolute', right: '20px',
     display: 'flex', alignItems: 'center', gap: '7px',
-    padding: '8px 14px', borderRadius: '999px',
+    padding: '7px 12px', borderRadius: '999px',
     background: 'rgba(255,255,255,0.07)',
     backdropFilter: 'blur(20px)',
     border: '1px solid rgba(255,255,255,0.14)',
     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)',
-    fontSize: '11px', fontWeight: '500', color: 'rgba(255,255,255,0.7)',
+    fontSize: '10px', fontWeight: '500', color: 'rgba(255,255,255,0.7)',
+  },
+  // ── MOBILE EMOTION STRIP (shown below top bar on narrow screens)
+  mobileEmoStrip: {
+    position: 'absolute', top: '60px', left: 0, right: 0, zIndex: 25,
+    display: 'none', // shown via .cv-emo-strip media query
+    alignItems: 'center', justifyContent: 'center', gap: '8px',
+    padding: '0 16px',
+    pointerEvents: 'none',
   },
 };
 
@@ -577,7 +588,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
       </div>
 
       {/* ── TOP BAR */}
-      <div style={S.topBar}>
+      <div className="cv-topbar" style={S.topBar}>
         <div style={S.topLeft}>
           <div style={S.logoMark}>
             <svg viewBox="0 0 16 16" fill="none" width="16" height="16">
@@ -598,8 +609,8 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
         <div style={S.ctxBadge}>{sessionInfo.ctx}</div>
       </div>
 
-      {/* ── FLOATING HUD (Live Breakdown) */}
-      <aside style={S.hud}>
+      {/* ── FLOATING HUD (Live Breakdown) — hidden on mobile via .cv-hud */}
+      <aside className="cv-hud" style={S.hud}>
         <div style={S.hudLabel}>{remoteName}'s Emotion Turns</div>
         <LiveTurnGraph timeline={getTimeline()} />
         <div style={S.hudDivider} />
@@ -614,6 +625,20 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           </div>
         </div>
       </aside>
+
+      {/* ── MOBILE COMPACT EMOTION PILL (visible only on mobile via .cv-emo-strip) */}
+      <div className="cv-emo-strip" style={S.mobileEmoStrip}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '8px',
+          background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(16px)',
+          border: `1px solid ${curE.c}44`, borderRadius: '999px',
+          padding: '6px 14px',
+        }}>
+          <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: curE.c, boxShadow: `0 0 6px ${curE.c}` }} />
+          <span style={{ fontSize: '12px', fontWeight: '700', color: curE.c, letterSpacing: '0.04em' }}>{curE.n.toUpperCase()}</span>
+          <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginLeft: '4px' }}>{detCount} scans</span>
+        </div>
+      </div>
 
       {/* ── COACHING TOAST */}
       {coachingToast && (
@@ -641,14 +666,14 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
 
       {/* ── LIVE SUBTITLES */}
       {activeSubtitle && (
-        <div style={{
-          position: 'absolute', bottom: '110px', left: '50%', transform: 'translateX(-50%)', zIndex: 45,
+        <div className="cv-subtitle" style={{
+          position: 'absolute', bottom: '130px', left: '50%', transform: 'translateX(-50%)', zIndex: 45,
           textAlign: 'center', width: '100%', pointerEvents: 'none'
         }}>
           <span style={{
             display: 'inline-block', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
             padding: '10px 20px', borderRadius: '12px', maxWidth: '80%',
-            fontSize: '22px', fontWeight: '500', color: EMO_COLORS[activeSubtitle.emotion] || 'white',
+            fontSize: '20px', fontWeight: '500', color: EMO_COLORS[activeSubtitle.emotion] || 'white',
             textShadow: '0 2px 8px rgba(0,0,0,0.8)', letterSpacing: '0.01em', lineHeight: '1.4',
             border: `1px solid ${EMO_COLORS[activeSubtitle.emotion]}44`,
             boxShadow: `0 8px 32px rgba(0,0,0,0.4), 0 0 24px ${EMO_COLORS[activeSubtitle.emotion]}22`,
@@ -659,16 +684,17 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
         </div>
       )}
 
-      {/* ── LOCAL PIP */}
-      <div style={S.localPip}>
+      {/* ── LOCAL PIP — .cv-pip class targets mobile override */}
+      <div className="cv-pip" style={S.localPip}>
         <video ref={localVideoRef} style={S.localVid} autoPlay muted playsInline />
         <div style={S.localLabel}>You</div>
       </div>
 
       {/* ── BOTTOM BAR */}
-      <div style={S.botBar}>
-        <div style={S.centerControls}>
+      <div className="cv-botbar" style={S.botBar}>
+        <div className="cv-controls" style={S.centerControls}>
           <button
+            className="cv-record-btn"
             style={{ ...S.recordBtn, border: isRecording ? '1px solid rgba(255,59,48,0.5)' : S.recordBtn.border }}
             onClick={handleRecordClick}
             onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
@@ -684,7 +710,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           </button>
           <button
             ref={endBtnRef}
-            className="end-btn"
+            className="end-btn cv-end-btn"
             onClick={handleEnd}
             style={S.endBtn}
             onMouseEnter={e => e.currentTarget.style.boxShadow = '0 12px 40px rgba(255,59,48,0.5), inset 0 1px 0 rgba(255,255,255,0.2)'}
@@ -693,14 +719,14 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             End Session
           </button>
         </div>
-        <div style={S.aiStatus}>
+        <div className="cv-ai-status" style={S.aiStatus}>
           <div style={{ position: 'relative', width: '8px', height: '8px', flexShrink: 0 }}>
             <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: modelsLoaded ? '#34c759' : '#ffb347' }} />
             {modelsLoaded && (
               <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#34c759', animation: 'ping 1.8s ease-out infinite' }} />
             )}
           </div>
-          {modelsLoaded ? 'AI Models Active' : 'Loading AI…'}
+          {modelsLoaded ? 'AI Active' : 'Loading AI…'}
         </div>
       </div>
     </div>
