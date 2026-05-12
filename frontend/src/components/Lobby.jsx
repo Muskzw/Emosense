@@ -231,14 +231,6 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
               <LangSwitcher />
-              {session && (
-                <button
-                  onClick={() => supabase.auth.signOut()}
-                  style={{ background: 'none', border: '0.5px solid var(--bd2)', borderRadius: '8px', color: 'var(--muted)', fontSize: '10px', fontFamily: 'var(--mono)', padding: '4px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}
-                >
-                  Sign Out
-                </button>
-              )}
             </div>
           </div>
 

@@ -88,7 +88,7 @@ export default function App() {
             {screen === 'sLobby' && <Lobby onStart={handleStart} webRTC={webRTC} onDash={() => setScreen('sDashboard')} session={session} />}
             {screen === 'sMirror' && <MirrorRoom webRTC={webRTC} sessionInfo={sessionInfo} onJoin={() => setScreen('sCall')} onBack={() => setScreen('sLobby')} />}
             {screen === 'sCall' && <CallView onEnd={handleEnd} webRTC={webRTC} sessionInfo={sessionInfo} callSecs={callSecs} onDataUpdate={setLiveData} onVideoReady={setVideoUrl} />}
-            {screen === 'sReport' && <ReportView onBack={() => setScreen('sLobby')} emoCounts={emoCounts} duration={callSecs} sessionInfo={sessionInfo} timeline={timeline} voiceTriggers={voiceTriggers} videoData={videoUrl} />}
+            {screen === 'sReport' && <ReportView onBack={() => setScreen('sLobby')} emoCounts={emoCounts} duration={callSecs} sessionInfo={sessionInfo} timeline={timeline} voiceTriggers={voiceTriggers} videoData={videoUrl} session={session} />}
             {screen === 'sDashboard' && <Dashboard onBack={() => setScreen('sLobby')} />}
           </>
         )}

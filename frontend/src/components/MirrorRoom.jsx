@@ -8,13 +8,11 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
   const canvasRef = useRef(null);
   const [micLevel, setMicLevel] = useState(0);
 
-  // We reuse useFaceAPI but point it at the LOCAL video to test it
   const { modelsLoaded, curEmo } = useFaceAPI(
     localVideoRef, svgRef, canvasRef, true, sessionInfo.ctx
   );
 
   useEffect(() => {
-    // Start camera when entering mirror room
     if (!faceStream) {
       startCamera();
     } else if (localVideoRef.current) {
@@ -24,8 +22,6 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
 
   useEffect(() => {
     if (!faceStream) return;
-    
-    // Setup Audio Context for mic level testing
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const analyser = audioCtx.createAnalyser();
     const microphone = audioCtx.createMediaStreamSource(faceStream);
@@ -33,7 +29,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
     analyser.fftSize = 256;
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
-    
+
     let reqId;
     const updateMicLevel = () => {
       analyser.getByteFrequencyData(dataArray);
@@ -61,97 +57,292 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
   const eConf = EMO[curEmo] || EMO.neutral;
 
   return (
-    <div className="screen active" style={{ 
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      background: 'radial-gradient(circle at center, #1a1a2e 0%, #0a0a0f 100%)', height: '100vh',
-      fontFamily: 'system-ui, -apple-system, sans-serif', color: 'white', overflow: 'hidden'
+    <div className="screen active" style={{
+      display: 'flex', flexDirection: 'column',
+      background: 'var(--bg)',
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      color: 'var(--txt)',
+      overflow: 'hidden',
     }}>
-      <div style={{ position: 'absolute', top: 40, left: 40 }}>
-        <button onClick={onBack} style={{
-          background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-          color: 'white', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer',
-          backdropFilter: 'blur(10px)', transition: '0.2s'
-        }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}>
-          ← Back to Lobby
-        </button>
-      </div>
-
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '32px', margin: '0 0 12px', fontWeight: '800', letterSpacing: '-0.5px' }}>Check Your Setup</h2>
-        <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0, fontSize: '16px' }}>Ensure your camera and microphone are working before joining.</p>
-      </div>
-
-      <div style={{
-        position: 'relative', width: '640px', height: '480px', borderRadius: '24px',
-        background: '#000', overflow: 'hidden', border: `2px solid ${eConf.c}55`,
-        boxShadow: `0 20px 60px rgba(0,0,0,0.6), 0 0 40px ${eConf.c}33`
-      }}>
-        <video 
-          ref={localVideoRef} 
-          autoPlay muted playsInline 
-          style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} 
-        />
-        
-        {/* Hidden svg for FaceAPI dots, we don't necessarily need to show the dots here, 
-            but we need the ref for useFaceAPI to run. Actually let's show them! */}
-        <svg ref={svgRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'scaleX(-1)' }} />
-        <canvas ref={canvasRef} style={{ display: 'none' }} />
-
-        {/* Emotion Overlay Preview */}
-        <div style={{
-          position: 'absolute', bottom: '24px', left: '50%', transform: 'translateX(-50%)',
-          background: 'rgba(10,10,15,0.85)', backdropFilter: 'blur(20px)',
-          border: `1px solid ${eConf.c}88`, borderRadius: '30px', padding: '12px 24px',
-          display: 'flex', gap: '12px', alignItems: 'center', boxShadow: `0 8px 32px rgba(0,0,0,0.5)`
-        }}>
-          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: eConf.c, boxShadow: `0 0 10px ${eConf.c}` }} />
-          <span style={{ fontSize: '18px', fontWeight: 'bold', letterSpacing: '0.05em' }}>AI SENSOR: {eConf.n.toUpperCase()}</span>
-        </div>
-
-        {!modelsLoaded && (
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }}>
-            <span style={{ color: '#ffb347', fontWeight: 'bold', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-               <div style={{ width: '16px', height: '16px', border: '3px solid #ffb347', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-               Initializing AI Models...
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div style={{ display: 'flex', gap: '24px', marginTop: '40px', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '20px 40px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '200px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'rgba(255,255,255,0.6)', fontWeight: 'bold' }}>
-            <span>MICROPHONE</span>
-            <span style={{ color: micLevel > 10 ? '#34c759' : 'rgba(255,255,255,0.3)' }}>{micLevel > 10 ? 'DETECTING' : 'SILENT'}</span>
-          </div>
-          <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
-            <div style={{ height: '100%', background: micLevel > 80 ? '#ff3b30' : '#34c759', width: `${micLevel}%`, transition: 'width 0.1s ease' }} />
-          </div>
-        </div>
-
-        <div style={{ width: '1px', height: '40px', background: 'rgba(255,255,255,0.1)' }} />
-
-        <button 
-          onClick={handleJoinClick}
-          disabled={!modelsLoaded}
-          style={{
-            background: modelsLoaded ? 'linear-gradient(135deg, #5b9cf6 0%, #3a7bd5 100%)' : 'rgba(255,255,255,0.1)',
-            color: modelsLoaded ? 'white' : 'rgba(255,255,255,0.3)',
-            border: 'none', padding: '16px 40px', borderRadius: '12px',
-            fontSize: '18px', fontWeight: 'bold', cursor: modelsLoaded ? 'pointer' : 'not-allowed',
-            boxShadow: modelsLoaded ? '0 12px 32px rgba(91,156,246,0.4), inset 0 1px 0 rgba(255,255,255,0.2)' : 'none',
-            transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '10px'
-          }}
-          onMouseEnter={e => { if (modelsLoaded) e.currentTarget.style.transform = 'translateY(-2px)' }}
-          onMouseLeave={e => { if (modelsLoaded) e.currentTarget.style.transform = 'translateY(0)' }}
-        >
-          Join Session ➔
-        </button>
-      </div>
-
       <style>{`
         @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes micPulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+        .mr-wrap {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          min-height: 0;
+          overflow: hidden;
+        }
+
+        /* ── TOP NAV BAR ── */
+        .mr-nav {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 16px;
+          padding-top: calc(12px + env(safe-area-inset-top));
+          border-bottom: 0.5px solid var(--bd);
+          background: var(--surf);
+          flex-shrink: 0;
+        }
+        .mr-back-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: var(--surf2);
+          border: 0.5px solid var(--bd2);
+          color: var(--txt);
+          padding: 8px 14px;
+          border-radius: 10px;
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: 600;
+          font-family: inherit;
+          transition: background 0.2s;
+          flex-shrink: 0;
+        }
+        .mr-back-btn:active { background: var(--bd2); }
+        .mr-nav-title {
+          flex: 1;
+          text-align: center;
+          font-size: 16px;
+          font-weight: 700;
+          letter-spacing: -0.02em;
+        }
+        .mr-nav-spacer { width: 80px; flex-shrink: 0; }
+
+        /* ── VIDEO AREA (fills available space) ── */
+        .mr-video-area {
+          flex: 1;
+          min-height: 0;
+          position: relative;
+          background: #000;
+          overflow: hidden;
+        }
+        .mr-video-area video {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transform: scaleX(-1);
+        }
+        .mr-video-area svg {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          transform: scaleX(-1);
+          pointer-events: none;
+        }
+
+        /* Emotion badge — pinned bottom-center of video */
+        .mr-emo-badge {
+          position: absolute;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          background: rgba(10,10,15,0.82);
+          backdrop-filter: blur(16px);
+          border-radius: 999px;
+          padding: 10px 20px;
+          white-space: nowrap;
+          box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+        }
+        .mr-emo-dot {
+          width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+        }
+        .mr-emo-label {
+          font-size: 14px; font-weight: 700; letter-spacing: 0.06em; color: white;
+        }
+
+        /* AI loading overlay */
+        .mr-loading {
+          position: absolute; inset: 0;
+          background: rgba(0,0,0,0.65);
+          display: flex; align-items: center; justify-content: center;
+          backdrop-filter: blur(8px);
+        }
+        .mr-loading span {
+          color: #ffb347; font-weight: 700; font-size: 15px;
+          display: flex; align-items: center; gap: 10px;
+        }
+        .mr-spinner {
+          width: 16px; height: 16px;
+          border: 2.5px solid #ffb347;
+          border-top-color: transparent;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+        }
+
+        /* ── BOTTOM PANEL ── */
+        .mr-bottom {
+          flex-shrink: 0;
+          background: var(--surf);
+          border-top: 0.5px solid var(--bd);
+          padding: 16px;
+          padding-bottom: calc(16px + env(safe-area-inset-bottom));
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        /* Mic meter */
+        .mr-mic {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          min-width: 0;
+        }
+        .mr-mic-row {
+          display: flex;
+          justify-content: space-between;
+          font-size: 11px;
+          font-family: var(--mono);
+          font-weight: 700;
+          letter-spacing: 0.06em;
+          color: var(--muted);
+        }
+        .mr-mic-status { color: var(--green); }
+        .mr-mic-track {
+          height: 5px;
+          background: var(--bd2);
+          border-radius: 999px;
+          overflow: hidden;
+        }
+        .mr-mic-fill {
+          height: 100%;
+          border-radius: 999px;
+          transition: width 0.1s ease;
+        }
+
+        /* Divider */
+        .mr-divider {
+          width: 0.5px;
+          height: 36px;
+          background: var(--bd2);
+          flex-shrink: 0;
+        }
+
+        /* Join button */
+        .mr-join-btn {
+          flex-shrink: 0;
+          padding: 14px 24px;
+          border-radius: 14px;
+          border: none;
+          font-size: 15px;
+          font-weight: 700;
+          font-family: inherit;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.2s;
+          white-space: nowrap;
+        }
+        .mr-join-btn:active { transform: scale(0.96); }
+        .mr-join-btn.ready {
+          background: linear-gradient(135deg, #5b9cf6 0%, #3a7bd5 100%);
+          color: white;
+          box-shadow: 0 8px 24px rgba(91,156,246,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+        .mr-join-btn.waiting {
+          background: var(--surf2);
+          color: var(--muted);
+          cursor: not-allowed;
+        }
+
+        /* Sub-hint text */
+        .mr-hint {
+          text-align: center;
+          font-size: 11px;
+          font-family: var(--mono);
+          color: var(--muted);
+          padding: 0 16px 8px;
+          flex-shrink: 0;
+        }
       `}</style>
+
+      <div className="mr-wrap">
+
+        {/* ── TOP NAV ── */}
+        <div className="mr-nav">
+          <button className="mr-back-btn" onClick={onBack}>
+            ← Back
+          </button>
+          <div className="mr-nav-title">Check Your Setup</div>
+          <div className="mr-nav-spacer" />
+        </div>
+
+        {/* ── VIDEO (fills all remaining space) ── */}
+        <div className="mr-video-area">
+          <video ref={localVideoRef} autoPlay muted playsInline />
+          <svg ref={svgRef} />
+          <canvas ref={canvasRef} style={{ display: 'none' }} />
+
+          {/* Emotion badge */}
+          <div className="mr-emo-badge" style={{ border: `1px solid ${eConf.c}66` }}>
+            <div className="mr-emo-dot" style={{ background: eConf.c, boxShadow: `0 0 8px ${eConf.c}` }} />
+            <span className="mr-emo-label" style={{ color: eConf.c }}>
+              AI SENSOR: {eConf.n.toUpperCase()}
+            </span>
+          </div>
+
+          {/* AI loading overlay */}
+          {!modelsLoaded && (
+            <div className="mr-loading">
+              <span>
+                <div className="mr-spinner" />
+                Initializing AI Models…
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* ── HINT ── */}
+        <div className="mr-hint">
+          Ensure your camera and mic are working before joining
+        </div>
+
+        {/* ── BOTTOM PANEL ── */}
+        <div className="mr-bottom">
+
+          {/* Mic meter */}
+          <div className="mr-mic">
+            <div className="mr-mic-row">
+              <span>MICROPHONE</span>
+              <span className="mr-mic-status" style={{ color: micLevel > 10 ? 'var(--green)' : 'var(--muted)' }}>
+                {micLevel > 10 ? 'DETECTING' : 'SILENT'}
+              </span>
+            </div>
+            <div className="mr-mic-track">
+              <div
+                className="mr-mic-fill"
+                style={{
+                  width: `${micLevel}%`,
+                  background: micLevel > 80 ? 'var(--red)' : 'var(--green)',
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="mr-divider" />
+
+          {/* Join button */}
+          <button
+            className={`mr-join-btn ${modelsLoaded ? 'ready' : 'waiting'}`}
+            onClick={handleJoinClick}
+            disabled={!modelsLoaded}
+          >
+            Join Session →
+          </button>
+
+        </div>
+      </div>
     </div>
   );
 }

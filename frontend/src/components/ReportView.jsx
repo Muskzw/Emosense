@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import html2pdf from 'html2pdf.js';
+import { supabase } from '../supabase';
 
 const EMO_COLORS = {
   happy:   { stroke: '#34c759', label: 'Happy',   fill: 'rgba(52,199,89,0.12)' },
@@ -146,7 +147,7 @@ function TimelineChart({ timeline }) {
   );
 }
 
-export default function ReportView({ onBack, emoCounts, duration, sessionInfo, timeline, voiceTriggers, videoData }) {
+export default function ReportView({ onBack, emoCounts, duration, sessionInfo, timeline, voiceTriggers, videoData, session }) {
   const saved = useRef(false);
   const [strategy, setStrategy] = useState('');
   
@@ -306,12 +307,28 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
             <div className="rh-t" style={{ color: 'white' }}>Session Report</div>
             <div className="rh-m">{new Date().toLocaleString()}</div>
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
             <button className="btn-new" onClick={handleDownloadPDF}
               style={{ background: 'rgba(91,156,246,0.2)', color: '#5b9cf6', borderColor: 'rgba(91,156,246,0.4)' }}>
               ↓ PDF
             </button>
             <button className="btn-new" onClick={onBack}>+ New call</button>
+            {session && (
+              <button
+                onClick={() => supabase.auth.signOut()}
+                style={{
+                  padding: '9px 16px', borderRadius: '12px', border: '0.5px solid rgba(255,59,48,0.35)',
+                  background: 'rgba(255,59,48,0.1)', color: '#ff3b30',
+                  fontFamily: 'var(--mono)', fontSize: '11px', cursor: 'pointer',
+                  fontWeight: '600', letterSpacing: '0.02em', whiteSpace: 'nowrap',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,59,48,0.2)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,59,48,0.1)'}
+              >
+                Sign Out
+              </button>
+            )}
           </div>
         </div>
 
