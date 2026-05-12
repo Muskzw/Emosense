@@ -114,9 +114,14 @@ app.get('/api/ice-config', (req, res) => {
 // ── SESSION LOGGING (Postgres/Supabase) ───────────────────
 const { Pool } = require('pg');
 
+if (!process.env.DATABASE_URL) {
+  console.error('\n[Postgres] FATAL: DATABASE_URL is missing in .env');
+  console.error('Please add your Supabase connection string to backend/.env\n');
+}
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 pool.connect((err, client, release) => {
