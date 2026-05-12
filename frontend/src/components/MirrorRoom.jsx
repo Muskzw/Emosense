@@ -54,6 +54,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
     onJoin();
   };
 
+  const isHost = !sessionInfo.targetPeerId;
   const eConf = EMO[curEmo] || EMO.neutral;
 
   return (
@@ -332,13 +333,13 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
 
           <div className="mr-divider" />
 
-          {/* Join button */}
+          {/* Join / Start button */}
           <button
             className={`mr-join-btn ${modelsLoaded ? 'ready' : 'waiting'}`}
             onClick={handleJoinClick}
             disabled={!modelsLoaded}
           >
-            Join Session →
+            {isHost ? 'Start Session →' : 'Join Session →'}
           </button>
 
         </div>

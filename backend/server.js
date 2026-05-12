@@ -256,8 +256,13 @@ app.post('/api/rooms', async (req, res) => {
 app.get('/api/rooms/:code', async (req, res) => {
   const code = req.params.code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   try {
-    const result = await pool.query(`SELECT peer_id FROM room_codes WHERE code = $1 AND expires_at > $2`, [code, Date.now()]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Room not found or expired' });
+    // We instantly expire the code upon successful read to prevent race conditions
+    // so no other user can join the same room code.
+    const result = await pool.query(
+      `UPDATE room_codes SET expires_at = 0 WHERE code = $1 AND expires_at > $2 RETURNING peer_id`, 
+      [code, Date.now()]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Room not found or already in session' });
     res.json({ peerId: result.rows[0].peer_id });
   } catch (err) {
     res.status(500).json({ error: err.message });
