@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLang, LangSwitcher } from '../context/LangContext';
+import { supabase } from '../supabase';
 
 const PROFILE_KEY = 'emosense_profile';
 
@@ -10,11 +11,13 @@ function saveProfile(data) {
   localStorage.setItem(PROFILE_KEY, JSON.stringify(data));
 }
 
-export default function Lobby({ onStart, webRTC, onDash }) {
+export default function Lobby({ onStart, webRTC, onDash, session }) {
   const { t } = useLang();
   const profile = loadProfile();
 
-  const [uName, setUName]         = useState(profile.uName || 'Tinashe Moyo');
+  // Pre-fill name from Supabase user metadata, fallback to saved profile
+  const authName = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.display_name || '';
+  const [uName, setUName]         = useState(profile.uName || authName || '');
   const [ctx, setCtx]             = useState(profile.ctx   || 'ZW-CN');
   const [joinId, setJoinId]       = useState('');
   const [optIn, setOptIn]         = useState(profile.optIn || false);
@@ -200,7 +203,17 @@ export default function Lobby({ onStart, webRTC, onDash }) {
                 UPGRADE TO PRO
               </button>
             </div>
-            <LangSwitcher />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+              <LangSwitcher />
+              {session && (
+                <button
+                  onClick={() => supabase.auth.signOut()}
+                  style={{ background: 'none', border: '0.5px solid var(--bd2)', borderRadius: '8px', color: 'var(--muted)', fontSize: '10px', fontFamily: 'var(--mono)', padding: '4px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                >
+                  Sign Out
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Camera preview */}

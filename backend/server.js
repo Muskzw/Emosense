@@ -254,7 +254,7 @@ app.post('/api/rooms', async (req, res) => {
 
 // GET /api/rooms/:code  → { peerId }
 app.get('/api/rooms/:code', async (req, res) => {
-  const code = req.params.code.toLowerCase().trim();
+  const code = req.params.code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
   try {
     const result = await pool.query(`SELECT peer_id FROM room_codes WHERE code = $1 AND expires_at > $2`, [code, Date.now()]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Room not found or expired' });
