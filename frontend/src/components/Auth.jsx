@@ -36,9 +36,18 @@ export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState(null);
   const [message, setMessage] = useState('');
+
+  const validateEmail = (email) => {
+    return String(email)
+      .toLowerCase()
+      .match(
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      );
+  };
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -46,9 +55,18 @@ export default function Auth() {
     setError(null);
     setMessage('');
 
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address.');
+      setLoading(false);
+      return;
+    }
+
     try {
       if (isSignUp) {
         if (!fullName.trim()) { setError('Please enter your full name.'); setLoading(false); return; }
+        if (password.length < 6) { setError('Password must be at least 6 characters long.'); setLoading(false); return; }
+        if (password !== confirmPassword) { setError('Passwords do not match.'); setLoading(false); return; }
+        
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -123,6 +141,18 @@ export default function Auth() {
             required
             disabled={loading}
           />
+          {isSignUp && (
+            <InputRow
+              label="Confirm Password"
+              icon={Lock}
+              type="password"
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              disabled={loading}
+            />
+          )}
 
           {/* Error */}
           {error && (

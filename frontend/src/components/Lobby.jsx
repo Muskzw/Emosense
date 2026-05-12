@@ -50,6 +50,7 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
   const [roomId, setRoomId]       = useState('');
   const [copyLabel, setCopyLabel] = useState('copy');
   const [joinError, setJoinError] = useState('');
+  const [validationError, setValidationError] = useState('');
   const [joining, setJoining]     = useState(false);
   const [showProModal, setShowProModal] = useState(false);
 
@@ -92,13 +93,22 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
     });
   };
 
+  const validateSetup = () => {
+    setValidationError('');
+    if (!uName.trim()) { setValidationError('Please enter your name.'); return false; }
+    if (!ctx.trim()) { setValidationError('Please enter your country.'); return false; }
+    return true;
+  };
+
   const handleJoin = async () => {
-    if (!joinId.trim()) return;
+    if (!validateSetup()) return;
+    if (!joinId.trim()) { setJoinError('Please enter a room code.'); return; }
     setJoining(true);
     setJoinError('');
     try {
       const cleanId = joinId.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-      if (!cleanId) { setJoinError(t('roomNotFound')); setJoining(false); return; }
+      if (cleanId.length !== 6) { setJoinError('Room code must be exactly 6 characters.'); setJoining(false); return; }
+      
       const res = await fetch(`/api/rooms/${cleanId}`);
       if (!res.ok) { setJoinError(t('roomNotFound')); setJoining(false); return; }
       const contentType = res.headers.get('content-type');
@@ -115,7 +125,10 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
     }
   };
 
-  const handleStart = () => onStart({ uName, ctx, optIn });
+  const handleStart = () => {
+    if (!validateSetup()) return;
+    onStart({ uName, ctx, optIn });
+  };
 
   return (
     <div className="screen active" id="sLobby">
@@ -243,7 +256,7 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
           <div className="lob-fields">
             <div className="fl">
               <label className="fl-l">{t('yourName')}</label>
-              <input className="fi" type="text" value={uName} onChange={e => setUName(e.target.value)} />
+              <input className="fi" type="text" value={uName} onChange={e => { setUName(e.target.value); setValidationError(''); }} />
             </div>
             <div className="fl">
               <label className="fl-l">Your Country</label>
@@ -252,10 +265,16 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
                 type="text"
                 placeholder="e.g. Zimbabwe, China, USA…"
                 value={ctx}
-                onChange={e => setCtx(e.target.value)}
+                onChange={e => { setCtx(e.target.value); setValidationError(''); }}
               />
             </div>
           </div>
+
+          {validationError && (
+            <div style={{ color: 'var(--red)', fontSize: '13px', background: 'rgba(255,59,48,0.1)', padding: '10px 14px', borderRadius: '10px', marginBottom: '16px', border: '1px solid rgba(255,59,48,0.2)' }}>
+              ⚠ {validationError}
+            </div>
+          )}
 
           {/* Room section */}
           <div className="room-box">
