@@ -203,11 +203,13 @@ app.get('/health', (req, res) => {
 const ADJECTIVES = ['swift','bold','calm','bright','keen','wise','cool','warm','zeal','pure'];
 const NOUNS      = ['hawk','lion','crane','tiger','lotus','river','drum','stone','cloud','flame'];
 
-function generateCode() {
-  const adj  = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
-  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
-  const num  = Math.floor(Math.random() * 900) + 100;
-  return `${adj}-${noun}-${num}`;
+function generateRoomId() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
 }
 
 // POST /api/rooms  { peerId }  → { code }
@@ -228,15 +230,15 @@ app.post('/api/rooms', async (req, res) => {
 
     // Generate a unique code
     const tryInsert = async () => {
-      const code = generateCode();
+      const roomId = generateRoomId();
       const insertRes = await pool.query(
         `INSERT INTO room_codes (code, peer_id, expires_at) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
-        [code, peerId, expiresAt]
+        [roomId, peerId, expiresAt]
       );
       if (insertRes.rowCount === 0) return tryInsert(); // collision, try again
       
-      console.log(`[Room] ${code} -> ${peerId.slice(0,8)}...`);
-      res.json({ code });
+      console.log(`[Room] ${roomId} -> ${peerId.slice(0,8)}...`);
+      res.json({ code: roomId });
     };
     await tryInsert();
   } catch (err) {

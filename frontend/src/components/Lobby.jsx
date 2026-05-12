@@ -16,9 +16,9 @@ export default function Lobby({ onStart, webRTC, onDash }) {
 
   const [uName, setUName]         = useState(profile.uName || 'Tinashe Moyo');
   const [ctx, setCtx]             = useState(profile.ctx   || 'ZW-CN');
-  const [joinCode, setJoinCode]   = useState('');
+  const [joinId, setJoinId]       = useState('');
   const [optIn, setOptIn]         = useState(profile.optIn || false);
-  const [roomCode, setRoomCode]   = useState('');
+  const [roomId, setRoomId]       = useState('');
   const [copyLabel, setCopyLabel] = useState('copy');
   const [joinError, setJoinError] = useState('');
   const [joining, setJoining]     = useState(false);
@@ -33,33 +33,44 @@ export default function Lobby({ onStart, webRTC, onDash }) {
   }, [uName, ctx, optIn]);
 
   useEffect(() => {
-    if (!peerId || roomCode) return;
-    fetch('/api/rooms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ peerId }),
-    })
-      .then(r => r.json())
-      .then(data => { if (data.code) setRoomCode(data.code); })
-      .catch(() => setRoomCode('offline'));
-  }, [peerId, roomCode]);
+    if (!peerId || roomId) return;
+    
+    const registerRoom = async () => {
+      try {
+        const res = await fetch('/api/rooms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ peerId }),
+        });
+        if (!res.ok) throw new Error('Registration failed');
+        const data = await res.json();
+        if (data.code) setRoomId(data.code);
+        else throw new Error('No ID returned');
+      } catch (err) {
+        console.error('[Room Registration Error]', err);
+        setRoomId('offline');
+      }
+    };
+
+    registerRoom();
+  }, [peerId, roomId]);
 
   const handleCopy = () => {
-    if (!roomCode) return;
-    navigator.clipboard.writeText(roomCode).then(() => {
+    if (!roomId) return;
+    navigator.clipboard.writeText(roomId).then(() => {
       setCopyLabel(t('copied'));
       setTimeout(() => setCopyLabel(t('copy')), 2000);
     });
   };
 
   const handleJoin = async () => {
-    if (!joinCode.trim()) return;
+    if (!joinId.trim()) return;
     setJoining(true);
     setJoinError('');
     try {
-      const cleanCode = joinCode.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
-      if (!cleanCode) { setJoinError(t('roomNotFound')); setJoining(false); return; }
-      const res = await fetch(`/api/rooms/${cleanCode}`);
+      const cleanId = joinId.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (!cleanId) { setJoinError(t('roomNotFound')); setJoining(false); return; }
+      const res = await fetch(`/api/rooms/${cleanId}`);
       if (!res.ok) { setJoinError(t('roomNotFound')); setJoining(false); return; }
       const contentType = res.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
@@ -216,13 +227,13 @@ export default function Lobby({ onStart, webRTC, onDash }) {
           {/* Room section */}
           <div className="room-box">
             <div className="room-cols">
-              {/* Your room code */}
+              {/* Your room ID */}
               <div className="room-col">
-                <div className="rb-title">{t('yourRoomCode')}</div>
-                <div className="rb-id" style={{ color: roomCode ? 'var(--green)' : 'var(--muted)' }}>
-                  {roomCode || (peerId ? t('registering') : t('connecting'))}
+                <div className="rb-title">{t('yourRoomId')}</div>
+                <div className="rb-id" style={{ color: roomId ? 'var(--green)' : 'var(--muted)' }}>
+                  {roomId === 'offline' ? t('serverError') : (roomId || (peerId ? t('registering') : t('connecting')))}
                 </div>
-                <button className="rb-copy" onClick={handleCopy} disabled={!roomCode}>
+                <button className="rb-copy" onClick={handleCopy} disabled={!roomId || roomId === 'offline'}>
                   {copyLabel || t('copy')}
                 </button>
               </div>
@@ -241,11 +252,11 @@ export default function Lobby({ onStart, webRTC, onDash }) {
                   className="fi"
                   type="text"
                   placeholder={t('joinPlaceholder')}
-                  value={joinCode}
-                  onChange={e => { setJoinCode(e.target.value); setJoinError(''); }}
+                  value={joinId}
+                  onChange={e => { setJoinId(e.target.value); setJoinError(''); }}
                   onKeyDown={e => e.key === 'Enter' && handleJoin()}
                 />
-                <button className="btn-join full-w" onClick={handleJoin} disabled={joining || !joinCode.trim()}>
+                <button className="btn-join full-w" onClick={handleJoin} disabled={joining || !joinId.trim()}>
                   {joining ? '...' : t('join')}
                 </button>
                 {joinError && (

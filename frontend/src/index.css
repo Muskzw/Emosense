@@ -373,7 +373,7 @@ video{display:block;background:#000}
   .fi { padding: 12px 15px; font-size: 14px; }
   .fl-l { font-size: 11px; }
 
-  /* Room code section: side-by-side columns */
+  /* Room ID section: side-by-side columns */
   .room-cols {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
