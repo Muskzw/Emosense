@@ -2,6 +2,35 @@ import React, { useState } from 'react';
 import { supabase } from '../supabase';
 import { LogIn, UserPlus, Mail, Lock, User, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 
+// ── InputRow is defined OUTSIDE Auth so React never remounts inputs on re-render ──
+function InputRow({ label, icon: Icon, type, value, onChange, placeholder, required, disabled }) {
+  return (
+    <div className="fl">
+      <label className="fl-l">{label}</label>
+      <div style={{ position: 'relative' }}>
+        <input
+          type={type}
+          className="fi"
+          placeholder={placeholder}
+          value={value}
+          onChange={onChange}
+          required={required}
+          disabled={disabled}
+          autoComplete={type === 'password' ? 'current-password' : type === 'email' ? 'email' : 'name'}
+          style={{ paddingLeft: '40px' }}
+        />
+        <Icon
+          size={15}
+          style={{
+            position: 'absolute', left: '14px', top: '50%',
+            transform: 'translateY(-50%)', opacity: 0.4, pointerEvents: 'none',
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
@@ -43,25 +72,6 @@ export default function Auth() {
     }
   };
 
-  const InputRow = ({ label, icon: Icon, type, value, onChange, placeholder, required }) => (
-    <div className="fl">
-      <label className="fl-l">{label}</label>
-      <div style={{ position: 'relative' }}>
-        <input
-          type={type}
-          className="fi"
-          placeholder={placeholder}
-          value={value}
-          onChange={onChange}
-          required={required}
-          disabled={loading}
-          style={{ paddingLeft: '40px' }}
-        />
-        <Icon size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, pointerEvents: 'none' }} />
-      </div>
-    </div>
-  );
-
   return (
     <div className="screen active" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
       <div className="lob-card" style={{ maxWidth: '400px', width: '100%' }}>
@@ -90,6 +100,7 @@ export default function Auth() {
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               required
+              disabled={loading}
             />
           )}
           <InputRow
@@ -100,6 +111,7 @@ export default function Auth() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            disabled={loading}
           />
           <InputRow
             label="Password"
@@ -109,6 +121,7 @@ export default function Auth() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            disabled={loading}
           />
 
           {/* Error */}

@@ -1,27 +1,58 @@
 :root {
-  color-scheme: dark;
-  --bg: #0a0a0c;
-  --surf: #16161e;
+  color-scheme: light dark;
+
+  /* ── Default (dark) theme ── */
+  --bg:    #0a0a0c;
+  --surf:  #16161e;
   --surf2: #1c1c26;
-  --bd: rgba(255,255,255,0.08);
-  --bd2: rgba(255,255,255,0.14);
-  --bd3: rgba(255,255,255,0.25);
-  --txt: #f5f5f7;
+  --card-bg: rgba(20,20,30,0.85);
+  --bd:    rgba(255,255,255,0.08);
+  --bd2:   rgba(255,255,255,0.14);
+  --bd3:   rgba(255,255,255,0.25);
+  --txt:   #f5f5f7;
   --muted: rgba(255,255,255,0.5);
-  --dim: rgba(255,255,255,0.22);
+  --dim:   rgba(255,255,255,0.22);
   --green: #2ecc71;
-  --gd: rgba(46,204,113,0.1);
-  --gb: rgba(46,204,113,0.3);
-  --blue: #007aff;
-  --red: #ff3b30;
+  --gd:    rgba(46,204,113,0.1);
+  --gb:    rgba(46,204,113,0.3);
+  --blue:  #007aff;
+  --red:   #ff3b30;
   --amber: #ff9500;
   --slate: #8e8e93;
+  --input-bg: rgba(255,255,255,0.05);
+  --shadow: rgba(0,0,0,0.5);
   --mono: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   --st: env(safe-area-inset-top, 0px);
   --sb: env(safe-area-inset-bottom, 0px);
   --sl: env(safe-area-inset-left, 0px);
   --sr: env(safe-area-inset-right, 0px);
+}
+
+/* ── Light theme — applied when the system is in light mode ── */
+@media (prefers-color-scheme: light) {
+  :root {
+    color-scheme: light;
+    --bg:    #f2f2f7;
+    --surf:  #ffffff;
+    --surf2: #e8e8ed;
+    --card-bg: rgba(255,255,255,0.9);
+    --bd:    rgba(0,0,0,0.08);
+    --bd2:   rgba(0,0,0,0.12);
+    --bd3:   rgba(0,0,0,0.22);
+    --txt:   #1c1c1e;
+    --muted: rgba(0,0,0,0.45);
+    --dim:   rgba(0,0,0,0.28);
+    --green: #1aab56;
+    --gd:    rgba(26,171,86,0.1);
+    --gb:    rgba(26,171,86,0.3);
+    --blue:  #007aff;
+    --red:   #ff3b30;
+    --amber: #ff9500;
+    --slate: #6e6e73;
+    --input-bg: rgba(0,0,0,0.04);
+    --shadow: rgba(0,0,0,0.15);
+  }
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:var(--sans);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
@@ -46,7 +77,7 @@ video{display:block;background:#000}
 /* Mobile: single column centered card */
 .lob-desktop-wrap{width:100%;height:100%;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;padding:var(--st) 16px var(--sb)}
 .lob-hero{display:none}
-.lob-card{width:100%;max-width:440px;background:rgba(20,20,30,0.85);border:1px solid var(--bd);border-radius:16px;backdrop-filter:blur(32px) saturate(1.8);padding:24px;display:flex;flex-direction:column;gap:20px;max-height:calc(100svh - var(--st) - var(--sb) - 32px);overflow-y:auto;scrollbar-width:none;box-shadow: 0 32px 64px rgba(0,0,0,0.5)}
+.lob-card{width:100%;max-width:440px;background:var(--card-bg);border:1px solid var(--bd);border-radius:16px;backdrop-filter:blur(32px) saturate(1.8);padding:24px;display:flex;flex-direction:column;gap:20px;max-height:calc(100svh - var(--st) - var(--sb) - 32px);overflow-y:auto;scrollbar-width:none;box-shadow:0 32px 64px var(--shadow)}
 .lob-card::-webkit-scrollbar{display:none}
 .lob-card-hdr{display:flex;align-items:flex-start;justify-content:space-between}
 .lob-logo{display:flex;align-items:center;gap:12px}
@@ -63,12 +94,12 @@ video{display:block;background:#000}
 .lob-fields{display:flex;flex-direction:column;gap:14px}
 .fl{display:flex;flex-direction:column;gap:6px}
 .fl-l{font-size:10px;font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
-.fi{background:rgba(255,255,255,.05);border:.5px solid var(--bd2);border-radius:12px;padding:11px 14px;color:var(--txt);font-size:14px;font-family:var(--mono);transition:border-color .2s;width:100%;caret-color:var(--green);cursor:text;-webkit-text-fill-color:var(--txt)}
+.fi{background:var(--input-bg);border:.5px solid var(--bd2);border-radius:12px;padding:11px 14px;color:var(--txt);font-size:14px;font-family:var(--mono);transition:border-color .2s,box-shadow .2s;width:100%;caret-color:var(--green);cursor:text;-webkit-text-fill-color:var(--txt)}
 
-.fi:focus{border-color:var(--gb);box-shadow:0 0 0 3px rgba(46,204,113,0.12)}.fi::placeholder{color:var(--muted);-webkit-text-fill-color:var(--muted)}
+.fi:focus{border-color:var(--gb);box-shadow:0 0 0 3px rgba(46,204,113,0.15)}.fi::placeholder{color:var(--muted);-webkit-text-fill-color:var(--muted)}
 .ctx-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.ctx-c{border-radius:12px;border:.5px solid var(--bd2);background:rgba(255,255,255,.04);padding:12px 14px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;gap:4px;-webkit-tap-highlight-color:transparent}
-.ctx-c:hover{border-color:var(--bd3);background:rgba(255,255,255,.07)}.ctx-c.sel{border-color:var(--gb);background:var(--gd)}
+.ctx-c{border-radius:12px;border:.5px solid var(--bd2);background:var(--input-bg);padding:12px 14px;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;gap:4px;-webkit-tap-highlight-color:transparent}
+.ctx-c:hover{border-color:var(--bd3);background:var(--surf2)}.ctx-c.sel{border-color:var(--gb);background:var(--gd)}
 .ctx-flags{font-size:18px;line-height:1}.ctx-lbl{font-size:11px;font-family:var(--mono);color:var(--muted)}.ctx-c.sel .ctx-lbl{color:var(--green)}
 /* Room box — mobile stacks, desktop splits */
 .room-box{background:var(--surf2);border-radius:14px;padding:16px;border:.5px solid var(--bd2)}
@@ -379,12 +410,12 @@ video{display:block;background:#000}
     width: 100%;
     max-width: unset;
     max-height: calc(100vh - clamp(48px, 6vh, 96px));
-    background: rgba(10,10,22,.88);
-    border: 1px solid rgba(255,255,255,.09);
+    background: var(--card-bg);
+    border: 1px solid var(--bd);
     border-radius: 24px;
     padding: clamp(20px, 2.5vw, 32px);
     gap: clamp(12px, 1.5vh, 20px);
-    box-shadow: 0 24px 64px rgba(0,0,0,.7), 0 0 0 .5px rgba(255,255,255,.04) inset;
+    box-shadow: 0 24px 64px var(--shadow), 0 0 0 .5px var(--bd) inset;
     backdrop-filter: blur(40px) saturate(1.5);
     overflow-y: auto;
     margin-top: 0;
