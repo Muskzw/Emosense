@@ -8,6 +8,8 @@ import ReportView from './components/ReportView';
 import Dashboard from './components/Dashboard';
 import Landing from './components/Landing';
 import MirrorRoom from './components/MirrorRoom';
+import Auth from './components/Auth';
+import { supabase } from './supabase';
 
 export default function App() {
   const [screen, setScreen] = useState('sLanding');
@@ -19,6 +21,21 @@ export default function App() {
   const [liveData, setLiveData] = useState({ counts: { happy: 0, neutral: 0, sad: 0, angry: 0 }, timeline: [], voiceTriggers: [] });
 
   const [videoUrl, setVideoUrl] = useState(null);
+  const [session, setSession] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleRemoteEnd = useCallback(() => {
     console.log('[App] Remote end detected, transitioning to report');
@@ -58,11 +75,19 @@ export default function App() {
     <LangProvider>
       <div className="app-container">
         {screen === 'sLanding' && <Landing onLaunch={() => setScreen('sLobby')} />}
-        {screen === 'sLobby' && <Lobby onStart={handleStart} webRTC={webRTC} onDash={() => setScreen('sDashboard')} />}
-        {screen === 'sMirror' && <MirrorRoom webRTC={webRTC} sessionInfo={sessionInfo} onJoin={() => setScreen('sCall')} onBack={() => setScreen('sLobby')} />}
-        {screen === 'sCall' && <CallView onEnd={handleEnd} webRTC={webRTC} sessionInfo={sessionInfo} callSecs={callSecs} onDataUpdate={setLiveData} onVideoReady={setVideoUrl} />}
-        {screen === 'sReport' && <ReportView onBack={() => setScreen('sLobby')} emoCounts={emoCounts} duration={callSecs} sessionInfo={sessionInfo} timeline={timeline} voiceTriggers={voiceTriggers} videoData={videoUrl} />}
-        {screen === 'sDashboard' && <Dashboard onBack={() => setScreen('sLobby')} />}
+        
+        {/* Protected Screens */}
+        {!session && screen !== 'sLanding' && <Auth />}
+        
+        {session && (
+          <>
+            {screen === 'sLobby' && <Lobby onStart={handleStart} webRTC={webRTC} onDash={() => setScreen('sDashboard')} />}
+            {screen === 'sMirror' && <MirrorRoom webRTC={webRTC} sessionInfo={sessionInfo} onJoin={() => setScreen('sCall')} onBack={() => setScreen('sLobby')} />}
+            {screen === 'sCall' && <CallView onEnd={handleEnd} webRTC={webRTC} sessionInfo={sessionInfo} callSecs={callSecs} onDataUpdate={setLiveData} onVideoReady={setVideoUrl} />}
+            {screen === 'sReport' && <ReportView onBack={() => setScreen('sLobby')} emoCounts={emoCounts} duration={callSecs} sessionInfo={sessionInfo} timeline={timeline} voiceTriggers={voiceTriggers} videoData={videoUrl} />}
+            {screen === 'sDashboard' && <Dashboard onBack={() => setScreen('sLobby')} />}
+          </>
+        )}
       </div>
     </LangProvider>
   );
