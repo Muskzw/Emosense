@@ -29,6 +29,20 @@ function nameFromEmail(email) {
     .join(' ');
 }
 
+/**
+ * Detect country based on browser timezone.
+ */
+function detectCountry() {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz.includes('Harare')) return 'Zimbabwe';
+    if (tz.includes('Shanghai') || tz.includes('Chongqing') || tz.includes('Hong_Kong') || tz.includes('Urumqi')) return 'China';
+    return '';
+  } catch (e) {
+    return '';
+  }
+}
+
 export default function Lobby({ onStart, webRTC, onDash, session }) {
   const { t } = useLang();
   const profile = loadProfile();
@@ -40,7 +54,7 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
     nameFromEmail(session?.user?.email) ||
     '';
   const [uName, setUName]   = useState(profile.uName || authName || '');
-  const [ctx, setCtx]       = useState(profile.ctx   || '');
+  const [ctx, setCtx]       = useState(profile.ctx   || detectCountry() || '');
   // Sync authName into uName once on first load if profile was empty
   React.useEffect(() => {
     if (!profile.uName && authName && !uName) setUName(authName);
