@@ -1,7 +1,7 @@
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
 
-  /* ── Default (dark) theme ── */
+  /* ── Premium Dark Theme (Enforced) ── */
   --bg:    #0a0a0c;
   --surf:  #16161e;
   --surf2: #1c1c26;
@@ -27,32 +27,6 @@
   --sb: env(safe-area-inset-bottom, 0px);
   --sl: env(safe-area-inset-left, 0px);
   --sr: env(safe-area-inset-right, 0px);
-}
-
-/* ── Light theme — applied when the system is in light mode ── */
-@media (prefers-color-scheme: light) {
-  :root {
-    color-scheme: light;
-    --bg:    #f2f2f7;
-    --surf:  #ffffff;
-    --surf2: #e8e8ed;
-    --card-bg: rgba(255,255,255,0.9);
-    --bd:    rgba(0,0,0,0.08);
-    --bd2:   rgba(0,0,0,0.12);
-    --bd3:   rgba(0,0,0,0.22);
-    --txt:   #1c1c1e;
-    --muted: rgba(0,0,0,0.45);
-    --dim:   rgba(0,0,0,0.28);
-    --green: #1aab56;
-    --gd:    rgba(26,171,86,0.1);
-    --gb:    rgba(26,171,86,0.3);
-    --blue:  #007aff;
-    --red:   #ff3b30;
-    --amber: #ff9500;
-    --slate: #6e6e73;
-    --input-bg: rgba(0,0,0,0.04);
-    --shadow: rgba(0,0,0,0.15);
-  }
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:var(--sans);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
