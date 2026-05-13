@@ -123,11 +123,12 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
       const cleanId = joinId.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
       if (cleanId.length !== 6) { setJoinError('Room code must be exactly 6 characters.'); setJoining(false); return; }
       
-      const res = await fetch(`/api/rooms/${cleanId}`);
-      if (!res.ok) { setJoinError(t('roomNotFound')); setJoining(false); return; }
-      const contentType = res.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('Server returned non-JSON response');
+      const res = await fetch(`/api/rooms/${cleanId}?guestId=${peerId}`);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        setJoinError(errData.error || t('roomNotFound'));
+        setJoining(false);
+        return;
       }
       const { peerId: targetPeerId } = await res.json();
       // Defer joinCall to MirrorRoom. Just pass targetPeerId to sessionInfo.

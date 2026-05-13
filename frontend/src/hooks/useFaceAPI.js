@@ -77,8 +77,8 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
     canvas.width = 48; canvas.height = 48;
     ctx2d.drawImage(video, 0, 0, 48, 48);
     
-    const getCultureCode = (c) => {
-      const s = String(c || '').toLowerCase();
+    const getCultureCode = (ctx) => {
+      const s = String(ctx || '').toLowerCase();
       if (s.includes('china') || s.includes('chinese') || s.includes('cn')) return 'CN';
       if (s.includes('zimbabwe') || s.includes('zw')) return 'ZW';
       return 'INT';

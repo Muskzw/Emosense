@@ -148,6 +148,7 @@ const initDb = async () => {
       CREATE TABLE IF NOT EXISTS room_codes (
         code TEXT PRIMARY KEY,
         peer_id TEXT NOT NULL,
+        guest_peer_id TEXT,
         expires_at BIGINT NOT NULL
       )
     `);
@@ -255,16 +256,37 @@ app.post('/api/rooms', async (req, res) => {
 // GET /api/rooms/:code  → { peerId }
 app.get('/api/rooms/:code', async (req, res) => {
   const code = req.params.code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const { guestId } = req.query;
+
+  if (!guestId) {
+    return res.status(400).json({ error: 'guestId required' });
+  }
+
   try {
-    // We instantly expire the code upon successful read to prevent race conditions
-    // so no other user can join the same room code.
+    // 1. Try to lock the room to this guest if it's currently unassigned
+    await pool.query(
+      `UPDATE room_codes SET guest_peer_id = $1 WHERE code = $2 AND guest_peer_id IS NULL AND expires_at > $3`,
+      [guestId, code, Date.now()]
+    );
+
+    // 2. Retrieve the room, ensuring it's either unassigned (if UPDATE missed?) or assigned to this guest
     const result = await pool.query(
-      `UPDATE room_codes SET expires_at = 0 WHERE code = $1 AND expires_at > $2 RETURNING peer_id`, 
+      `SELECT peer_id, guest_peer_id FROM room_codes WHERE code = $1 AND expires_at > $2`, 
       [code, Date.now()]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Room not found or already in session' });
-    res.json({ peerId: result.rows[0].peer_id });
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Room not found or expired' });
+    }
+
+    const room = result.rows[0];
+    if (room.guest_peer_id !== guestId) {
+      return res.status(403).json({ error: 'Room is already in session with another peer' });
+    }
+
+    res.json({ peerId: room.peer_id });
   } catch (err) {
+    console.error('[Room Error]', err);
     res.status(500).json({ error: err.message });
   }
 });
