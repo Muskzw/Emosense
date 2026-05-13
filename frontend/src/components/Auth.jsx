@@ -1,53 +1,18 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabase';
-import { LogIn, UserPlus, Mail, Lock, User, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
-
-// ── InputRow is defined OUTSIDE Auth so React never remounts inputs on re-render ──
-function InputRow({ label, icon: Icon, type, value, onChange, placeholder, required, disabled }) {
-  return (
-    <div className="fl">
-      <label className="fl-l">{label}</label>
-      <div style={{ position: 'relative' }}>
-        <input
-          type={type}
-          className="fi"
-          placeholder={placeholder}
-          value={value}
-          onChange={onChange}
-          required={required}
-          disabled={disabled}
-          autoComplete={type === 'password' ? 'current-password' : type === 'email' ? 'email' : 'name'}
-          style={{ paddingLeft: '40px' }}
-        />
-        <Icon
-          size={15}
-          style={{
-            position: 'absolute', left: '14px', top: '50%',
-            transform: 'translateY(-50%)', opacity: 0.4, pointerEvents: 'none',
-          }}
-        />
-      </div>
-    </div>
-  );
-}
+import { LogIn, UserPlus, Mail, Lock, User, Loader2, AlertCircle, CheckCircle2, Building2, Briefcase, MapPin } from 'lucide-react';
 
 export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [org, setOrg] = useState('');
+  const [role, setRole] = useState('');
+  const [location, setLocation] = useState('Zimbabwe');
   const [error, setError] = useState(null);
   const [message, setMessage] = useState('');
-
-  const validateEmail = (email) => {
-    return String(email)
-      .toLowerCase()
-      .match(
-        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-      );
-  };
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -55,24 +20,18 @@ export default function Auth() {
     setError(null);
     setMessage('');
 
-    if (!validateEmail(email)) {
-      setError('Please enter a valid email address.');
-      setLoading(false);
-      return;
-    }
-
     try {
       if (isSignUp) {
         if (!fullName.trim()) { setError('Please enter your full name.'); setLoading(false); return; }
-        if (password.length < 6) { setError('Password must be at least 6 characters long.'); setLoading(false); return; }
-        if (password !== confirmPassword) { setError('Passwords do not match.'); setLoading(false); return; }
-        
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
               full_name: fullName.trim(),
+              organization: org.trim(),
+              role: role.trim(),
+              location: location,
               display_name: fullName.trim(),
             },
           },
@@ -90,9 +49,34 @@ export default function Auth() {
     }
   };
 
+  const InputRow = ({ label, icon: Icon, type, value, onChange, placeholder, required, options }) => (
+    <div className="fl">
+      <label className="fl-l">{label}</label>
+      <div style={{ position: 'relative' }}>
+        {type === 'select' ? (
+          <select className="fi" value={value} onChange={onChange} disabled={loading} style={{ paddingLeft: '40px' }}>
+            {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          </select>
+        ) : (
+          <input
+            type={type}
+            className="fi"
+            placeholder={placeholder}
+            value={value}
+            onChange={onChange}
+            required={required}
+            disabled={loading}
+            style={{ paddingLeft: '40px' }}
+          />
+        )}
+        <Icon size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, pointerEvents: 'none' }} />
+      </div>
+    </div>
+  );
+
   return (
-    <div className="screen active" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)' }}>
-      <div className="lob-card" style={{ maxWidth: '400px', width: '100%' }}>
+    <div className="screen active" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '20px' }}>
+      <div className="lob-card" style={{ maxWidth: '440px', width: '100%', maxHeight: '90svh', overflowY: 'auto' }}>
 
         {/* Header */}
         <div style={{ textAlign: 'center' }}>
@@ -100,27 +84,55 @@ export default function Auth() {
             {isSignUp ? <UserPlus size={22} color="var(--green)" /> : <LogIn size={22} color="var(--green)" />}
           </div>
           <h1 className="lob-title" style={{ fontSize: '22px' }}>
-            {isSignUp ? 'Create Account' : 'Welcome Back'}
+            {isSignUp ? 'Create Professional Profile' : 'Welcome Back'}
           </h1>
           <p className="lob-sub" style={{ marginTop: '6px' }}>
-            {isSignUp ? 'Sign up to start using EmoSense' : 'Sign in to continue your sessions'}
+            {isSignUp ? 'Join the EmoSense cross-cultural network' : 'Sign in to continue your sessions'}
           </p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleAuth} className="lob-fields" style={{ marginTop: '8px' }}>
+        <form onSubmit={handleAuth} className="lob-fields" style={{ marginTop: '16px' }}>
           {isSignUp && (
-            <InputRow
-              label="Full Name"
-              icon={User}
-              type="text"
-              placeholder="e.g. Tinashe Moyo"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              required
-              disabled={loading}
-            />
+            <>
+              <InputRow
+                label="Full Name"
+                icon={User}
+                type="text"
+                placeholder="e.g. Tinashe Moyo"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+              />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <InputRow
+                  label="Organization"
+                  icon={Building2}
+                  type="text"
+                  placeholder="Company name"
+                  value={org}
+                  onChange={(e) => setOrg(e.target.value)}
+                />
+                <InputRow
+                  label="Role"
+                  icon={Briefcase}
+                  type="text"
+                  placeholder="e.g. Director"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                />
+              </div>
+              <InputRow
+                label="Primary Location"
+                icon={MapPin}
+                type="select"
+                options={['Zimbabwe', 'China', 'Other']}
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+              />
+            </>
           )}
+          
           <InputRow
             label="Email Address"
             icon={Mail}
@@ -129,7 +141,6 @@ export default function Auth() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            disabled={loading}
           />
           <InputRow
             label="Password"
@@ -139,20 +150,7 @@ export default function Auth() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            disabled={loading}
           />
-          {isSignUp && (
-            <InputRow
-              label="Confirm Password"
-              icon={Lock}
-              type="password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              disabled={loading}
-            />
-          )}
 
           {/* Error */}
           {error && (
@@ -170,7 +168,7 @@ export default function Auth() {
             </div>
           )}
 
-          <button type="submit" className="btn-start" disabled={loading} style={{ marginTop: '4px' }}>
+          <button type="submit" className="btn-start" disabled={loading} style={{ marginTop: '8px' }}>
             {loading
               ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
               : isSignUp ? <UserPlus size={18} /> : <LogIn size={18} />
@@ -180,7 +178,7 @@ export default function Auth() {
         </form>
 
         {/* Toggle */}
-        <div style={{ textAlign: 'center', paddingTop: '4px' }}>
+        <div style={{ textAlign: 'center', paddingTop: '12px' }}>
           <button
             type="button"
             onClick={() => { setIsSignUp(!isSignUp); setError(null); setMessage(''); }}

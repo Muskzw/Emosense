@@ -47,14 +47,13 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
   const { t } = useLang();
   const profile = loadProfile();
 
-  // Pre-fill name: prefer Supabase metadata → saved profile → derive from email
-  const authName =
-    session?.user?.user_metadata?.full_name ||
-    session?.user?.user_metadata?.display_name ||
-    nameFromEmail(session?.user?.email) ||
-    '';
-  const [uName, setUName]   = useState(profile.uName || authName || '');
-  const [ctx, setCtx]       = useState(profile.ctx   || detectCountry() || '');
+  // CRITICAL FIX: Prioritize Supabase user metadata for the name
+  const meta = session?.user?.user_metadata || {};
+  const authName = meta.full_name || meta.display_name || '';
+  const authOrg = meta.organization ? `(${meta.organization})` : '';
+
+  const [uName, setUName]         = useState(authName || profile.uName || '');
+  const [ctx, setCtx]             = useState(profile.ctx   || detectCountry() || '');
   // Sync authName into uName once on first load if profile was empty
   React.useEffect(() => {
     if (!profile.uName && authName && !uName) setUName(authName);
@@ -121,15 +120,12 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
     setJoinError('');
     try {
       const cleanId = joinId.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-      if (cleanId.length !== 6) { setJoinError('Room code must be exactly 6 characters.'); setJoining(false); return; }
+      if (!cleanId) { setJoinError('Invalid ID'); setJoining(false); return; }
       
       const res = await fetch(`/api/rooms/${cleanId}?guestId=${peerId}`);
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        setJoinError(errData.error || t('roomNotFound'));
-        setJoining(false);
-        return;
-      }
+      if (res.status === 404) { setJoinError('Room not found or expired'); setJoining(false); return; }
+      if (!res.ok) { setJoinError('Server connection error'); setJoining(false); return; }
+      
       const { peerId: targetPeerId } = await res.json();
       // Defer joinCall to MirrorRoom. Just pass targetPeerId to sessionInfo.
       onStart({ uName, ctx, optIn, targetPeerId });
@@ -270,7 +266,7 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
           {/* Name + Context */}
           <div className="lob-fields">
             <div className="fl">
-              <label className="fl-l">{t('yourName')}</label>
+              <label className="fl-l">{t('yourName')} <span style={{ opacity: 0.5, fontSize: '10px' }}>{authOrg}</span></label>
               <input className="fi" type="text" value={uName} onChange={e => { setUName(e.target.value); setValidationError(''); }} />
             </div>
             <div className="fl">
