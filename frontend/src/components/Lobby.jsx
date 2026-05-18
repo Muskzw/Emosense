@@ -76,7 +76,7 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
   }, [uName, ctx, optIn]);
 
   useEffect(() => {
-    if (!peerId || roomId) return;
+    if (!peerId || (roomId && roomId !== 'offline')) return;
     
     const registerRoom = async () => {
       try {
@@ -116,6 +116,7 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
   const handleJoin = async () => {
     if (!validateSetup()) return;
     if (!joinId.trim()) { setJoinError('Please enter a room code.'); return; }
+    if (!peerId) { setJoinError('Connecting to server. Please wait...'); return; }
     setJoining(true);
     setJoinError('');
     try {
@@ -319,7 +320,7 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
                   onChange={e => { setJoinId(e.target.value); setJoinError(''); }}
                   onKeyDown={e => e.key === 'Enter' && handleJoin()}
                 />
-                <button className="btn-join full-w" onClick={handleJoin} disabled={joining || !joinId.trim()}>
+                <button className="btn-join full-w" onClick={handleJoin} disabled={joining || !joinId.trim() || !peerId}>
                   {joining ? '...' : t('join')}
                 </button>
                 {joinError && (
