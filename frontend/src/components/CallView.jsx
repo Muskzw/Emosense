@@ -488,7 +488,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
   useEffect(() => {
     const video = remoteVideoRef.current;
     if (video && remoteStream && isConnected) {
-      console.log('[CallView] Attaching remote stream');
+      console.log('[CallView] Attaching remote stream:', remoteStream.id);
       video.srcObject = remoteStream;
       
       const playVideo = async () => {
@@ -502,6 +502,25 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
         }
       };
       playVideo();
+
+      // Robust track handling: Trigger play refresh when tracks go active
+      const handleTrackEvent = () => {
+        console.log('[CallView] Track active/updated event fired');
+        video.srcObject = remoteStream;
+        playVideo();
+      };
+
+      remoteStream.getTracks().forEach(track => {
+        track.addEventListener('unmute', handleTrackEvent);
+        track.addEventListener('ended', handleTrackEvent);
+      });
+
+      return () => {
+        remoteStream.getTracks().forEach(track => {
+          track.removeEventListener('unmute', handleTrackEvent);
+          track.removeEventListener('ended', handleTrackEvent);
+        });
+      };
     }
   }, [remoteStream, isConnected]);
 
