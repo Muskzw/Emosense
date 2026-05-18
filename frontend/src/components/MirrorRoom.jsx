@@ -96,7 +96,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
       // Host starting
       try {
         await fetch(`/api/rooms/${sessionInfo.roomId}/start`, { method: 'POST' });
-      } catch(err) {
+      } catch (err) {
         console.error('Failed to mark room as active', err);
       }
     }
@@ -362,7 +362,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
 
         {/* ── HINT ── */}
         <div className="mr-hint">
-          Ensure your camera and mic are working before joining
+          Ensure your camera and mic are working before joining/ Starting a session.
         </div>
 
         {/* ── BOTTOM PANEL ── */}

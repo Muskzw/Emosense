@@ -48,7 +48,7 @@ function TimelineChart({ timeline }) {
 
   if (!timeline || timeline.length < 2) {
     return (
-      <div style={{ textAlign: 'center', padding: '32px', color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', fontSize: '12px' }}>
+      <div style={{ textAlign: 'center', padding: '32px', color: 'var(--dim)', fontFamily: 'monospace', fontSize: '12px' }}>
         Not enough data to render turn graph.<br/>
         <span style={{ fontSize: '10px' }}>Requires at least 2 interaction turns.</span>
       </div>
@@ -99,7 +99,7 @@ function TimelineChart({ timeline }) {
           return (
             <g key={label}>
               <line x1={pad + 20} y1={y} x2={W - pad} y2={y}
-                stroke="rgba(255,255,255,0.08)" strokeWidth="1" strokeDasharray="4 4" />
+                stroke="var(--bd2)" strokeWidth="1" strokeDasharray="4 4" />
               <text x={pad + 10} y={y + 3}
                 textAnchor="end" fill={color} fontSize="10" fontFamily="system-ui" fontWeight="600" opacity="0.8">
                 {label}
@@ -111,7 +111,7 @@ function TimelineChart({ timeline }) {
         {/* X axis ticks */}
         {ticks.map(({ x, label }) => (
           <text key={label} x={x} y={H - 2}
-            textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="9" fontFamily="monospace">
+            textAnchor="middle" fill="var(--dim)" fontSize="9" fontFamily="monospace">
             {label}
           </text>
         ))}
@@ -287,10 +287,10 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
   const getPct = (n) => ((n / total) * 100).toFixed(0);
 
   const cardStyle = {
-    background: 'rgba(255,255,255,0.05)',
+    background: 'var(--surf)',
     backdropFilter: 'blur(20px)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)',
+    border: '1px solid var(--bd2)',
+    boxShadow: '0 8px 32px var(--shadow)',
     borderRadius: '20px',
     padding: '20px',
   };
@@ -298,13 +298,13 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
   return (
     <div className="screen active" id="sReport" style={{
       overflowY: 'auto',
-      background: 'radial-gradient(ellipse at top, #1a1a2e 0%, #0a0a0f 100%)',
+      background: 'var(--bg)',
       fontFamily: 'system-ui, -apple-system, "SF Pro Display", sans-serif',
     }}>
       <div className="rep" style={{ margin: '0 auto', paddingBottom: '80px', paddingTop: '40px' }}>
         <div className="rh" style={{ marginBottom: '24px' }}>
           <div>
-            <div className="rh-t" style={{ color: 'white' }}>Session Report</div>
+            <div className="rh-t" style={{ color: 'var(--txt)' }}>Session Report</div>
             <div className="rh-m">{new Date().toLocaleString()}</div>
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -337,8 +337,8 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
           {/* Highlight Reel Player */}
           {videoData && (
             <div style={{ ...cardStyle, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ margin: 0, fontSize: '18px', color: 'white', display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <div style={{ padding: '20px', borderBottom: '1px solid var(--bd)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--txt)', display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <span style={{ fontSize: '20px' }}>🎬</span> Session Recording
                 </h3>
                 {validHighlights.length > 0 && (
@@ -354,7 +354,7 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
                 )}
               </div>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1px', background: 'rgba(255,255,255,0.08)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1px', background: 'var(--bd)' }}>
                 {/* Video Player */}
                 <div style={{ background: '#000', position: 'relative', display: 'flex' }}>
                   <video 
@@ -376,11 +376,11 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
                 </div>
 
                 {/* Highlight Markers */}
-                <div style={{ background: 'rgba(20,20,30,0.95)', overflowY: 'auto', maxHeight: '400px', padding: '12px' }}>
-                  <h4 style={{ color: 'rgba(255,255,255,0.5)', margin: '0 0 12px 4px', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Emotional Peaks ({validHighlights.length})</h4>
+                <div style={{ background: 'var(--surf2)', overflowY: 'auto', maxHeight: '400px', padding: '12px' }}>
+                  <h4 style={{ color: 'var(--muted)', margin: '0 0 12px 4px', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Emotional Peaks ({validHighlights.length})</h4>
                   
                   {validHighlights.length === 0 ? (
-                    <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px', padding: '12px 4px' }}>No significant emotional peaks recorded after the video started.</div>
+                    <div style={{ color: 'var(--dim)', fontSize: '13px', padding: '12px 4px' }}>No significant emotional peaks recorded after the video started.</div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {validHighlights.map((hl, i) => {
@@ -388,13 +388,13 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
                         const s = Math.floor(hl.relativeSecs % 60).toString().padStart(2, '0');
                         return (
                           <div key={i} onClick={() => handleSeek(hl.relativeSecs)} style={{
-                            padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)',
+                            padding: '12px', borderRadius: '8px', background: 'var(--surf2)',
                             borderLeft: `3px solid ${EMO_COLORS[hl.emotion]?.stroke || '#fff'}`, cursor: 'pointer',
                             transition: 'background 0.2s'
-                          }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}>
+                          }} onMouseEnter={e => e.currentTarget.style.background = 'var(--surf)'} onMouseLeave={e => e.currentTarget.style.background = 'var(--surf2)'}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                               <span style={{ fontSize: '12px', fontWeight: 'bold', color: EMO_COLORS[hl.emotion]?.stroke || '#fff' }}>{EMO_COLORS[hl.emotion]?.label || hl.emotion}</span>
-                              <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>{m}:{s}</span>
+                              <span style={{ fontSize: '12px', color: 'var(--muted)', fontFamily: 'monospace' }}>{m}:{s}</span>
                             </div>
                             <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', fontStyle: 'italic' }}>"{hl.text}"</div>
                           </div>
@@ -410,11 +410,11 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
           {/* Stats row */}
           <div className="r-st">
             <div style={cardStyle}>
-              <div className="rsc-v" style={{ color: 'white' }}>{Math.floor(duration / 60)}m {duration % 60}s</div>
+              <div className="rsc-v" style={{ color: 'var(--txt)' }}>{Math.floor(duration / 60)}m {duration % 60}s</div>
               <div className="rsc-l">DURATION</div>
             </div>
             <div style={cardStyle}>
-              <div className="rsc-v" style={{ color: 'white' }}>{total}</div>
+              <div className="rsc-v" style={{ color: 'var(--txt)' }}>{total}</div>
               <div className="rsc-l">DATA POINTS</div>
             </div>
             <div style={cardStyle}>
@@ -423,7 +423,56 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
             </div>
           </div>
 
-          {/* Timeline Chart */}
+          {/* ── Session Insights ── */}
+          {(() => {
+            const empathy = Math.round(((emoCounts.happy + emoCounts.neutral) / total) * 100);
+            const empColor = empathy >= 70 ? '#34c759' : empathy >= 50 ? '#8899bb' : '#ff3b30';
+            const empLabel = empathy >= 70 ? 'Positive' : empathy >= 50 ? 'Neutral' : 'High Friction';
+
+            // Emotional stability: fewer unique emotions = more stable
+            const half = Math.ceil((timeline || []).length / 2);
+            const firstHalf = (timeline || []).slice(0, half);
+            const secondHalf = (timeline || []).slice(half);
+            const calcEmp = (arr) => {
+              if (!arr.length) return 50;
+              const pos = arr.filter(t => t.emo === 'happy' || t.emo === 'neutral').length;
+              return Math.round((pos / arr.length) * 100);
+            };
+            const firstScore = calcEmp(firstHalf);
+            const secondScore = calcEmp(secondHalf);
+            const momentum = secondScore - firstScore;
+            const momentumLabel = momentum > 5 ? '↑ Improving' : momentum < -5 ? '↓ Declining' : '→ Stable';
+            const momentumColor = momentum > 5 ? '#34c759' : momentum < -5 ? '#ff3b30' : '#8899bb';
+
+            // Switches = number of emotion changes
+            let switches = 0;
+            (timeline || []).forEach((t, i) => { if (i > 0 && t.emo !== timeline[i-1].emo) switches++; });
+            const turnCount = (timeline || []).length;
+            const stabilityPct = turnCount > 1 ? Math.max(0, Math.round(100 - (switches / (turnCount - 1)) * 100)) : 100;
+            const stabilityLabel = stabilityPct >= 70 ? 'Consistent' : stabilityPct >= 40 ? 'Variable' : 'Volatile';
+            const stabilityColor = stabilityPct >= 70 ? '#34c759' : stabilityPct >= 40 ? '#8899bb' : '#ff3b30';
+
+            const metric = (val, label, sub, color) => (
+              <div style={{ flex: 1, minWidth: '120px', padding: '16px', background: 'var(--surf2)', borderRadius: '14px', textAlign: 'center' }}>
+                <div style={{ fontSize: '28px', fontWeight: '800', color, letterSpacing: '-1px', lineHeight: 1 }}>{val}</div>
+                <div style={{ fontSize: '11px', fontWeight: '700', color: 'var(--txt)', marginTop: '6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
+                <div style={{ fontSize: '10px', color, marginTop: '3px', fontWeight: '600' }}>{sub}</div>
+              </div>
+            );
+
+            return (
+              <div style={{ ...cardStyle, marginBottom: 0 }}>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '16px' }}>📊 Session Insights</div>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  {metric(`${empathy}%`, 'Empathy Score', empLabel, empColor)}
+                  {metric(momentumLabel, 'Call Momentum', `${firstScore}% → ${secondScore}%`, momentumColor)}
+                  {metric(`${stabilityPct}%`, 'Emotional Stability', stabilityLabel, stabilityColor)}
+                  {metric(switches, 'Emotion Shifts', `across ${turnCount} turns`, 'var(--blue)')}
+                </div>
+              </div>
+            );
+          })()}
+
           <div style={cardStyle}>
             <div className="rc-t" style={{ marginBottom: '16px' }}>Emotion Timeline</div>
             <TimelineChart timeline={timeline} />
@@ -440,8 +489,8 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
                 { key: 'angry', label: 'Angry', color: '#ff3b30', bgColor: 'rgba(255,59,48,0.15)' },
               ].map(({ key, label, color, bgColor }) => (
                 <div key={key} className="ecr">
-                  <div className="ecl" style={{ color: 'rgba(255,255,255,0.6)' }}>{label}</div>
-                  <div className="ect" style={{ background: 'rgba(255,255,255,0.06)', borderRadius: '999px' }}>
+                  <div className="ecl" style={{ color: 'var(--muted)' }}>{label}</div>
+                  <div className="ect" style={{ background: 'var(--surf2)', borderRadius: '999px' }}>
                     <div style={{
                       height: '100%', borderRadius: '999px',
                       background: bgColor, color,
@@ -476,11 +525,11 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
                    
                    return (
                      <div key={i} style={{ padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', borderLeft: `3px solid ${stroke}` }}>
-                       <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.9)' }}>
-                         When they said: <span style={{ fontStyle: 'italic', color: 'rgba(255,255,255,0.6)' }}>"{trig.text}"</span>
+                       <div style={{ fontSize: '13px', color: 'var(--txt)' }}>
+                         When they said: <span style={{ fontStyle: 'italic', color: 'var(--muted)' }}>"{trig.text}"</span>
                        </div>
                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
-                         <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>They showed:</span>
+                         <span style={{ fontSize: '11px', color: 'var(--muted)' }}>They showed:</span>
                          <span style={{ fontSize: '11px', fontWeight: '700', color: stroke, textTransform: 'uppercase' }}>{trig.emotion}</span>
                        </div>
                        <div style={{ fontSize: '11px', color: 'rgba(255,215,0,0.8)', marginTop: '8px', background: 'rgba(255,215,0,0.05)', padding: '6px 8px', borderRadius: '6px' }}>
@@ -499,8 +548,8 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
               <div className="ir-dot" style={{ background: '#34c759', boxShadow: '0 0 6px #34c759' }} />
               <span className="ir-t" style={{ color: '#34c759' }}>AI Follow-up Strategy</span>
             </div>
-            <div className="ir-item" style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '10px', padding: '12px', marginTop: '8px' }}>
-              <div className="ir-txt" style={{ fontSize: '13px', lineHeight: '1.65', color: 'rgba(255,255,255,0.7)' }}
+            <div className="ir-item" style={{ background: 'var(--surf2)', borderRadius: '10px', padding: '12px', marginTop: '8px' }}>
+              <div className="ir-txt" style={{ fontSize: '13px', lineHeight: '1.65', color: 'var(--txt)' }}
                 dangerouslySetInnerHTML={{ __html: strategy }} />
             </div>
           </div>
@@ -520,7 +569,7 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
                     border: `1px solid ${tagColor}55`, background: `${tagColor}18`, color: tagColor,
                     whiteSpace: 'nowrap', flexShrink: 0, marginTop: '1px'
                   }}>{tag}</span>
-                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}
+                  <span style={{ fontSize: '11px', color: 'var(--muted)', lineHeight: 1.6 }}
                     dangerouslySetInnerHTML={{ __html: text }} />
                 </div>
               ))}
