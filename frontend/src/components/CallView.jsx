@@ -732,22 +732,38 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
               </div>
               <div style={S.hudDivider} />
               <div style={S.emoRow}>
-                {Object.entries(EMO).map(([k, v]) => {
-                  const cnt = emoCounts[k] || 0;
+                {(() => {
                   const total = getEmoTotal();
-                  const pct = total > 0 ? Math.round((cnt / total) * 100) : 0;
-                  return (
-                    <div key={k} style={S.emoItem}>
-                      <div style={S.emoHead}>
-                        <span style={S.emoName}>{v.n}</span>
-                        <span style={S.emoPct}>{pct}%</span>
+                  let sumPct = 0;
+                  let maxKey = null;
+                  let maxVal = -1;
+                  const pcts = {};
+                  Object.keys(EMO).forEach(k => {
+                    const cnt = emoCounts[k] || 0;
+                    const pct = total > 0 ? Math.round((cnt / total) * 100) : 0;
+                    pcts[k] = pct;
+                    sumPct += pct;
+                    if (pct > maxVal) { maxVal = pct; maxKey = k; }
+                  });
+                  if (sumPct !== 100 && sumPct > 0 && maxKey) {
+                    pcts[maxKey] += (100 - sumPct);
+                  }
+                  
+                  return Object.entries(EMO).map(([k, v]) => {
+                    const pct = pcts[k] || 0;
+                    return (
+                      <div key={k} style={S.emoItem}>
+                        <div style={S.emoHead}>
+                          <span style={S.emoName}>{v.n}</span>
+                          <span style={S.emoPct}>{pct}%</span>
+                        </div>
+                        <div style={S.emoTrack}>
+                          <div style={{ height: '100%', width: `${pct}%`, background: v.c, transition: 'width 0.3s ease, background 0.3s ease', borderRadius: '999px' }} />
+                        </div>
                       </div>
-                      <div style={S.emoTrack}>
-                        <div style={{ height: '100%', width: `${pct}%`, background: v.c, transition: 'width 0.3s ease, background 0.3s ease', borderRadius: '999px' }} />
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  });
+                })()}
               </div>
             </div>
 

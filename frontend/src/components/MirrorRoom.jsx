@@ -17,7 +17,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
   }, []);
 
   const { modelsLoaded, curEmo } = useFaceAPI(
-    localVideoRef, svgRef, canvasRef, true, sessionInfo.ctx, sessionInfo.optIn
+    localVideoRef, null, canvasRef, true, sessionInfo.ctx, sessionInfo.optIn
   );
 
   useEffect(() => {
@@ -457,7 +457,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
               <button 
                 className="mr-btn-primary" 
                 onClick={handleJoinClick}
-                disabled={!modelsLoaded || joiningState}
+                disabled={!modelsLoaded || !faceStream || joiningState}
               >
                 {joiningState ? (
                   <><div className="mr-spinner" style={{ width: '18px', height: '18px', borderWidth: '2px', borderColor: 'rgba(255,255,255,0.5)', borderTopColor: 'white' }} /> Connecting...</>
