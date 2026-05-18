@@ -128,7 +128,7 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
       
       const { peerId: targetPeerId } = await res.json();
       // Defer joinCall to MirrorRoom. Just pass targetPeerId to sessionInfo.
-      onStart({ uName, ctx, optIn, targetPeerId });
+      onStart({ uName, ctx, optIn, targetPeerId, roomId: cleanId });
     } catch (err) {
       console.error('[Join Error]', err);
       setJoinError(t('serverError'));
@@ -138,7 +138,7 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
 
   const handleStart = () => {
     if (!validateSetup()) return;
-    onStart({ uName, ctx, optIn });
+    onStart({ uName, ctx, optIn, roomId });
   };
 
   return (

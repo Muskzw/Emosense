@@ -7,6 +7,8 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
   const svgRef = useRef(null);
   const canvasRef = useRef(null);
   const [micLevel, setMicLevel] = useState(0);
+  const [joinError, setJoinError] = useState('');
+  const [joiningState, setJoiningState] = useState(false);
 
   const { modelsLoaded, curEmo } = useFaceAPI(
     localVideoRef, svgRef, canvasRef, true, sessionInfo.ctx, sessionInfo.optIn
@@ -47,9 +49,33 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
     };
   }, [faceStream]);
 
-  const handleJoinClick = () => {
+  const handleJoinClick = async () => {
+    setJoiningState(true);
+    setJoinError('');
+
     if (sessionInfo.targetPeerId) {
+      // Guest joining
+      try {
+        const res = await fetch(`/api/rooms/${sessionInfo.roomId}/status`);
+        if (!res.ok) throw new Error('Failed to fetch status');
+        const data = await res.json();
+        
+        if (data.status !== 'active') {
+          setJoinError("The meeting has not yet started. Please wait for the host.");
+          setJoiningState(false);
+          return;
+        }
+      } catch (err) {
+        console.error('Status check error:', err);
+      }
       webRTC.joinCall(sessionInfo.targetPeerId, sessionInfo.uName);
+    } else {
+      // Host starting
+      try {
+        await fetch(`/api/rooms/${sessionInfo.roomId}/start`, { method: 'POST' });
+      } catch(err) {
+        console.error('Failed to mark room as active', err);
+      }
     }
     onJoin();
   };
@@ -334,13 +360,20 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           <div className="mr-divider" />
 
           {/* Join / Start button */}
-          <button
-            className={`mr-join-btn ${modelsLoaded ? 'ready' : 'waiting'}`}
-            onClick={handleJoinClick}
-            disabled={!modelsLoaded}
-          >
-            {isHost ? 'Start Session →' : 'Join Session →'}
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', flexShrink: 0 }}>
+            <button
+              className={`mr-join-btn ${(modelsLoaded && !joiningState) ? 'ready' : 'waiting'}`}
+              onClick={handleJoinClick}
+              disabled={!modelsLoaded || joiningState}
+            >
+              {joiningState ? '...' : (isHost ? 'Start Session →' : 'Join Session →')}
+            </button>
+            {joinError && (
+              <div style={{ color: 'var(--red)', fontSize: '12px', fontWeight: '500' }}>
+                ⚠ {joinError}
+              </div>
+            )}
+          </div>
 
         </div>
       </div>

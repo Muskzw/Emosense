@@ -149,9 +149,11 @@ const initDb = async () => {
         code TEXT PRIMARY KEY,
         peer_id TEXT NOT NULL,
         guest_peer_id TEXT,
-        expires_at BIGINT NOT NULL
+        expires_at BIGINT NOT NULL,
+        status TEXT DEFAULT 'waiting'
       )
     `);
+    await pool.query(`ALTER TABLE room_codes ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'waiting'`);
     // Clean up expired codes on startup
     await pool.query(`DELETE FROM room_codes WHERE expires_at < $1`, [Date.now()]);
     console.log('[Postgres] Tables initialized.');
@@ -205,7 +207,8 @@ app.get('/health', (req, res) => {
   });
 });
 
-// ── ROOM CODE REGISTRY (SQLite-backed) ─────────────────────
+// ── ROOM CODE REGISTRY (Postgres + Memory Fallback) ─────────────────────
+let memoryRooms = {};
 const ADJECTIVES = ['swift','bold','calm','bright','keen','wise','cool','warm','zeal','pure'];
 const NOUNS      = ['hawk','lion','crane','tiger','lotus','river','drum','stone','cloud','flame'];
 
@@ -238,7 +241,7 @@ app.post('/api/rooms', async (req, res) => {
     const tryInsert = async () => {
       const roomId = generateRoomId();
       const insertRes = await pool.query(
-        `INSERT INTO room_codes (code, peer_id, expires_at) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+        `INSERT INTO room_codes (code, peer_id, expires_at, status) VALUES ($1, $2, $3, 'waiting') ON CONFLICT DO NOTHING`,
         [roomId, peerId, expiresAt]
       );
       if (insertRes.rowCount === 0) return tryInsert(); // collision, try again
@@ -248,8 +251,20 @@ app.post('/api/rooms', async (req, res) => {
     };
     await tryInsert();
   } catch (err) {
-    console.error('[Room Error]', err);
-    res.status(500).json({ error: err.message });
+    console.warn('[Room Error] Falling back to memory', err.message);
+    
+    // Clean up memory
+    for (const k of Object.keys(memoryRooms)) {
+      if (memoryRooms[k].expires_at < now) delete memoryRooms[k];
+    }
+    
+    let existingCode = Object.keys(memoryRooms).find(k => memoryRooms[k].peer_id === peerId);
+    if (existingCode) return res.json({ code: existingCode });
+
+    const roomId = generateRoomId();
+    memoryRooms[roomId] = { peer_id: peerId, expires_at: expiresAt, guest_peer_id: null, status: 'waiting' };
+    console.log(`[Room-Mem] ${roomId} -> ${peerId.slice(0,8)}...`);
+    res.json({ code: roomId });
   }
 });
 
@@ -286,7 +301,44 @@ app.get('/api/rooms/:code', async (req, res) => {
 
     res.json({ peerId: room.peer_id });
   } catch (err) {
-    console.error('[Room Error]', err);
+    // FALLBACK to memory
+    const room = memoryRooms[code];
+    if (!room || room.expires_at < Date.now()) {
+      return res.status(404).json({ error: 'Room not found or expired' });
+    }
+    if (!room.guest_peer_id) room.guest_peer_id = guestId;
+    if (room.guest_peer_id !== guestId) {
+      return res.status(403).json({ error: 'Room is already in session' });
+    }
+    res.json({ peerId: room.peer_id });
+  }
+});
+
+// POST /api/rooms/:code/start → Mark room as active
+app.post('/api/rooms/:code/start', async (req, res) => {
+  const code = req.params.code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  try {
+    await pool.query(`UPDATE room_codes SET status = 'active' WHERE code = $1`, [code]);
+    res.json({ ok: true });
+  } catch (err) {
+    if (memoryRooms[code]) {
+      memoryRooms[code].status = 'active';
+    }
+    res.json({ ok: true });
+  }
+});
+
+// GET /api/rooms/:code/status → Get room status
+app.get('/api/rooms/:code/status', async (req, res) => {
+  const code = req.params.code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  try {
+    const result = await pool.query(`SELECT status FROM room_codes WHERE code = $1`, [code]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+    res.json({ status: result.rows[0].status });
+  } catch (err) {
+    if (memoryRooms[code]) {
+      return res.json({ status: memoryRooms[code].status });
+    }
     res.status(500).json({ error: err.message });
   }
 });
