@@ -289,7 +289,15 @@ app.get('/api/rooms/:code', async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Room not found or expired' });
+      const memRoom = memoryRooms[code];
+      if (!memRoom || memRoom.expires_at < Date.now()) {
+        return res.status(404).json({ error: 'Room not found or expired' });
+      }
+      if (!memRoom.guest_peer_id) memRoom.guest_peer_id = guestId;
+      if (memRoom.guest_peer_id !== guestId) {
+        return res.status(403).json({ error: 'Room is already in session' });
+      }
+      return res.json({ peerId: memRoom.peer_id });
     }
 
     const room = result.rows[0];
@@ -316,7 +324,10 @@ app.get('/api/rooms/:code', async (req, res) => {
 app.post('/api/rooms/:code/start', async (req, res) => {
   const code = req.params.code.trim().toLowerCase().replace(/[^a-z0-9\-]/g, '');
   try {
-    await pool.query(`UPDATE room_codes SET status = 'active' WHERE code = $1`, [code]);
+    const result = await pool.query(`UPDATE room_codes SET status = 'active' WHERE code = $1`, [code]);
+    if (result.rowCount === 0 && memoryRooms[code]) {
+      memoryRooms[code].status = 'active';
+    }
     res.json({ ok: true });
   } catch (err) {
     if (memoryRooms[code]) {
@@ -331,7 +342,12 @@ app.get('/api/rooms/:code/status', async (req, res) => {
   const code = req.params.code.trim().toLowerCase().replace(/[^a-z0-9\-]/g, '');
   try {
     const result = await pool.query(`SELECT status FROM room_codes WHERE code = $1`, [code]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+    if (result.rows.length === 0) {
+      if (memoryRooms[code]) {
+        return res.json({ status: memoryRooms[code].status });
+      }
+      return res.status(404).json({ error: 'Not found' });
+    }
     res.json({ status: result.rows[0].status });
   } catch (err) {
     if (memoryRooms[code]) {
