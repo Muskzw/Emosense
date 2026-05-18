@@ -18,7 +18,7 @@ function EmpathyLineGraph({ sessions }) {
   const [hovered, setHovered] = useState(null);
 
   if (sessions.length < 2) return (
-    <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>
+    <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--dim)', fontSize: '13px' }}>
       Complete at least 2 meaningful calls to see your trend line.
     </div>
   );
@@ -43,7 +43,7 @@ function EmpathyLineGraph({ sessions }) {
       {/* Y-axis labels */}
       <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '36px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', paddingTop: '4px', paddingBottom: '4px' }}>
         {[100, 75, 50, 25].map(v => (
-          <span key={v} style={{ fontSize: '9px', color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', textAlign: 'right', paddingRight: '6px' }}>{v}%</span>
+          <span key={v} style={{ fontSize: '9px', color: 'var(--dim)', fontFamily: 'monospace', textAlign: 'right', paddingRight: '6px' }}>{v}%</span>
         ))}
       </div>
 
@@ -59,7 +59,7 @@ function EmpathyLineGraph({ sessions }) {
           {/* Grid lines */}
           {yLines.map(v => (
             <line key={v} x1={padX} y1={toY(v)} x2={W - padX} y2={toY(v)}
-              stroke="rgba(255,255,255,0.06)" strokeWidth="0.5" strokeDasharray="2 2" />
+              stroke="var(--bd)" strokeWidth="0.5" strokeDasharray="2 2" />
           ))}
 
           {/* Area fill */}
@@ -83,17 +83,18 @@ function EmpathyLineGraph({ sessions }) {
             position: 'absolute',
             top: `${(toY(scores[hovered]) / 60) * 180 - 52}px`,
             left: `calc(${(toX(scores[hovered]) / 100) * 100}% - 52px)`,
-            background: 'rgba(20,20,30,0.95)', border: '1px solid rgba(255,255,255,0.15)',
+            background: 'var(--surf)', border: '1px solid var(--bd)',
             borderRadius: '10px', padding: '8px 12px', pointerEvents: 'none', zIndex: 10,
-            backdropFilter: 'blur(10px)', minWidth: '104px', textAlign: 'center'
+            backdropFilter: 'blur(10px)', minWidth: '104px', textAlign: 'center',
+            boxShadow: '0 4px 12px var(--shadow)'
           }}>
             <div style={{ fontSize: '18px', fontWeight: '800', color: scores[hovered] >= 70 ? '#3dffa0' : scores[hovered] >= 50 ? '#8899bb' : '#ff6b6b' }}>
               {scores[hovered]}%
             </div>
-            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', marginTop: '2px' }}>
+            <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '2px' }}>
               Empathy · Session {hovered + 1}
             </div>
-            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.35)', marginTop: '1px' }}>
+            <div style={{ fontSize: '10px', color: 'var(--dim)', marginTop: '1px' }}>
               {new Date(sessions[hovered].ts).toLocaleDateString()}
             </div>
           </div>
@@ -102,7 +103,7 @@ function EmpathyLineGraph({ sessions }) {
         {/* X-axis session labels */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', paddingLeft: '2px', paddingRight: '2px' }}>
           {sessions.map((s, i) => (
-            <span key={i} style={{ fontSize: '9px', color: i === hovered ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.25)', fontFamily: 'monospace', transition: 'color 0.2s' }}>
+            <span key={i} style={{ fontSize: '9px', color: i === hovered ? 'var(--txt)' : 'var(--dim)', fontFamily: 'monospace', transition: 'color 0.2s' }}>
               #{i + 1}
             </span>
           ))}
@@ -201,7 +202,7 @@ export default function Dashboard({ onBack, session }) {
                 <span style={{ fontSize: '18px' }}>{m.icon}</span>
               </div>
               <div style={{ fontSize: '34px', fontWeight: '800', color: m.color || 'var(--txt)', letterSpacing: '-1px', lineHeight: 1 }}>{m.val}</div>
-              {m.sub && <div style={{ marginTop: '8px', fontSize: '11px', color: m.color || 'rgba(255,255,255,0.4)', opacity: 0.8 }}>{m.sub}</div>}
+              {m.sub && <div style={{ marginTop: '8px', fontSize: '11px', color: m.color || 'var(--dim)', opacity: 0.8 }}>{m.sub}</div>}
             </div>
           ))}
         </div>
@@ -259,18 +260,18 @@ export default function Dashboard({ onBack, session }) {
               return (
                 <div key={s.id} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px',
-                  padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+                  padding: '16px 20px', background: 'var(--surf2)', border: '1px solid var(--bd2)',
                   borderRadius: '14px', transition: 'background 0.2s'
                 }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--surf)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'var(--surf2)'}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{
                       width: '36px', height: '36px', borderRadius: '10px',
-                      background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center',
+                      background: 'var(--surf)', display: 'flex', alignItems: 'center',
                       justifyContent: 'center', fontSize: '14px', fontWeight: '800',
-                      color: 'rgba(255,255,255,0.4)', flexShrink: 0
+                      color: 'var(--dim)', flexShrink: 0
                     }}>
                       {sessions.length - idx}
                     </div>

@@ -17,7 +17,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
   }, []);
 
   const { modelsLoaded, curEmo } = useFaceAPI(
-    localVideoRef, null, canvasRef, true, sessionInfo.ctx, sessionInfo.optIn
+    localVideoRef, svgRef, canvasRef, true, sessionInfo.ctx, sessionInfo.optIn
   );
 
   useEffect(() => {
@@ -211,9 +211,8 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
 
         .mr-emo-glass {
           position: absolute;
-          bottom: 24px;
-          left: 50%;
-          transform: translateX(-50%);
+          top: 24px;
+          right: 24px;
           background: rgba(10, 10, 15, 0.7);
           backdrop-filter: blur(24px) saturate(150%);
           border: 1px solid rgba(255,255,255,0.1);
