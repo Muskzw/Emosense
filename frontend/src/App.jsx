@@ -51,7 +51,7 @@ export default function App() {
     setScreen('sReport');
   }, []); // no deps needed — reads from ref
 
-  const webRTC = useWebRTC(handleRemoteEnd);
+  const webRTC = useWebRTC(handleRemoteEnd, sessionInfo?.uName);
 
   useEffect(() => {
     let int;
@@ -61,6 +61,9 @@ export default function App() {
       setCallSecs(0);
       setVideoUrl(null);
       setLiveData({ counts: { happy: 0, neutral: 0, sad: 0, angry: 0 }, timeline: [], voiceTriggers: [] });
+      if (webRTC.isConnected || webRTC.remoteStream) {
+        webRTC.endCall();
+      }
     }
     return () => clearInterval(int);
   }, [screen, webRTC.isConnected]);

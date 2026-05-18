@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Peer from 'peerjs';
 
-export function useWebRTC(onRemoteEnd) {
+export function useWebRTC(onRemoteEnd, localName) {
   const [peerId, setPeerId] = useState('');
   const [remoteName, setRemoteName] = useState('Remote peer');
   const [isConnected, setIsConnected] = useState(false);
@@ -17,10 +17,12 @@ export function useWebRTC(onRemoteEnd) {
   const remoteVideoRef = useRef(null);
   const localVideoRef = useRef(null);
   const onRemoteEndRef = useRef(onRemoteEnd);
+  const localNameRef = useRef(localName);
 
   useEffect(() => {
     onRemoteEndRef.current = onRemoteEnd;
-  }, [onRemoteEnd]);
+    localNameRef.current = localName;
+  }, [onRemoteEnd, localName]);
 
   useEffect(() => {
     if (peerRef.current && !peerRef.current.destroyed) return; // Already initialized
@@ -63,6 +65,11 @@ export function useWebRTC(onRemoteEnd) {
       peer.on('connection', conn => {
         connRef.current = conn;
         conn.on('data', handleData);
+        conn.on('open', () => {
+          if (localNameRef.current) {
+            conn.send({ name: localNameRef.current });
+          }
+        });
       });
       
       peerRef.current = peer;

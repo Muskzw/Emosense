@@ -2,14 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useFaceAPI, EMO } from '../hooks/useFaceAPI';
 
 export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
-  const { startCamera, faceStream } = webRTC;
-  const localVideoRef = useRef(null);
+  const { startCamera, faceStream, localVideoRef, isConnected } = webRTC;
   const svgRef = useRef(null);
   const canvasRef = useRef(null);
   const [micLevel, setMicLevel] = useState(0);
   const [joinError, setJoinError] = useState('');
   const [joiningState, setJoiningState] = useState(false);
   const [waitingForHost, setWaitingForHost] = useState(false);
+  const [waitingForStream, setWaitingForStream] = useState(false);
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
     setJoinError('');
 
     if (sessionInfo.targetPeerId) {
-      // Guest joining
+      // Guest joining — poll until host marks the room active
       setWaitingForHost(true);
       try {
         let active = false;
@@ -91,17 +91,27 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
         setJoiningState(false);
         return;
       }
+      // Initiate the WebRTC call and wait for stream before switching screens
       webRTC.joinCall(sessionInfo.targetPeerId, sessionInfo.uName);
+      setWaitingForStream(true);
+      // onJoin() will be called by the useEffect watching isConnected below
     } else {
-      // Host starting
+      // Host starting — mark room active then enter call screen
       try {
         await fetch(`/api/rooms/${sessionInfo.roomId}/start`, { method: 'POST' });
       } catch (err) {
         console.error('Failed to mark room as active', err);
       }
+      onJoin();
     }
-    onJoin();
   };
+
+  // Guest: once WebRTC reports connected, transition to the call screen
+  useEffect(() => {
+    if (waitingForStream && isConnected) {
+      if (isMounted.current) onJoin();
+    }
+  }, [isConnected, waitingForStream]);
 
   const isHost = !sessionInfo.targetPeerId;
   const eConf = EMO[curEmo] || EMO.neutral;
