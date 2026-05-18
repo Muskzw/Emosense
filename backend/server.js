@@ -141,7 +141,8 @@ const initDb = async () => {
         happy INTEGER,
         neutral INTEGER,
         sad INTEGER,
-        angry INTEGER
+        angry INTEGER,
+        user_id TEXT
       )
     `);
     await pool.query(`
@@ -154,6 +155,7 @@ const initDb = async () => {
       )
     `);
     await pool.query(`ALTER TABLE room_codes ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'waiting'`);
+    await pool.query(`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_id TEXT`);
     // Clean up expired codes on startup
     await pool.query(`DELETE FROM room_codes WHERE expires_at < $1`, [Date.now()]);
     console.log('[Postgres] Tables initialized.');
@@ -164,12 +166,12 @@ const initDb = async () => {
 initDb();
 
 app.post('/api/session', async (req, res) => {
-  const { duration, ctx, emoCounts } = req.body;
+  const { duration, ctx, emoCounts, userId } = req.body;
   const ts = new Date().toISOString();
   
   try {
     const result = await pool.query(
-      `INSERT INTO sessions (ts, duration, ctx, happy, neutral, sad, angry) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+      `INSERT INTO sessions (ts, duration, ctx, happy, neutral, sad, angry, user_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
       [
         ts, 
         duration || 0, 
@@ -177,10 +179,11 @@ app.post('/api/session', async (req, res) => {
         emoCounts?.happy || 0, 
         emoCounts?.neutral || 0, 
         emoCounts?.sad || 0, 
-        emoCounts?.angry || 0
+        emoCounts?.angry || 0,
+        userId || null
       ]
     );
-    console.log('[Session Saved]', result.rows[0].id);
+    console.log('[Session Saved]', result.rows[0].id, 'user:', userId);
     res.json({ ok: true, id: result.rows[0].id });
   } catch (err) {
     console.error('[Session Error]', err);
@@ -190,7 +193,13 @@ app.post('/api/session', async (req, res) => {
 
 app.get('/api/sessions', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM sessions ORDER BY id DESC');
+    const { userId } = req.query;
+    let result;
+    if (userId) {
+      result = await pool.query('SELECT * FROM sessions WHERE user_id = $1 ORDER BY id DESC', [userId]);
+    } else {
+      result = await pool.query('SELECT * FROM sessions ORDER BY id DESC');
+    }
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });

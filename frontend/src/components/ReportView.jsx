@@ -267,7 +267,7 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
     fetch('/api/session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ duration, emoCounts, ctx })
+      body: JSON.stringify({ duration, emoCounts, ctx, userId: session?.user?.id || null })
     }).catch(e => console.error(e));
   }, [duration, emoCounts, sessionInfo]);
 

@@ -112,12 +112,14 @@ function EmpathyLineGraph({ sessions }) {
   );
 }
 
-export default function Dashboard({ onBack }) {
+export default function Dashboard({ onBack, session }) {
   const [allSessions, setAllSessions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const userId = session?.user?.id;
 
   useEffect(() => {
-    fetch('/api/sessions')
+    const url = userId ? `/api/sessions?userId=${userId}` : '/api/sessions';
+    fetch(url)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) setAllSessions(data);
@@ -125,7 +127,7 @@ export default function Dashboard({ onBack }) {
         setLoading(false);
       })
       .catch(e => { console.error('[Dashboard] Fetch error:', e); setLoading(false); });
-  }, []);
+  }, [userId]);
 
   // Only meaningful sessions (>= 1 minute)
   const sessions = allSessions.filter(s => s.duration >= MIN_DURATION);
@@ -146,33 +148,39 @@ export default function Dashboard({ onBack }) {
   const chartSessions = sessions.slice(0, 12).reverse();
 
   const cardStyle = {
-    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: '20px', padding: '24px', boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+    background: 'var(--surf)',
+    border: '1px solid var(--bd2)',
+    borderRadius: '20px',
+    padding: '24px',
+    boxShadow: '0 8px 32px var(--shadow)'
   };
 
   return (
     <div className="screen active" style={{
-      overflowY: 'auto', background: 'radial-gradient(circle at top right, #1a1a2e 0%, #0a0a0f 100%)',
-      fontFamily: 'system-ui, -apple-system, sans-serif', minHeight: '100vh', paddingBottom: '80px'
+      overflowY: 'auto',
+      background: 'var(--bg)',
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      minHeight: '100vh',
+      paddingBottom: '80px'
     }}>
       <div style={{ maxWidth: '960px', margin: '0 auto', padding: '40px 20px' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
           <div>
-            <h1 style={{ margin: '0 0 6px', fontSize: '32px', fontWeight: '800', color: 'white', letterSpacing: '-1px' }}>Analytics</h1>
-            <p style={{ margin: 0, color: 'rgba(255,255,255,0.4)', fontSize: '14px' }}>
-              Showing <strong style={{ color: 'rgba(255,255,255,0.7)' }}>{totalCalls}</strong> meaningful call{totalCalls !== 1 ? 's' : ''} (≥ 1 minute)
+            <h1 style={{ margin: '0 0 6px', fontSize: '32px', fontWeight: '800', color: 'var(--txt)', letterSpacing: '-1px' }}>Analytics</h1>
+            <p style={{ margin: 0, color: 'var(--muted)', fontSize: '14px' }}>
+              Showing <strong style={{ color: 'var(--txt)' }}>{totalCalls}</strong> meaningful call{totalCalls !== 1 ? 's' : ''} (≥ 1 minute)
               {allSessions.length > totalCalls && (
-                <span style={{ color: 'rgba(255,255,255,0.3)' }}>
+                <span style={{ color: 'var(--dim)' }}>
                   {' · '}{allSessions.length - totalCalls} short test call{allSessions.length - totalCalls !== 1 ? 's' : ''} hidden
                 </span>
               )}
             </p>
           </div>
           <button onClick={onBack} style={{
-            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-            color: 'white', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', fontWeight: '600', fontSize: '14px'
+            background: 'var(--surf)', border: '1px solid var(--bd2)',
+            color: 'var(--txt)', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', fontWeight: '600', fontSize: '14px'
           }}>← Back</button>
         </div>
 
@@ -189,10 +197,10 @@ export default function Dashboard({ onBack }) {
           ].map((m, i) => (
             <div key={i} style={cardStyle}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{m.label}</span>
+                <span style={{ color: 'var(--muted)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{m.label}</span>
                 <span style={{ fontSize: '18px' }}>{m.icon}</span>
               </div>
-              <div style={{ fontSize: '34px', fontWeight: '800', color: m.color || 'white', letterSpacing: '-1px', lineHeight: 1 }}>{m.val}</div>
+              <div style={{ fontSize: '34px', fontWeight: '800', color: m.color || 'var(--txt)', letterSpacing: '-1px', lineHeight: 1 }}>{m.val}</div>
               {m.sub && <div style={{ marginTop: '8px', fontSize: '11px', color: m.color || 'rgba(255,255,255,0.4)', opacity: 0.8 }}>{m.sub}</div>}
             </div>
           ))}
@@ -202,14 +210,14 @@ export default function Dashboard({ onBack }) {
         <div style={{ ...cardStyle, marginBottom: '32px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
             <div>
-              <h3 style={{ margin: '0 0 4px', color: 'white', fontSize: '16px', fontWeight: '700' }}>Empathy Score Trend</h3>
-              <p style={{ margin: 0, fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
+              <h3 style={{ margin: '0 0 4px', color: 'var(--txt)', fontSize: '16px', fontWeight: '700' }}>Empathy Score Trend</h3>
+              <p style={{ margin: 0, fontSize: '12px', color: 'var(--muted)' }}>
                 % of positive emotions (happy + neutral) per session · hover a dot for details
               </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-              <div style={{ width: '24px', height: '2px', background: '#3dffa0', borderRadius: '1px' }} />
-              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>Empathy %</span>
+              <div style={{ width: '24px', height: '2px', background: 'var(--green)', borderRadius: '1px' }} />
+              <span style={{ fontSize: '11px', color: 'var(--muted)' }}>Empathy %</span>
             </div>
           </div>
 
@@ -224,7 +232,7 @@ export default function Dashboard({ onBack }) {
               ].map(r => (
                 <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: r.color, flexShrink: 0 }} />
-                  <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)' }}>{r.label}</span>
+                  <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{r.label}</span>
                 </div>
               ))}
             </div>
@@ -232,14 +240,14 @@ export default function Dashboard({ onBack }) {
         </div>
 
         {/* Session History */}
-        <h3 style={{ margin: '0 0 16px', color: 'white', fontSize: '16px', fontWeight: '700' }}>Session History</h3>
+        <h3 style={{ margin: '0 0 16px', color: 'var(--txt)', fontSize: '16px', fontWeight: '700' }}>Session History</h3>
         {loading ? (
-          <div style={{ color: 'rgba(255,255,255,0.4)', padding: '40px', textAlign: 'center' }}>Loading...</div>
+          <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading...</div>
         ) : sessions.length === 0 ? (
-          <div style={{ ...cardStyle, textAlign: 'center', color: 'rgba(255,255,255,0.35)', padding: '48px 24px', fontSize: '14px', lineHeight: 1.7 }}>
+          <div style={{ ...cardStyle, textAlign: 'center', color: 'var(--muted)', padding: '48px 24px', fontSize: '14px', lineHeight: 1.7 }}>
             <div style={{ fontSize: '32px', marginBottom: '12px' }}>📞</div>
             No meaningful sessions yet.<br />
-            <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.25)' }}>Sessions shorter than 1 minute are excluded as test calls.</span>
+            <span style={{ fontSize: '12px', color: 'var(--dim)' }}>Sessions shorter than 1 minute are excluded as test calls.</span>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -267,8 +275,8 @@ export default function Dashboard({ onBack }) {
                       {sessions.length - idx}
                     </div>
                     <div>
-                      <div style={{ color: 'white', fontWeight: '600', fontSize: '14px' }}>{s.ctx || 'ZW-CN'} Session</div>
-                      <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', marginTop: '2px' }}>
+                      <div style={{ color: 'var(--txt)', fontWeight: '600', fontSize: '14px' }}>{s.ctx || 'ZW-CN'} Session</div>
+                      <div style={{ color: 'var(--muted)', fontSize: '12px', marginTop: '2px' }}>
                         {d.toLocaleDateString()} at {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
@@ -276,15 +284,15 @@ export default function Dashboard({ onBack }) {
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>Duration</div>
-                      <div style={{ color: 'white', fontWeight: '600', fontSize: '13px' }}>{fmt(s.duration)}</div>
+                      <div style={{ color: 'var(--dim)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>Duration</div>
+                      <div style={{ color: 'var(--txt)', fontWeight: '600', fontSize: '13px' }}>{fmt(s.duration)}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>Dominant</div>
+                      <div style={{ color: 'var(--dim)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>Dominant</div>
                       <div style={{ color: EMO_COLORS[topEmoKey].color, fontWeight: '700', fontSize: '13px', textTransform: 'capitalize' }}>{topEmoKey}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>Empathy</div>
+                      <div style={{ color: 'var(--dim)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>Empathy</div>
                       <div style={{ color: posScore >= 70 ? '#3dffa0' : posScore >= 50 ? '#8899bb' : '#ff6b6b', fontWeight: '700', fontSize: '13px' }}>{posScore}%</div>
                     </div>
                   </div>
