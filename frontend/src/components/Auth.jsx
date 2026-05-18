@@ -2,6 +2,31 @@ import React, { useState } from 'react';
 import { supabase } from '../supabase';
 import { LogIn, UserPlus, Mail, Lock, User, Loader2, AlertCircle, CheckCircle2, Building2, Briefcase, MapPin } from 'lucide-react';
 
+const InputRow = ({ label, icon: Icon, type, value, onChange, placeholder, required, options, disabled }) => (
+  <div className="fl">
+    <label className="fl-l">{label}</label>
+    <div style={{ position: 'relative' }}>
+      {type === 'select' ? (
+        <select className="fi" value={value} onChange={onChange} disabled={disabled} style={{ paddingLeft: '40px' }}>
+          {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+        </select>
+      ) : (
+        <input
+          type={type}
+          className="fi"
+          placeholder={placeholder}
+          value={value}
+          onChange={onChange}
+          required={required}
+          disabled={disabled}
+          style={{ paddingLeft: '40px' }}
+        />
+      )}
+      <Icon size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, pointerEvents: 'none' }} />
+    </div>
+  </div>
+);
+
 export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
@@ -49,30 +74,7 @@ export default function Auth() {
     }
   };
 
-  const InputRow = ({ label, icon: Icon, type, value, onChange, placeholder, required, options }) => (
-    <div className="fl">
-      <label className="fl-l">{label}</label>
-      <div style={{ position: 'relative' }}>
-        {type === 'select' ? (
-          <select className="fi" value={value} onChange={onChange} disabled={loading} style={{ paddingLeft: '40px' }}>
-            {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-          </select>
-        ) : (
-          <input
-            type={type}
-            className="fi"
-            placeholder={placeholder}
-            value={value}
-            onChange={onChange}
-            required={required}
-            disabled={loading}
-            style={{ paddingLeft: '40px' }}
-          />
-        )}
-        <Icon size={15} style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', opacity: 0.4, pointerEvents: 'none' }} />
-      </div>
-    </div>
-  );
+  };
 
   return (
     <div className="screen active" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '20px' }}>
@@ -103,6 +105,7 @@ export default function Auth() {
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
+                disabled={loading}
               />
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <InputRow
@@ -112,6 +115,7 @@ export default function Auth() {
                   placeholder="Company name"
                   value={org}
                   onChange={(e) => setOrg(e.target.value)}
+                  disabled={loading}
                 />
                 <InputRow
                   label="Role"
@@ -120,6 +124,7 @@ export default function Auth() {
                   placeholder="e.g. Director"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
+                  disabled={loading}
                 />
               </div>
               <InputRow
@@ -129,6 +134,7 @@ export default function Auth() {
                 options={['Zimbabwe', 'China', 'Other']}
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
+                disabled={loading}
               />
             </>
           )}
@@ -141,6 +147,7 @@ export default function Auth() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            disabled={loading}
           />
           <InputRow
             label="Password"
@@ -150,6 +157,7 @@ export default function Auth() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            disabled={loading}
           />
 
           {/* Error */}
