@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import './index.css';
+import { useTheme } from './hooks/useTheme';
 import { useWebRTC } from './hooks/useWebRTC';
 import { LangProvider } from './context/LangContext';
 import Lobby from './components/Lobby';
@@ -12,6 +13,7 @@ import Auth from './components/Auth';
 import { supabase } from './supabase';
 
 export default function App() {
+  const theme = useTheme();
   const [screen, setScreen] = useState('sLanding');
   const [sessionInfo, setSessionInfo] = useState({});
   const [emoCounts, setEmoCounts] = useState({ happy: 0, neutral: 0, sad: 0, angry: 0 });
