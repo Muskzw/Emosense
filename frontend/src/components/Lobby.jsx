@@ -131,7 +131,8 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
     setJoining(true);
     setJoinError('');
     try {
-      const cleanId = joinId.trim().toLowerCase().replace(/[^a-z0-9\-]/g, '');
+      // Replace spaces with dashes first, then strip anything that isn't a-z, 0-9, or dash
+      const cleanId = joinId.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
       if (!cleanId) { setJoinError('Invalid ID'); setJoining(false); return; }
       
       const res = await fetch(`/api/rooms/${cleanId}?guestId=${peerId}`);
