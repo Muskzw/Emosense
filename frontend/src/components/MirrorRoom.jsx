@@ -60,7 +60,6 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
     setJoinError('');
 
     if (sessionInfo.targetPeerId) {
-      // Guest joining — poll until host marks the room active
       setWaitingForHost(true);
       try {
         let active = false;
@@ -91,12 +90,9 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
         setJoiningState(false);
         return;
       }
-      // Initiate the WebRTC call and wait for stream before switching screens
       webRTC.joinCall(sessionInfo.targetPeerId, sessionInfo.uName);
       setWaitingForStream(true);
-      // onJoin() will be called by the useEffect watching isConnected below
     } else {
-      // Host starting — mark room active then enter call screen
       try {
         await fetch(`/api/rooms/${sessionInfo.roomId}/start`, { method: 'POST' });
       } catch (err) {
@@ -106,7 +102,6 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
     }
   };
 
-  // Guest: once WebRTC reports connected, transition to the call screen
   useEffect(() => {
     if (waitingForStream && isConnected) {
       if (isMounted.current) onJoin();
@@ -119,75 +114,93 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
   return (
     <div className="screen active" style={{
       display: 'flex', flexDirection: 'column',
-      background: 'var(--bg)',
+      background: 'radial-gradient(ellipse at top, #1a1a2e 0%, #0a0a0f 100%)',
       fontFamily: 'system-ui, -apple-system, sans-serif',
-      color: 'var(--txt)',
+      color: 'white',
       overflow: 'hidden',
+      position: 'fixed',
+      inset: 0
     }}>
       <style>{`
         @keyframes spin { 100% { transform: rotate(360deg); } }
-        @keyframes micPulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.05); opacity: 1; } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
-        .mr-wrap {
-          display: flex;
-          flex-direction: column;
-          flex: 1;
-          min-height: 0;
-          overflow: hidden;
+        .mr-bg-glow {
+          position: absolute;
+          top: 50%; left: 50%;
+          width: 800px; height: 800px;
+          transform: translate(-50%, -50%);
+          background: radial-gradient(circle, ${eConf.c}11 0%, transparent 70%);
+          pointer-events: none;
+          transition: background 1s ease;
+          z-index: 0;
         }
 
-        /* ── TOP NAV BAR ── */
-        .mr-nav {
+        .mr-top {
+          position: relative;
+          z-index: 10;
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 12px 16px;
-          padding-top: calc(12px + env(safe-area-inset-top));
-          border-bottom: 0.5px solid var(--bd);
-          background: var(--surf);
-          flex-shrink: 0;
+          justify-content: space-between;
+          padding: max(24px, env(safe-area-inset-top)) 32px 0;
         }
-        .mr-back-btn {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          background: var(--surf2);
-          border: 0.5px solid var(--bd2);
-          color: var(--txt);
-          padding: 8px 14px;
-          border-radius: 10px;
-          cursor: pointer;
-          font-size: 13px;
+        
+        .mr-back {
+          background: rgba(255,255,255,0.05);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255,255,255,0.1);
+          color: white;
+          padding: 10px 18px;
+          border-radius: 12px;
           font-weight: 600;
-          font-family: inherit;
-          transition: background 0.2s;
-          flex-shrink: 0;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
-        .mr-back-btn:active { background: var(--bd2); }
-        .mr-nav-title {
-          flex: 1;
-          text-align: center;
-          font-size: 16px;
+        .mr-back:hover { background: rgba(255,255,255,0.1); transform: translateX(-2px); }
+
+        .mr-title {
+          font-size: 18px;
           font-weight: 700;
           letter-spacing: -0.02em;
+          text-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
-        .mr-nav-spacer { width: 80px; flex-shrink: 0; }
 
-        /* ── VIDEO AREA (fills available space) ── */
-        .mr-video-area {
+        .mr-main {
           flex: 1;
-          min-height: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          z-index: 10;
+          padding: 20px;
+        }
+
+        .mr-video-container {
+          width: 100%;
+          max-width: 900px;
+          aspect-ratio: 16/9;
+          border-radius: 32px;
+          overflow: hidden;
           position: relative;
           background: #000;
-          overflow: hidden;
+          box-shadow: 0 40px 120px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
+          animation: float 6s ease-in-out infinite;
         }
-        .mr-video-area video {
+
+        .mr-video-container video {
           width: 100%;
           height: 100%;
           object-fit: cover;
           transform: scaleX(-1);
         }
-        .mr-video-area svg {
+
+        .mr-video-container svg {
           position: absolute;
           inset: 0;
           width: 100%;
@@ -196,227 +209,266 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           pointer-events: none;
         }
 
-        /* Emotion badge — pinned bottom-center of video */
-        .mr-emo-badge {
+        .mr-emo-glass {
           position: absolute;
-          bottom: 20px;
+          bottom: 24px;
           left: 50%;
           transform: translateX(-50%);
+          background: rgba(10, 10, 15, 0.7);
+          backdrop-filter: blur(24px) saturate(150%);
+          border: 1px solid rgba(255,255,255,0.1);
+          padding: 12px 24px;
+          border-radius: 999px;
           display: flex;
           align-items: center;
-          gap: 10px;
-          background: rgba(10,10,15,0.82);
-          backdrop-filter: blur(16px);
-          border-radius: 999px;
-          padding: 10px 20px;
-          white-space: nowrap;
-          box-shadow: 0 4px 24px rgba(0,0,0,0.4);
-        }
-        .mr-emo-dot {
-          width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
-        }
-        .mr-emo-label {
-          font-size: 14px; font-weight: 700; letter-spacing: 0.06em; color: white;
+          gap: 12px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+          transition: all 0.3s ease;
         }
 
-        /* AI loading overlay */
+        .mr-emo-dot {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          box-shadow: 0 0 12px currentColor;
+        }
+
+        .mr-emo-text {
+          font-weight: 800;
+          font-size: 15px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
         .mr-loading {
-          position: absolute; inset: 0;
-          background: rgba(0,0,0,0.65);
-          display: flex; align-items: center; justify-content: center;
-          backdrop-filter: blur(8px);
+          position: absolute;
+          inset: 0;
+          background: rgba(10,10,15,0.8);
+          backdrop-filter: blur(12px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 20;
         }
-        .mr-loading span {
-          color: #ffb347; font-weight: 700; font-size: 15px;
-          display: flex; align-items: center; gap: 10px;
-        }
+
         .mr-spinner {
-          width: 16px; height: 16px;
-          border: 2.5px solid #ffb347;
+          width: 24px; height: 24px;
+          border: 3px solid #ffb347;
           border-top-color: transparent;
           border-radius: 50%;
-          animation: spin 0.8s linear infinite;
+          animation: spin 1s linear infinite;
         }
 
-        /* ── BOTTOM PANEL ── */
-        .mr-bottom {
-          flex-shrink: 0;
-          background: var(--surf);
-          border-top: 0.5px solid var(--bd);
-          padding: 16px;
-          padding-bottom: calc(16px + env(safe-area-inset-bottom));
+        .mr-controls {
+          margin-top: 40px;
+          width: 100%;
+          max-width: 900px;
+          background: rgba(255,255,255,0.03);
+          backdrop-filter: blur(30px) saturate(180%);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 24px;
+          padding: 24px 32px;
           display: flex;
           align-items: center;
-          gap: 16px;
+          gap: 32px;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.4);
         }
 
-        /* Mic meter */
-        .mr-mic {
+        .mr-mic-wrap {
           flex: 1;
           display: flex;
           flex-direction: column;
-          gap: 6px;
-          min-width: 0;
+          gap: 10px;
         }
-        .mr-mic-row {
+
+        .mr-mic-header {
           display: flex;
           justify-content: space-between;
-          font-size: 11px;
-          font-family: var(--mono);
+          font-size: 12px;
           font-weight: 700;
-          letter-spacing: 0.06em;
-          color: var(--muted);
+          letter-spacing: 0.1em;
+          color: rgba(255,255,255,0.5);
+          text-transform: uppercase;
         }
-        .mr-mic-status { color: var(--green); }
-        .mr-mic-track {
-          height: 5px;
-          background: var(--bd2);
+
+        .mr-mic-bar {
+          height: 8px;
+          background: rgba(255,255,255,0.06);
           border-radius: 999px;
           overflow: hidden;
+          position: relative;
         }
+
         .mr-mic-fill {
           height: 100%;
           border-radius: 999px;
-          transition: width 0.1s ease;
+          transition: width 0.1s ease, background 0.2s ease;
+          box-shadow: 0 0 10px currentColor;
         }
 
-        /* Divider */
-        .mr-divider {
-          width: 0.5px;
-          height: 36px;
-          background: var(--bd2);
-          flex-shrink: 0;
-        }
-
-        /* Join button */
-        .mr-join-btn {
-          flex-shrink: 0;
-          padding: 14px 24px;
-          border-radius: 14px;
-          border: none;
-          font-size: 15px;
-          font-weight: 700;
-          font-family: inherit;
-          cursor: pointer;
+        .mr-action-wrap {
           display: flex;
-          align-items: center;
-          gap: 8px;
-          transition: all 0.2s;
-          white-space: nowrap;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 10px;
         }
-        .mr-join-btn:active { transform: scale(0.96); }
-        .mr-join-btn.ready {
+
+        .mr-btn-primary {
           background: linear-gradient(135deg, #5b9cf6 0%, #3a7bd5 100%);
           color: white;
-          box-shadow: 0 8px 24px rgba(91,156,246,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+          border: none;
+          padding: 16px 32px;
+          border-radius: 16px;
+          font-size: 16px;
+          font-weight: 800;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 0 10px 30px rgba(91,156,246,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          white-space: nowrap;
         }
-        .mr-join-btn.waiting {
-          background: var(--surf2);
-          color: var(--muted);
+
+        .mr-btn-primary:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 15px 35px rgba(91,156,246,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+
+        .mr-btn-primary:active:not(:disabled) {
+          transform: scale(0.96);
+        }
+
+        .mr-btn-primary:disabled {
+          background: rgba(255,255,255,0.05);
+          color: rgba(255,255,255,0.3);
+          box-shadow: none;
           cursor: not-allowed;
         }
 
-        /* Sub-hint text */
-        .mr-hint {
-          text-align: center;
-          font-size: 11px;
-          font-family: var(--mono);
-          color: var(--muted);
-          padding: 0 16px 8px;
-          flex-shrink: 0;
+        .mr-btn-cancel {
+          background: rgba(255,59,48,0.1);
+          color: #ff3b30;
+          border: 1px solid rgba(255,59,48,0.3);
+          padding: 16px 32px;
+          border-radius: 16px;
+          font-size: 16px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .mr-btn-cancel:hover { background: rgba(255,59,48,0.2); }
+
+        @media (max-width: 768px) {
+          .mr-video-container { border-radius: 20px; animation: none; }
+          .mr-controls { flex-direction: column; padding: 20px; gap: 20px; }
+          .mr-action-wrap { width: 100%; align-items: stretch; }
+          .mr-btn-primary { justify-content: center; }
         }
       `}</style>
 
-      <div className="mr-wrap">
+      {/* Dynamic Background Glow */}
+      <div className="mr-bg-glow" />
 
-        {/* ── TOP NAV ── */}
-        <div className="mr-nav">
-          <button className="mr-back-btn" onClick={onBack}>
-            ← Back
-          </button>
-          <div className="mr-nav-title">Check Your Setup</div>
-          <div className="mr-nav-spacer" />
-        </div>
+      {/* TOP NAV */}
+      <div className="mr-top">
+        <button className="mr-back" onClick={onBack}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Leave
+        </button>
+        <div className="mr-title">Equipment Check</div>
+        <div style={{ width: '84px' }} /> {/* Spacer */}
+      </div>
 
-        {/* ── VIDEO (fills all remaining space) ── */}
-        <div className="mr-video-area">
+      {/* MAIN CONTENT */}
+      <div className="mr-main">
+        
+        {/* VIDEO CONTAINER */}
+        <div className="mr-video-container">
           <video ref={localVideoRef} autoPlay muted playsInline />
           <svg ref={svgRef} />
           <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-          {/* Emotion badge */}
-          <div className="mr-emo-badge" style={{ border: `1px solid ${eConf.c}66` }}>
-            <div className="mr-emo-dot" style={{ background: eConf.c, boxShadow: `0 0 8px ${eConf.c}` }} />
-            <span className="mr-emo-label" style={{ color: eConf.c }}>
-              AI SENSOR: {eConf.n.toUpperCase()}
-            </span>
+          {/* AI Emotion Badge */}
+          <div className="mr-emo-glass" style={{ border: `1px solid ${eConf.c}44` }}>
+            <div className="mr-emo-dot" style={{ background: eConf.c, color: eConf.c }} />
+            <div className="mr-emo-text" style={{ color: eConf.c }}>
+              AI Sensor: {eConf.n}
+            </div>
           </div>
 
-          {/* AI loading overlay */}
+          {/* Loading Overlay */}
           {!modelsLoaded && (
             <div className="mr-loading">
-              <span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#ffb347', fontWeight: '700', fontSize: '16px' }}>
                 <div className="mr-spinner" />
-                Initializing AI Models…
-              </span>
+                Initializing AI Models...
+              </div>
             </div>
           )}
 
+          {/* Waiting for Host Overlay */}
           {waitingForHost && (
-            <div className="mr-emo-badge" style={{ bottom: '70px', border: '1px solid rgba(255,179,71,0.4)', background: 'rgba(255,179,71,0.1)' }}>
-              <div className="mr-spinner" style={{ width: '14px', height: '14px', borderColor: '#ffb347', borderTopColor: 'transparent', borderWidth: '2px' }} />
-              <span className="mr-emo-label" style={{ color: '#ffb347', fontSize: '13px' }}>WAITING FOR HOST…</span>
+            <div className="mr-loading" style={{ background: 'rgba(10,10,15,0.85)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#5b9cf6', fontWeight: '700', fontSize: '16px' }}>
+                <div className="mr-spinner" style={{ borderColor: '#5b9cf6', borderTopColor: 'transparent' }} />
+                Waiting for host to start session...
+              </div>
             </div>
           )}
         </div>
 
-        {/* ── HINT ── */}
-        <div className="mr-hint">
-          Ensure your camera and mic are working before joining/ Starting a session.
-        </div>
-
-        {/* ── BOTTOM PANEL ── */}
-        <div className="mr-bottom">
-
-          {/* Mic meter */}
-          <div className="mr-mic">
-            <div className="mr-mic-row">
-              <span>MICROPHONE</span>
-              <span className="mr-mic-status" style={{ color: micLevel > 10 ? 'var(--green)' : 'var(--muted)' }}>
-                {micLevel > 10 ? 'DETECTING' : 'SILENT'}
+        {/* BOTTOM CONTROLS */}
+        <div className="mr-controls">
+          
+          <div className="mr-mic-wrap">
+            <div className="mr-mic-header">
+              <span>Microphone</span>
+              <span style={{ color: micLevel > 10 ? '#3dffa0' : 'rgba(255,255,255,0.4)' }}>
+                {micLevel > 10 ? 'Detecting' : 'Silent'}
               </span>
             </div>
-            <div className="mr-mic-track">
-              <div
-                className="mr-mic-fill"
-                style={{
-                  width: `${micLevel}%`,
-                  background: micLevel > 80 ? 'var(--red)' : 'var(--green)',
-                }}
+            <div className="mr-mic-bar">
+              <div 
+                className="mr-mic-fill" 
+                style={{ 
+                  width: `${micLevel}%`, 
+                  background: micLevel > 80 ? '#ff6b6b' : '#3dffa0',
+                  color: micLevel > 80 ? '#ff6b6b' : '#3dffa0'
+                }} 
               />
+            </div>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>
+              Ensure your face is clearly visible and audio is picking up.
             </div>
           </div>
 
-          <div className="mr-divider" />
-
-          {/* Join / Start button */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', flexShrink: 0 }}>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              {waitingForHost && (
-                <button className="mr-back-btn" onClick={onBack} style={{ padding: '14px 24px', borderRadius: '14px', fontSize: '15px' }}>
-                  Cancel
-                </button>
-              )}
-              <button
-                className={`mr-join-btn ${(modelsLoaded && !joiningState) ? 'ready' : 'waiting'}`}
+          <div className="mr-action-wrap">
+            {waitingForHost ? (
+              <button className="mr-btn-cancel" onClick={() => {
+                setWaitingForHost(false);
+                setJoiningState(false);
+                setJoinError('');
+                onBack();
+              }}>
+                Cancel Request
+              </button>
+            ) : (
+              <button 
+                className="mr-btn-primary" 
                 onClick={handleJoinClick}
                 disabled={!modelsLoaded || joiningState}
               >
-                {joiningState ? <div className="mr-spinner" style={{ borderColor: 'currentColor', borderTopColor: 'transparent' }} /> : (isHost ? 'Start Session →' : 'Join Session →')}
+                {joiningState ? (
+                  <><div className="mr-spinner" style={{ width: '18px', height: '18px', borderWidth: '2px', borderColor: 'rgba(255,255,255,0.5)', borderTopColor: 'white' }} /> Connecting...</>
+                ) : (
+                  <>{isHost ? 'Start Session' : 'Join Session'} <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></>
+                )}
               </button>
-            </div>
+            )}
+            
             {joinError && (
-              <div style={{ color: 'var(--red)', fontSize: '12px', fontWeight: '500' }}>
+              <div style={{ color: '#ff6b6b', fontSize: '13px', fontWeight: '600', marginTop: '4px' }}>
                 ⚠ {joinError}
               </div>
             )}
