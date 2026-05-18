@@ -74,8 +74,6 @@ export default function Auth() {
     }
   };
 
-  };
-
   return (
     <div className="screen active" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '20px' }}>
       <div className="lob-card" style={{ maxWidth: '440px', width: '100%', maxHeight: '90svh', overflowY: 'auto' }}>
