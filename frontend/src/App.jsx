@@ -61,7 +61,7 @@ export default function App() {
       setCallSecs(0);
       setVideoUrl(null);
       setLiveData({ counts: { happy: 0, neutral: 0, sad: 0, angry: 0 }, timeline: [], voiceTriggers: [] });
-      if (webRTC.isConnected || webRTC.remoteStream) {
+      if (webRTC.isConnected || webRTC.remoteStream || webRTC.faceStream) {
         webRTC.endCall();
       }
     }
