@@ -730,6 +730,25 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                   <div style={S.statLbl}>Current</div>
                 </div>
               </div>
+              <div style={S.hudDivider} />
+              <div style={S.emoRow}>
+                {Object.entries(EMO).map(([k, v]) => {
+                  const cnt = emoCounts[k] || 0;
+                  const total = getEmoTotal();
+                  const pct = total > 0 ? Math.round((cnt / total) * 100) : 0;
+                  return (
+                    <div key={k} style={S.emoItem}>
+                      <div style={S.emoHead}>
+                        <span style={S.emoName}>{v.n}</span>
+                        <span style={S.emoPct}>{pct}%</span>
+                      </div>
+                      <div style={S.emoTrack}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: v.c, transition: 'width 0.3s ease, background 0.3s ease', borderRadius: '999px' }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="cv-ai-status" style={S.aiStatus}>
