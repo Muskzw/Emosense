@@ -213,12 +213,10 @@ const ADJECTIVES = ['swift','bold','calm','bright','keen','wise','cool','warm','
 const NOUNS      = ['hawk','lion','crane','tiger','lotus','river','drum','stone','cloud','flame'];
 
 function generateRoomId() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  for (let i = 0; i < 6; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
+  const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+  const num = Math.floor(Math.random() * 99) + 1;
+  return `${adj}-${noun}-${num}`;
 }
 
 // POST /api/rooms  { peerId }  → { code }
@@ -270,7 +268,7 @@ app.post('/api/rooms', async (req, res) => {
 
 // GET /api/rooms/:code  → { peerId }
 app.get('/api/rooms/:code', async (req, res) => {
-  const code = req.params.code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const code = req.params.code.trim().toLowerCase().replace(/[^a-z0-9\-]/g, '');
   const { guestId } = req.query;
 
   if (!guestId) {
@@ -316,7 +314,7 @@ app.get('/api/rooms/:code', async (req, res) => {
 
 // POST /api/rooms/:code/start → Mark room as active
 app.post('/api/rooms/:code/start', async (req, res) => {
-  const code = req.params.code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const code = req.params.code.trim().toLowerCase().replace(/[^a-z0-9\-]/g, '');
   try {
     await pool.query(`UPDATE room_codes SET status = 'active' WHERE code = $1`, [code]);
     res.json({ ok: true });
@@ -330,7 +328,7 @@ app.post('/api/rooms/:code/start', async (req, res) => {
 
 // GET /api/rooms/:code/status → Get room status
 app.get('/api/rooms/:code/status', async (req, res) => {
-  const code = req.params.code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const code = req.params.code.trim().toLowerCase().replace(/[^a-z0-9\-]/g, '');
   try {
     const result = await pool.query(`SELECT status FROM room_codes WHERE code = $1`, [code]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });

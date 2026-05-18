@@ -119,7 +119,7 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
     setJoining(true);
     setJoinError('');
     try {
-      const cleanId = joinId.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const cleanId = joinId.trim().toLowerCase().replace(/[^a-z0-9\-]/g, '');
       if (!cleanId) { setJoinError('Invalid ID'); setJoining(false); return; }
       
       const res = await fetch(`/api/rooms/${cleanId}?guestId=${peerId}`);
