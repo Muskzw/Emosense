@@ -233,7 +233,12 @@ app.post('/api/rooms', async (req, res) => {
 
     // Check if this peer already has a live code
     const existing = await pool.query(`SELECT code FROM room_codes WHERE peer_id = $1 AND expires_at > $2`, [peerId, now]);
-    if (existing.rows.length > 0) return res.json({ code: existing.rows[0].code });
+    if (existing.rows.length > 0) {
+      const code = existing.rows[0].code;
+      // Buffer in memory
+      memoryRooms[code] = { peer_id: peerId, expires_at: expiresAt, guest_peer_id: null, status: 'waiting' };
+      return res.json({ code });
+    }
 
     // Generate a unique code
     const tryInsert = async () => {
@@ -243,6 +248,9 @@ app.post('/api/rooms', async (req, res) => {
         [roomId, peerId, expiresAt]
       );
       if (insertRes.rowCount === 0) return tryInsert(); // collision, try again
+      
+      // Buffer in memory in case DB fails for the guest
+      memoryRooms[roomId] = { peer_id: peerId, expires_at: expiresAt, guest_peer_id: null, status: 'waiting' };
       
       console.log(`[Room] ${roomId} -> ${peerId.slice(0,8)}...`);
       res.json({ code: roomId });
@@ -325,7 +333,7 @@ app.post('/api/rooms/:code/start', async (req, res) => {
   const code = req.params.code.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
   try {
     const result = await pool.query(`UPDATE room_codes SET status = 'active' WHERE code = $1`, [code]);
-    if (result.rowCount === 0 && memoryRooms[code]) {
+    if (memoryRooms[code]) {
       memoryRooms[code].status = 'active';
     }
     res.json({ ok: true });
