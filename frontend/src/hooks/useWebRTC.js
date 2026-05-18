@@ -16,6 +16,11 @@ export function useWebRTC(onRemoteEnd) {
   const connRef = useRef(null); // Keep track of data connection
   const remoteVideoRef = useRef(null);
   const localVideoRef = useRef(null);
+  const onRemoteEndRef = useRef(onRemoteEnd);
+
+  useEffect(() => {
+    onRemoteEndRef.current = onRemoteEnd;
+  }, [onRemoteEnd]);
 
   useEffect(() => {
     if (peerRef.current && !peerRef.current.destroyed) return; // Already initialized
@@ -48,7 +53,7 @@ export function useWebRTC(onRemoteEnd) {
         if(d.name) setRemoteName(d.name); 
         if(d.type === 'END_SESSION') {
           console.log('[WebRTC] Remote peer ended session');
-          if (onRemoteEnd) onRemoteEnd();
+          if (onRemoteEndRef.current) onRemoteEndRef.current();
         }
         if(d.type === 'transcript') setPeerTranscripts(prev => [...prev, d]);
         if(d.type === 'record_request') setRecordConsentReq(true);
@@ -135,7 +140,7 @@ export function useWebRTC(onRemoteEnd) {
       if(d.name) setRemoteName(d.name); 
       if(d.type === 'END_SESSION') {
         console.log('[WebRTC] Remote peer ended session');
-        if (onRemoteEnd) onRemoteEnd();
+        if (onRemoteEndRef.current) onRemoteEndRef.current();
       }
       if(d.type === 'transcript') setPeerTranscripts(prev => [...prev, d]);
       if(d.type === 'record_request') setRecordConsentReq(true);

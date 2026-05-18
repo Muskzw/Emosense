@@ -9,6 +9,12 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
   const [micLevel, setMicLevel] = useState(0);
   const [joinError, setJoinError] = useState('');
   const [joiningState, setJoiningState] = useState(false);
+  const [waitingForHost, setWaitingForHost] = useState(false);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    return () => { isMounted.current = false; };
+  }, []);
 
   const { modelsLoaded, curEmo } = useFaceAPI(
     localVideoRef, svgRef, canvasRef, true, sessionInfo.ctx, sessionInfo.optIn
@@ -55,18 +61,35 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
 
     if (sessionInfo.targetPeerId) {
       // Guest joining
+      setWaitingForHost(true);
       try {
-        const res = await fetch(`/api/rooms/${sessionInfo.roomId}/status`);
-        if (!res.ok) throw new Error('Failed to fetch status');
-        const data = await res.json();
-        
-        if (data.status !== 'active') {
-          setJoinError("The meeting has not yet started. Please wait for the host.");
+        let active = false;
+        for (let i = 0; i < 30; i++) {
+          if (!isMounted.current) return;
+          const res = await fetch(`/api/rooms/${sessionInfo.roomId}/status`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.status === 'active') {
+              active = true;
+              break;
+            }
+          }
+          await new Promise(r => setTimeout(r, 2500));
+        }
+        if (!isMounted.current) return;
+        setWaitingForHost(false);
+        if (!active) {
+          setJoinError("Host hasn't started yet — try again.");
           setJoiningState(false);
           return;
         }
       } catch (err) {
         console.error('Status check error:', err);
+        if (!isMounted.current) return;
+        setWaitingForHost(false);
+        setJoinError("Failed to connect to server. Try again.");
+        setJoiningState(false);
+        return;
       }
       webRTC.joinCall(sessionInfo.targetPeerId, sessionInfo.uName);
     } else {
@@ -328,6 +351,13 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
               </span>
             </div>
           )}
+
+          {waitingForHost && (
+            <div className="mr-emo-badge" style={{ bottom: '70px', border: '1px solid rgba(255,179,71,0.4)', background: 'rgba(255,179,71,0.1)' }}>
+              <div className="mr-spinner" style={{ width: '14px', height: '14px', borderColor: '#ffb347', borderTopColor: 'transparent', borderWidth: '2px' }} />
+              <span className="mr-emo-label" style={{ color: '#ffb347', fontSize: '13px' }}>WAITING FOR HOST…</span>
+            </div>
+          )}
         </div>
 
         {/* ── HINT ── */}
@@ -361,13 +391,20 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
 
           {/* Join / Start button */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', flexShrink: 0 }}>
-            <button
-              className={`mr-join-btn ${(modelsLoaded && !joiningState) ? 'ready' : 'waiting'}`}
-              onClick={handleJoinClick}
-              disabled={!modelsLoaded || joiningState}
-            >
-              {joiningState ? '...' : (isHost ? 'Start Session →' : 'Join Session →')}
-            </button>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              {waitingForHost && (
+                <button className="mr-back-btn" onClick={onBack} style={{ padding: '14px 24px', borderRadius: '14px', fontSize: '15px' }}>
+                  Cancel
+                </button>
+              )}
+              <button
+                className={`mr-join-btn ${(modelsLoaded && !joiningState) ? 'ready' : 'waiting'}`}
+                onClick={handleJoinClick}
+                disabled={!modelsLoaded || joiningState}
+              >
+                {joiningState ? <div className="mr-spinner" style={{ borderColor: 'currentColor', borderTopColor: 'transparent' }} /> : (isHost ? 'Start Session →' : 'Join Session →')}
+              </button>
+            </div>
             {joinError && (
               <div style={{ color: 'var(--red)', fontSize: '12px', fontWeight: '500' }}>
                 ⚠ {joinError}

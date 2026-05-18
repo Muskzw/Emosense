@@ -61,6 +61,7 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
   const [joinId, setJoinId]       = useState('');
   const [optIn, setOptIn]         = useState(profile.optIn || false);
   const [roomId, setRoomId]       = useState('');
+  const [retryDelay, setRetryDelay] = useState(3000);
   const [copyLabel, setCopyLabel] = useState('copy');
   const [joinError, setJoinError] = useState('');
   const [validationError, setValidationError] = useState('');
@@ -78,6 +79,7 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
   useEffect(() => {
     if (!peerId || (roomId && roomId !== 'offline')) return;
     
+    let timeoutId;
     const registerRoom = async () => {
       try {
         const res = await fetch('/api/rooms', {
@@ -87,16 +89,25 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
         });
         if (!res.ok) throw new Error('Registration failed');
         const data = await res.json();
-        if (data.code) setRoomId(data.code);
-        else throw new Error('No ID returned');
+        if (data.code) {
+          setRoomId(data.code);
+          setRetryDelay(3000);
+        } else {
+          throw new Error('No ID returned');
+        }
       } catch (err) {
         console.error('[Room Registration Error]', err);
         setRoomId('offline');
+        timeoutId = setTimeout(() => {
+          setRoomId(''); // trigger re-fetch
+          setRetryDelay(prev => prev === 3000 ? 6000 : 10000);
+        }, retryDelay);
       }
     };
 
     registerRoom();
-  }, [peerId, roomId]);
+    return () => clearTimeout(timeoutId);
+  }, [peerId, roomId, retryDelay]);
 
   const handleCopy = () => {
     if (!roomId) return;
@@ -116,7 +127,7 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
   const handleJoin = async () => {
     if (!validateSetup()) return;
     if (!joinId.trim()) { setJoinError('Please enter a room code.'); return; }
-    if (!peerId) { setJoinError('Connecting to server. Please wait...'); return; }
+    if (!peerId) { setJoinError('Still connecting to server, please wait...'); return; }
     setJoining(true);
     setJoinError('');
     try {
@@ -144,7 +155,9 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
 
   return (
     <div className="screen active" id="sLobby">
-
+      <style>{`
+        @keyframes dotPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+      `}</style>
       {/* ── Desktop two-column layout ── */}
       <div className="lob-desktop-wrap">
 
@@ -294,8 +307,18 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
               {/* Your room ID */}
               <div className="room-col">
                 <div className="rb-title">{t('yourRoomId')}</div>
-                <div className="rb-id" style={{ color: roomId ? 'var(--green)' : 'var(--muted)' }}>
-                  {roomId === 'offline' ? t('serverError') : (roomId || (peerId ? t('registering') : t('connecting')))}
+                <div className="rb-id" style={{ color: (roomId && roomId !== 'offline') ? 'var(--green)' : 'var(--muted)', fontSize: (!peerId || roomId === 'offline') ? '13px' : 'inherit' }}>
+                  {!peerId ? (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--blue)' }}>
+                      <span style={{ width: '8px', height: '8px', background: 'var(--blue)', borderRadius: '50%', animation: 'dotPulse 1.5s infinite' }} />
+                      Connecting to signaling server…
+                    </span>
+                  ) : roomId === 'offline' ? (
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--amber)' }}>
+                      <span style={{ width: '8px', height: '8px', background: 'var(--amber)', borderRadius: '50%', animation: 'dotPulse 1.5s infinite' }} />
+                      Server waking up, retrying…
+                    </span>
+                  ) : (roomId || t('registering'))}
                 </div>
                 <button className="rb-copy" onClick={handleCopy} disabled={!roomId || roomId === 'offline'}>
                   {copyLabel || t('copy')}
@@ -332,7 +355,7 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
 
           {/* Action buttons */}
           <div className="lob-actions">
-            <button className="btn-start" onClick={handleStart}>{t('startSession')}</button>
+            <button className="btn-start" onClick={handleStart} disabled={!peerId || !roomId || roomId === 'offline'}>{t('startSession')}</button>
             <button className="btn-dash" onClick={onDash}>{t('viewDashboard')}</button>
           </div>
 
