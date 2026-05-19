@@ -37,20 +37,23 @@ export function useWebRTC(onRemoteEnd, localName) {
         if (data.iceServers) iceServers = data.iceServers;
       } catch(e) { console.warn('ICE fetch failed', e); }
 
-      const isProd = window.location.hostname.includes('render.com') || window.location.hostname.includes('vercel.app');
-      const host = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
-      const port = window.location.hostname === 'localhost' ? 3000 : (window.location.port || (window.location.protocol === 'https:' ? 443 : 80));
+      // Always use our own self-hosted PeerJS signaling server.
+      // Using the free peerjs.com cloud (empty opts) is unreliable and rate-limited.
+      const host = window.location.hostname;
+      const isSecure = window.location.protocol === 'https:';
+      const port = window.location.port
+        ? parseInt(window.location.port)
+        : (isSecure ? 443 : 80);
 
-      // Use PeerJS public cloud in production for flawless global NAT traversal (free STUN/TURN relays)
-      const peerOpts = isProd ? {
-        // Passing undefined config lets PeerJS inject its own reliable cloud TURN servers
-      } : {
+      const peerOpts = {
         host: host,
         port: port,
         path: '/peerjs',
-        secure: window.location.protocol === 'https:',
+        secure: isSecure,
         config: { iceServers }
       };
+
+      console.log('[WebRTC] Connecting to PeerJS at', host, port);
 
       const peer = new Peer(undefined, peerOpts);
 

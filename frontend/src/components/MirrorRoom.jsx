@@ -11,9 +11,13 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
   const [waitingForHost, setWaitingForHost] = useState(false);
   const [waitingForStream, setWaitingForStream] = useState(false);
   const isMounted = useRef(true);
+  const connectionTimeoutRef = useRef(null);
 
   useEffect(() => {
-    return () => { isMounted.current = false; };
+    return () => {
+      isMounted.current = false;
+      if (connectionTimeoutRef.current) clearTimeout(connectionTimeoutRef.current);
+    };
   }, []);
 
   const { modelsLoaded, curEmo } = useFaceAPI(
@@ -92,6 +96,16 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
       }
       webRTC.joinCall(sessionInfo.targetPeerId, sessionInfo.uName);
       setWaitingForStream(true);
+
+      // Safety timeout: if stream never arrives within 30s, unblock the guest
+      connectionTimeoutRef.current = setTimeout(() => {
+        if (!isMounted.current) return;
+        if (!webRTC.isConnected) {
+          setWaitingForStream(false);
+          setJoiningState(false);
+          setJoinError('Could not reach the host — check your network and try again.');
+        }
+      }, 30000);
     } else {
       try {
         await fetch(`/api/rooms/${sessionInfo.roomId}/start`, { method: 'POST' });
@@ -104,6 +118,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
 
   useEffect(() => {
     if (waitingForStream && isConnected) {
+      if (connectionTimeoutRef.current) clearTimeout(connectionTimeoutRef.current);
       if (isMounted.current) onJoin();
     }
   }, [isConnected, waitingForStream]);
@@ -178,19 +193,25 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           justify-content: center;
           position: relative;
           z-index: 10;
-          padding: 20px;
+          padding: 16px 20px;
+          gap: 16px;
+          min-height: 0;
+          overflow: hidden;
         }
 
         .mr-video-container {
           width: 100%;
           max-width: 900px;
+          /* Use aspect-ratio but cap height so it never overflows on laptop */
           aspect-ratio: 16/9;
+          max-height: calc(100vh - 220px);
           border-radius: 32px;
           overflow: hidden;
           position: relative;
           background: #000;
           box-shadow: 0 40px 120px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.08);
           animation: float 6s ease-in-out infinite;
+          flex-shrink: 0;
         }
 
         .mr-video-container video {
@@ -259,18 +280,18 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
         }
 
         .mr-controls {
-          margin-top: 40px;
           width: 100%;
           max-width: 900px;
           background: rgba(255,255,255,0.03);
           backdrop-filter: blur(30px) saturate(180%);
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 24px;
-          padding: 24px 32px;
+          padding: 20px 28px;
           display: flex;
           align-items: center;
-          gap: 32px;
+          gap: 28px;
           box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+          flex-shrink: 0;
         }
 
         .mr-mic-wrap {
@@ -358,8 +379,15 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
         }
         .mr-btn-cancel:hover { background: rgba(255,59,48,0.2); }
 
+        /* Laptop / medium screens — tighten vertical spacing */
+        @media (max-width: 1200px) and (min-width: 769px) {
+          .mr-video-container { max-height: calc(100vh - 200px); animation: none; }
+          .mr-main { gap: 12px; padding: 12px 20px; }
+          .mr-controls { padding: 16px 24px; gap: 20px; }
+        }
+
         @media (max-width: 768px) {
-          .mr-video-container { border-radius: 20px; animation: none; }
+          .mr-video-container { border-radius: 20px; animation: none; max-height: none; }
           .mr-controls { flex-direction: column; padding: 20px; gap: 20px; }
           .mr-action-wrap { width: 100%; align-items: stretch; }
           .mr-btn-primary { justify-content: center; }
