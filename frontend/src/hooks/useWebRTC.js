@@ -11,6 +11,7 @@ export function useWebRTC(onRemoteEnd, localName) {
   const [recordConsentReq, setRecordConsentReq] = useState(false);
   const [recordAllowed, setRecordAllowed] = useState(false);
   const [recordDenied, setRecordDenied] = useState(false);
+  const [cameraError, setCameraError] = useState('');  // '' | 'denied' | 'insecure' | 'notfound' | 'error'
   
   const peerRef = useRef(null);
   const callRef = useRef(null);
@@ -38,12 +39,16 @@ export function useWebRTC(onRemoteEnd, localName) {
       } catch(e) { console.warn('ICE fetch failed', e); }
 
       // Always use our own self-hosted PeerJS signaling server.
-      // Using the free peerjs.com cloud (empty opts) is unreliable and rate-limited.
+      // For localhost dev, the backend is always on port 3000 regardless of Vite's port.
+      // In production, the backend is co-located so use port 443 (HTTPS) or 80 (HTTP).
       const host = window.location.hostname;
       const isSecure = window.location.protocol === 'https:';
-      const port = window.location.port
-        ? parseInt(window.location.port)
-        : (isSecure ? 443 : 80);
+      const isLocalhost = host === 'localhost' || host === '127.0.0.1';
+      const port = isLocalhost
+        ? 3000                                         // Vite dev server ≠ backend port
+        : (window.location.port                        // production: co-located port
+            ? parseInt(window.location.port)
+            : (isSecure ? 443 : 80));
 
       const peerOpts = {
         host: host,
@@ -137,12 +142,52 @@ export function useWebRTC(onRemoteEnd, localName) {
   };
 
   const startCamera = async () => {
+    setCameraError('');
+
+    // Chrome (and all browsers) block getUserMedia on non-secure, non-localhost pages.
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+      if (!isLocalhost && window.location.protocol !== 'https:') {
+        setCameraError('insecure');
+      } else {
+        setCameraError('notfound');
+      }
+      return;
+    }
+
+    // Check if permission was previously denied (Chrome remembers denials)
+    try {
+      const perm = await navigator.permissions.query({ name: 'camera' });
+      if (perm.state === 'denied') {
+        setCameraError('denied');
+        return;
+      }
+    } catch (_) { /* Firefox doesn't support permissions.query for camera */ }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       setFaceStream(stream);
+      setCameraError('');
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-    } catch(e) {
-      console.error('Camera error', e);
+    } catch (e) {
+      console.error('[Camera]', e.name, e.message);
+      // Try again with video-only — Chrome sometimes blocks audio on certain systems
+      if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+        setCameraError('denied');
+      } else if (e.name === 'NotFoundError' || e.name === 'DevicesNotFoundError') {
+        setCameraError('notfound');
+      } else {
+        // Audio device might be blocked — retry with video only
+        try {
+          const videoOnly = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+          setFaceStream(videoOnly);
+          setCameraError('noaudio'); // partial success, warn user
+          if (localVideoRef.current) localVideoRef.current.srcObject = videoOnly;
+        } catch (e2) {
+          console.error('[Camera] Video-only fallback failed:', e2.message);
+          setCameraError('error');
+        }
+      }
     }
   };
 
@@ -191,5 +236,5 @@ export function useWebRTC(onRemoteEnd, localName) {
     setIsConnected(false);
   };
 
-  return { peerId, remoteName, isConnected, startCamera, joinCall, endCall, remoteVideoRef, localVideoRef, faceStream, remoteStream, sendData, peerTranscripts, recordConsentReq, setRecordConsentReq, recordAllowed, recordDenied, setRecordDenied };
+  return { peerId, remoteName, isConnected, startCamera, joinCall, endCall, remoteVideoRef, localVideoRef, faceStream, remoteStream, sendData, peerTranscripts, recordConsentReq, setRecordConsentReq, recordAllowed, recordDenied, setRecordDenied, cameraError, setCameraError };
 }

@@ -69,7 +69,7 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
   const [joining, setJoining]     = useState(false);
   const [showProModal, setShowProModal] = useState(false);
 
-  const { peerId, startCamera, joinCall, localVideoRef } = webRTC;
+  const { peerId, startCamera, joinCall, localVideoRef, cameraError } = webRTC;
 
   useEffect(() => { startCamera(); }, []);
 
@@ -296,6 +296,38 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
           {/* Camera preview */}
           <div className="cam-strip">
             <video ref={localVideoRef} autoPlay muted playsInline />
+            {cameraError && (
+              <div style={{
+                position: 'absolute', inset: 0, background: 'rgba(10,10,15,0.92)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                gap: '8px', padding: '16px', borderRadius: '16px', textAlign: 'center'
+              }}>
+                <span style={{ fontSize: '24px' }}>
+                  {cameraError === 'denied' ? '🚫' : cameraError === 'insecure' ? '🔒' : cameraError === 'notfound' ? '📷' : '⚠️'}
+                </span>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#ff6b6b', fontFamily: 'monospace', letterSpacing: '0.05em' }}>
+                  {cameraError === 'denied' && 'Camera Access Denied'}
+                  {cameraError === 'insecure' && 'HTTPS Required'}
+                  {cameraError === 'notfound' && 'No Camera Found'}
+                  {cameraError === 'noaudio' && 'Microphone Blocked'}
+                  {cameraError === 'error' && 'Camera Error'}
+                </div>
+                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.55)', lineHeight: '1.5', fontFamily: 'monospace', maxWidth: '220px' }}>
+                  {cameraError === 'denied' && 'Click the 🔒 icon in your browser address bar → allow Camera & Microphone → refresh the page.'}
+                  {cameraError === 'insecure' && 'Camera requires a secure connection. Use HTTPS or access via localhost.'}
+                  {cameraError === 'notfound' && 'No camera detected. Connect a webcam and refresh.'}
+                  {cameraError === 'noaudio' && 'Video active but mic is blocked. Check browser permissions for full functionality.'}
+                  {cameraError === 'error' && 'Could not access camera. Ensure no other app is using it, then refresh.'}
+                </div>
+                {(cameraError === 'denied' || cameraError === 'error' || cameraError === 'noaudio') && (
+                  <button onClick={() => webRTC.startCamera()} style={{
+                    marginTop: '6px', background: 'rgba(61,255,160,0.1)', border: '1px solid rgba(61,255,160,0.3)',
+                    color: '#3dffa0', borderRadius: '8px', padding: '6px 14px',
+                    fontSize: '11px', fontFamily: 'monospace', cursor: 'pointer'
+                  }}>Retry Camera</button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Name + Context */}

@@ -26,7 +26,8 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
 
   // ── Load models (once) ────────────────────────────────────────
   useEffect(() => {
-    audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+    // Note: AudioContext is NOT created here — Chrome blocks it before a user gesture.
+    // It is lazily created on first use inside playPop().
 
     (async () => {
       try {
@@ -47,6 +48,10 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
   // ── Audio micro-interaction ───────────────────────────────────
   const playPop = () => {
     try {
+      // Lazily create AudioContext — Chrome requires a user gesture first
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      }
       const ctx = audioCtxRef.current;
       if (!ctx) return;
       if (ctx.state === 'suspended') ctx.resume();
