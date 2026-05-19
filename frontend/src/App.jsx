@@ -64,9 +64,14 @@ export default function App() {
       if (webRTC.isConnected || webRTC.remoteStream || webRTC.faceStream) {
         webRTC.endCall();
       }
+    } else if (screen !== 'sMirror' && screen !== 'sCall') {
+      // Cleanly stop the camera if going to sReport, sDashboard, sLanding, etc.
+      if (webRTC.isConnected || webRTC.remoteStream || webRTC.faceStream) {
+        webRTC.endCall();
+      }
     }
     return () => clearInterval(int);
-  }, [screen, webRTC.isConnected]);
+  }, [screen, webRTC.isConnected, webRTC.remoteStream, webRTC.faceStream]);
 
   const handleStart = (info) => {
     setSessionInfo(info);

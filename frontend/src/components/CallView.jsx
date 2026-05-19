@@ -252,7 +252,8 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
   const { 
     remoteName, isConnected, remoteVideoRef, localVideoRef, endCall, 
     faceStream, remoteStream, sendData, peerTranscripts, 
-    recordConsentReq, setRecordConsentReq, recordAllowed 
+    recordConsentReq, setRecordConsentReq, recordAllowed,
+    recordDenied, setRecordDenied
   } = webRTC;
   const svgRef = useRef(null);
   const canvasRef = useRef(null);
@@ -359,6 +360,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
   // Session Recording
   const [isRecording, setIsRecording] = useState(false);
   const [waitingConsent, setWaitingConsent] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const mediaRecorderRef = useRef(null);
   const recordedChunks = useRef([]);
   const recordingStartTimeRef = useRef(0);
@@ -367,10 +369,23 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
     if (isRecording) {
       stopRecording();
     } else {
+      setRecordDenied(false);
       sendData({ type: 'record_request' });
       setWaitingConsent(true);
     }
   };
+
+  useEffect(() => {
+    if (recordDenied) {
+      setWaitingConsent(false);
+      setIsResetting(true);
+      const timer = setTimeout(() => {
+        setIsResetting(false);
+        setRecordDenied(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [recordDenied, setRecordDenied]);
 
   useEffect(() => {
     if (recordAllowed && !isRecording && remoteStream) {
@@ -864,14 +879,15 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             className="cv-record-btn"
             style={{ ...S.recordBtn, border: isRecording ? '1px solid rgba(255,59,48,0.5)' : S.recordBtn.border }}
             onClick={handleRecordClick}
+            disabled={isResetting || waitingConsent}
           >
             {isRecording ? (
                <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: '#ff3b30', animation: 'ping 1.5s infinite' }} />
             ) : (
                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ff3b30' }} />
             )}
-            {isRecording ? 'Stop Recording' : (waitingConsent ? 'Waiting...' : 'Record Session')}
-            {!isRecording && !waitingConsent && <span style={{ fontSize: '9px', fontWeight: '800', background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', color: '#1a1a2e', padding: '2px 6px', borderRadius: '4px', marginLeft: '4px' }}>PRO</span>}
+            {isRecording ? 'Stop Recording' : (isResetting ? 'Resetting...' : (waitingConsent ? 'Waiting...' : 'Record Session'))}
+            {!isRecording && !waitingConsent && !isResetting && <span style={{ fontSize: '9px', fontWeight: '800', background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', color: '#1a1a2e', padding: '2px 6px', borderRadius: '4px', marginLeft: '4px' }}>PRO</span>}
           </button>
           
           <button
@@ -903,7 +919,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             <h3 style={{ color: 'white', margin: '0 0 10px', fontSize: '20px', fontWeight: '700' }}>Recording Request</h3>
             <p style={{ color: 'rgba(255,255,255,0.7)', margin: '0 0 24px', fontSize: '15px', lineHeight: '1.5' }}>{remoteName} wants to record this session for analysis. Do you consent?</p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <button style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'white', cursor: 'pointer', fontWeight: '600' }} onClick={() => setRecordConsentReq(false)}>Deny</button>
+              <button style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'white', cursor: 'pointer', fontWeight: '600' }} onClick={() => { sendData({ type: 'record_deny' }); setRecordConsentReq(false); }}>Deny</button>
               <button style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#ff3b30', color: 'white', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => { sendData({ type: 'record_allow' }); setRecordConsentReq(false); }}>Allow</button>
             </div>
           </div>

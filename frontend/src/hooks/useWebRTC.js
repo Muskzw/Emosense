@@ -10,6 +10,7 @@ export function useWebRTC(onRemoteEnd, localName) {
   const [peerTranscripts, setPeerTranscripts] = useState([]);
   const [recordConsentReq, setRecordConsentReq] = useState(false);
   const [recordAllowed, setRecordAllowed] = useState(false);
+  const [recordDenied, setRecordDenied] = useState(false);
   
   const peerRef = useRef(null);
   const callRef = useRef(null);
@@ -66,6 +67,7 @@ export function useWebRTC(onRemoteEnd, localName) {
         if(d.type === 'transcript') setPeerTranscripts(prev => [...prev, d]);
         if(d.type === 'record_request') setRecordConsentReq(true);
         if(d.type === 'record_allow') setRecordAllowed(true);
+        if(d.type === 'record_deny') setRecordDenied(true);
       };
 
       peer.on('connection', conn => {
@@ -158,6 +160,7 @@ export function useWebRTC(onRemoteEnd, localName) {
       if(d.type === 'transcript') setPeerTranscripts(prev => [...prev, d]);
       if(d.type === 'record_request') setRecordConsentReq(true);
       if(d.type === 'record_allow') setRecordAllowed(true);
+      if(d.type === 'record_deny') setRecordDenied(true);
     };
     conn.on('data', handleData);
   };
@@ -185,5 +188,5 @@ export function useWebRTC(onRemoteEnd, localName) {
     setIsConnected(false);
   };
 
-  return { peerId, remoteName, isConnected, startCamera, joinCall, endCall, remoteVideoRef, localVideoRef, faceStream, remoteStream, sendData, peerTranscripts, recordConsentReq, setRecordConsentReq, recordAllowed };
+  return { peerId, remoteName, isConnected, startCamera, joinCall, endCall, remoteVideoRef, localVideoRef, faceStream, remoteStream, sendData, peerTranscripts, recordConsentReq, setRecordConsentReq, recordAllowed, recordDenied, setRecordDenied };
 }
