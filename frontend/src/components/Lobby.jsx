@@ -64,6 +64,7 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
   const [retryDelay, setRetryDelay] = useState(3000);
   const [copyLabel, setCopyLabel] = useState('copy');
   const [joinError, setJoinError] = useState('');
+  const [joinErrorType, setJoinErrorType] = useState(''); // 'taken' | 'expired' | 'server'
   const [validationError, setValidationError] = useState('');
   const [joining, setJoining]     = useState(false);
   const [showProModal, setShowProModal] = useState(false);
@@ -126,25 +127,44 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
 
   const handleJoin = async () => {
     if (!validateSetup()) return;
-    if (!joinId.trim()) { setJoinError('Please enter a room code.'); return; }
-    if (!peerId) { setJoinError('Still connecting to server, please wait...'); return; }
+    if (!joinId.trim()) { setJoinError('Please enter a room code.'); setJoinErrorType(''); return; }
+    if (!peerId) { setJoinError('Still connecting to server, please wait...'); setJoinErrorType(''); return; }
     setJoining(true);
     setJoinError('');
+    setJoinErrorType('');
     try {
       // Replace spaces with dashes first, then strip anything that isn't a-z, 0-9, or dash
       const cleanId = joinId.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
-      if (!cleanId) { setJoinError('Invalid ID'); setJoining(false); return; }
-      
+      if (!cleanId) { setJoinError('Invalid room ID format.'); setJoining(false); return; }
+
       const res = await fetch(`/api/rooms/${cleanId}?guestId=${peerId}`);
-      if (res.status === 404) { setJoinError('Room not found or expired'); setJoining(false); return; }
-      if (!res.ok) { setJoinError('Server connection error'); setJoining(false); return; }
-      
+
+      if (res.status === 404) {
+        setJoinError('Room not found or expired — ask the host to create a new one.');
+        setJoinErrorType('expired');
+        setJoining(false);
+        return;
+      }
+      if (res.status === 403) {
+        setJoinError('This room ID is already in use by another session.');
+        setJoinErrorType('taken');
+        setJoining(false);
+        return;
+      }
+      if (!res.ok) {
+        setJoinError('Server connection error — please try again.');
+        setJoinErrorType('server');
+        setJoining(false);
+        return;
+      }
+
       const { peerId: targetPeerId } = await res.json();
       // Defer joinCall to MirrorRoom. Just pass targetPeerId to sessionInfo.
       onStart({ uName, ctx, optIn, targetPeerId, roomId: cleanId });
     } catch (err) {
       console.error('[Join Error]', err);
-      setJoinError(t('serverError'));
+      setJoinError('Could not reach the server — check your connection.');
+      setJoinErrorType('server');
       setJoining(false);
     }
   };
@@ -341,14 +361,34 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
                   type="text"
                   placeholder={t('joinPlaceholder')}
                   value={joinId}
-                  onChange={e => { setJoinId(e.target.value); setJoinError(''); }}
+                  onChange={e => { setJoinId(e.target.value); setJoinError(''); setJoinErrorType(''); }}
                   onKeyDown={e => e.key === 'Enter' && handleJoin()}
                 />
                 <button className="btn-join full-w" onClick={handleJoin} disabled={joining || !joinId.trim() || !peerId}>
                   {joining ? '...' : t('join')}
                 </button>
                 {joinError && (
-                  <div className="join-err">⚠ {joinError}</div>
+                  <div className="join-err" style={{ lineHeight: '1.5' }}>
+                    ⚠ {joinError}
+                    {joinErrorType === 'taken' && (
+                      <div style={{ marginTop: '8px', fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>
+                        💡 The host needs to go back and{' '}
+                        <strong style={{ color: 'var(--amber)' }}>generate a new Room ID</strong>{' '}
+                        — each ID can only be used once.
+                        <button
+                          onClick={() => { setJoinId(''); setJoinError(''); setJoinErrorType(''); }}
+                          style={{ display: 'block', marginTop: '6px', background: 'none', border: '1px solid rgba(255,179,71,0.4)', color: 'var(--amber)', borderRadius: '8px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer', width: '100%' }}
+                        >
+                          Clear &amp; enter a new ID
+                        </button>
+                      </div>
+                    )}
+                    {joinErrorType === 'expired' && (
+                      <div style={{ marginTop: '8px', fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>
+                        💡 Room IDs expire after 2 hours. Ask the host to share a fresh one.
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
