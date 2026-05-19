@@ -396,7 +396,7 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
                               <span style={{ fontSize: '12px', fontWeight: 'bold', color: EMO_COLORS[hl.emotion]?.stroke || '#fff' }}>{EMO_COLORS[hl.emotion]?.label || hl.emotion}</span>
                               <span style={{ fontSize: '12px', color: 'var(--muted)', fontFamily: 'monospace' }}>{m}:{s}</span>
                             </div>
-                            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', fontStyle: 'italic' }}>"{hl.text}"</div>
+                            <div style={{ fontSize: '13px', color: 'var(--muted)', fontStyle: 'italic' }}>"{hl.text}"</div>
                           </div>
                         );
                       })}
@@ -524,7 +524,7 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
                    if (trig.emotion === 'happy') advice = "Great alignment! Reinforce this topic in future meetings.";
                    
                    return (
-                     <div key={i} style={{ padding: '12px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', borderLeft: `3px solid ${stroke}` }}>
+                     <div key={i} style={{ padding: '12px', background: 'var(--surf2)', borderRadius: '12px', borderLeft: `3px solid ${stroke}` }}>
                        <div style={{ fontSize: '13px', color: 'var(--txt)' }}>
                          When they said: <span style={{ fontStyle: 'italic', color: 'var(--muted)' }}>"{trig.text}"</span>
                        </div>
@@ -532,7 +532,7 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
                          <span style={{ fontSize: '11px', color: 'var(--muted)' }}>They showed:</span>
                          <span style={{ fontSize: '11px', fontWeight: '700', color: stroke, textTransform: 'uppercase' }}>{trig.emotion}</span>
                        </div>
-                       <div style={{ fontSize: '11px', color: 'rgba(255,215,0,0.8)', marginTop: '8px', background: 'rgba(255,215,0,0.05)', padding: '6px 8px', borderRadius: '6px' }}>
+                       <div style={{ fontSize: '11px', color: 'var(--amber)', marginTop: '8px', background: 'rgba(255,183,71,0.1)', padding: '6px 8px', borderRadius: '6px', border: '1px solid rgba(255,183,71,0.2)' }}>
                          <strong>Advice:</strong> {advice}
                        </div>
                      </div>
@@ -549,7 +549,7 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
               <span className="ir-t" style={{ color: '#34c759' }}>AI Follow-up Strategy</span>
             </div>
             <div className="ir-item" style={{ background: 'var(--surf2)', borderRadius: '10px', padding: '12px', marginTop: '8px' }}>
-              <div className="ir-txt" style={{ fontSize: '13px', lineHeight: '1.65', color: 'var(--txt)' }}
+              <div className="ir-txt" style={{ fontSize: '13px', lineHeight: '1.65' }}
                 dangerouslySetInnerHTML={{ __html: strategy }} />
             </div>
           </div>
