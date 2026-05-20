@@ -545,6 +545,61 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
 
   const timerStr = `${String(Math.floor(callSecs / 60)).padStart(2, '0')}:${String(callSecs % 60).padStart(2, '0')}`;
 
+  // Cultural alignment calculations
+  const totalCounts = getEmoTotal();
+  const isZw = String(sessionInfo.ctx || '').toLowerCase().includes('zimbabwe') || String(sessionInfo.ctx || '').toLowerCase().includes('zw');
+  const isCn = String(sessionInfo.ctx || '').toLowerCase().includes('china') || String(sessionInfo.ctx || '').toLowerCase().includes('cn');
+  
+  let alignmentScore = 50;
+  let alignmentTitle = "Intercultural Synergy";
+  let alignmentStatus = "Communication Productive";
+  let alignmentAdvice = "Rapport is stable. Balance presentation with space for their input.";
+  let alignmentThemeColor = "#3dffa0";
+  
+  if (isZw) {
+    alignmentScore = Math.min(100, Math.max(10, Math.round(((emoCounts.happy * 1.2 + emoCounts.neutral * 0.8) / (totalCounts || 1)) * 100)));
+    alignmentTitle = "Ubuntu Resonance Index";
+    alignmentThemeColor = "#3dffa0"; // green
+    if (alignmentScore >= 80) {
+      alignmentStatus = "Communal Harmony High 🇿🇼";
+      alignmentAdvice = "Communal connection is thriving. Focus on storytelling and collective value. Respectful presence is deeply felt.";
+    } else if (alignmentScore >= 50) {
+      alignmentStatus = "Warm Connection Stable";
+      alignmentAdvice = "Relational connection is positive. Cultivate communal warmth (Ubuntu) by showing interest in family, health, and mutual respect.";
+    } else {
+      alignmentStatus = "Relational Warmth Fading";
+      alignmentAdvice = "Connection is tense or cold. Slow down. Prioritize relationship-building over transaction. Ask respectful open questions.";
+    }
+  } else if (isCn) {
+    alignmentScore = Math.min(100, Math.max(10, Math.round(((emoCounts.neutral * 1.1 + emoCounts.happy * 0.7) / (totalCounts || 1)) * 100)));
+    alignmentTitle = "Guanxi & Mianzi Poise";
+    alignmentThemeColor = "#5b9cf6"; // blue/neutral
+    if (alignmentScore >= 80) {
+      alignmentStatus = "Face-Saving Harmony High 🇨🇳";
+      alignmentAdvice = "Excellent Guanxi established. Mutual face-saving (Mianzi) is maintained. Keep communication respectful, indirect, and patient.";
+    } else if (alignmentScore >= 50) {
+      alignmentStatus = "Polite Poise Established";
+      alignmentAdvice = "Polite reserve is active. Respect pauses. Avoid confrontational negotiation; allow indirect expressions.";
+    } else {
+      alignmentStatus = "Harmony Disrupted";
+      alignmentAdvice = "Friction detected. Pause immediately. Express utmost respect. Do not call out errors directly; offer face-saving ways out.";
+    }
+  } else {
+    alignmentScore = Math.min(100, Math.max(10, Math.round(((emoCounts.happy * 1.0 + emoCounts.neutral * 0.8) / (totalCounts || 1)) * 100)));
+    alignmentTitle = "Intercultural Synergy";
+    alignmentThemeColor = "#007aff"; // blue
+    if (alignmentScore >= 80) {
+      alignmentStatus = "Synergy Achieved 🌐";
+      alignmentAdvice = "High positive resonance. Communication is fluid and empathetic. Continue active listening.";
+    } else if (alignmentScore >= 50) {
+      alignmentStatus = "Communication Productive";
+      alignmentAdvice = "Rapport is stable. Balance presentation with space for their input.";
+    } else {
+      alignmentStatus = "Friction Alert";
+      alignmentAdvice = "Potential communication gap. Check assumptions, simplify terms, and ask open clarifying questions.";
+    }
+  }
+
   return (
     <div style={S.root} className="cv-root">
       {/* Keyframe & Layout Styles */}
@@ -606,6 +661,12 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             display: flex !important;
             flex-direction: column !important;
             gap: 20px !important;
+            overflow-y: auto !important;
+            max-height: calc(100vh - 130px) !important;
+            scrollbar-width: none !important;
+          }
+          .cv-sidebar::-webkit-scrollbar {
+            display: none !important;
           }
           .cv-side-card {
             background: rgba(255,255,255,0.04) !important;
@@ -673,6 +734,83 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           .cv-desktop-timer-hide { display: none !important; }
           .cv-ai-status { position: static !important; margin-top: auto; }
         }
+
+        .alignment-gauge-container {
+          background: rgba(255, 255, 255, 0.04) !important;
+          backdrop-filter: blur(40px) saturate(180%) !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          border-radius: 24px !important;
+          padding: 24px !important;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          position: relative;
+          overflow: hidden;
+        }
+        .alignment-gauge-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .alignment-gauge-title {
+          font-size: 10px;
+          font-weight: 700;
+          color: rgba(255, 255, 255, 0.4);
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+        }
+        .alignment-gauge-value {
+          font-size: 24px;
+          font-weight: 800;
+          font-family: var(--mono);
+        }
+        .alignment-bar-outer {
+          height: 10px;
+          background: rgba(255, 255, 255, 0.06);
+          border-radius: 999px;
+          overflow: hidden;
+          position: relative;
+          border: 0.5px solid rgba(255, 255, 255, 0.1);
+        }
+        .alignment-bar-inner {
+          height: 100%;
+          border-radius: 999px;
+          transition: width 1s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        .alignment-desc {
+          font-size: 11.5px;
+          line-height: 1.55;
+          color: rgba(255, 255, 255, 0.65);
+        }
+        
+        .remote-stats-overlay {
+          position: absolute;
+          top: 24px;
+          left: 24px;
+          z-index: 10;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          pointer-events: none;
+        }
+        .glass-stats-card {
+          background: rgba(10, 10, 15, 0.6) !important;
+          backdrop-filter: blur(20px) saturate(160%) !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          border-radius: 16px !important;
+          padding: 12px 18px !important;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+        }
+        .stat-indicator-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          animation: blink 1.5s infinite;
+        }
       `}</style>
 
       {/* ── DESKTOP CONTENT WRAPPER ── */}
@@ -689,7 +827,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                 autoPlay
                 playsInline
               />
-              <svg
+              <div
                 ref={svgRef}
                 style={{
                   position: 'absolute', inset: 0, width: '100%', height: '100%',
@@ -711,6 +849,29 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                 <div style={S.orbTxt}>Waiting for peer…</div>
               </div>
             </div>
+
+            {/* Glassmorphic Remote HUD Overlay */}
+            {isConnected && (
+              <div className="remote-stats-overlay">
+                <div className="glass-stats-card">
+                  <div className="stat-indicator-dot" style={{
+                    background: curE.c,
+                    boxShadow: `0 0 8px ${curE.c}`
+                  }} />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Remote Participant</span>
+                    <span style={{ fontSize: '14px', fontWeight: '700', color: '#ffffff' }}>{remoteName} {isZw ? '🇿🇼' : isCn ? '🇨🇳' : '🌐'}</span>
+                  </div>
+                </div>
+                
+                <div className="glass-stats-card" style={{ padding: '8px 14px', background: 'rgba(10, 10, 15, 0.4)' }}>
+                  <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', fontFamily: 'var(--mono)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: modelsLoaded ? '#34c759' : '#ffb347' }} />
+                    Context Engine: {isZw ? 'ZW CNN Ensemble' : isCn ? 'CN CNN Ensemble' : 'Standard TFJS Model'}
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Local PiP (moved inside card for desktop) */}
             <div className="cv-pip" style={S.localPip}>
@@ -746,6 +907,31 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             <div style={S.statLbl}>Session Duration</div>
             <div className="cv-timer-val">{timerStr}</div>
             <div style={{ ...S.ctxBadge, display: 'inline-block', marginTop: '10px' }}>{sessionInfo.ctx}</div>
+          </div>
+
+          {/* Cultural Alignment Card */}
+          <div className="alignment-gauge-container">
+            <div className="alignment-gauge-header">
+              <span className="alignment-gauge-title">{alignmentTitle}</span>
+              <span className="alignment-gauge-value" style={{
+                background: `linear-gradient(135deg, ${alignmentThemeColor} 0%, #007aff 100%)`,
+                webkitBackgroundClip: 'text',
+                webkitTextFillColor: 'transparent',
+              }}>{alignmentScore}%</span>
+            </div>
+            
+            <div className="alignment-bar-outer">
+              <div className="alignment-bar-inner" style={{
+                width: `${alignmentScore}%`,
+                background: `linear-gradient(90deg, ${alignmentThemeColor} 0%, #007aff 100%)`,
+                boxShadow: `0 0 12px ${alignmentThemeColor}66`
+              }} />
+            </div>
+
+            <div className="alignment-desc">
+              <div style={{ fontWeight: '700', color: '#ffffff', marginBottom: '4px', fontSize: '12px' }}>{alignmentStatus}</div>
+              {alignmentAdvice}
+            </div>
           </div>
 
           {/* AI Insights Card */}

@@ -30,7 +30,7 @@ function nameFromEmail(email) {
 }
 
 /**
- * Detect country based on browser timezone.
+ * Detect country based on browser  timezone or country code.
  */
 function detectCountry() {
   try {
@@ -52,21 +52,28 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
   const authName = meta.full_name || meta.display_name || '';
   const authOrg = meta.organization ? `(${meta.organization})` : '';
 
-  const [uName, setUName]         = useState(authName || profile.uName || '');
-  const [ctx, setCtx]             = useState(profile.ctx   || detectCountry() || '');
+  const [uName, setUName] = useState(authName || profile.uName || '');
+  const [ctx, setCtx] = useState(profile.ctx || detectCountry() || '');
+  const [selectedCulture, setSelectedCulture] = useState(() => {
+    const initialCtx = profile.ctx || detectCountry() || '';
+    if (initialCtx === 'Zimbabwe') return 'ZW';
+    if (initialCtx === 'China') return 'CN';
+    if (initialCtx) return 'Other';
+    return '';
+  });
   // Sync authName into uName once on first load if profile was empty
   React.useEffect(() => {
     if (!profile.uName && authName && !uName) setUName(authName);
   }, [authName]);
-  const [joinId, setJoinId]       = useState('');
-  const [optIn, setOptIn]         = useState(profile.optIn || false);
-  const [roomId, setRoomId]       = useState('');
+  const [joinId, setJoinId] = useState('');
+  const [optIn, setOptIn] = useState(profile.optIn || false);
+  const [roomId, setRoomId] = useState('');
   const [retryDelay, setRetryDelay] = useState(3000);
   const [copyLabel, setCopyLabel] = useState('copy');
   const [joinError, setJoinError] = useState('');
   const [joinErrorType, setJoinErrorType] = useState(''); // 'taken' | 'expired' | 'server'
   const [validationError, setValidationError] = useState('');
-  const [joining, setJoining]     = useState(false);
+  const [joining, setJoining] = useState(false);
   const [showProModal, setShowProModal] = useState(false);
 
   const { peerId, startCamera, joinCall, localVideoRef, cameraError } = webRTC;
@@ -79,7 +86,7 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
 
   useEffect(() => {
     if (!peerId || (roomId && roomId !== 'offline')) return;
-    
+
     let timeoutId;
     const registerRoom = async () => {
       try {
@@ -187,8 +194,8 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
           <div className="lob-hero-logo">
             <div className="lob-mark">
               <svg viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="5.5" r="2.8" stroke="#3dffa0" strokeWidth="1.2"/>
-                <path d="M2.5 14c0-3.04 2.46-5.5 5.5-5.5s5.5 2.46 5.5 5.5" stroke="#3dffa0" strokeWidth="1.2" strokeLinecap="round"/>
+                <circle cx="8" cy="5.5" r="2.8" stroke="#3dffa0" strokeWidth="1.2" />
+                <path d="M2.5 14c0-3.04 2.46-5.5 5.5-5.5s5.5 2.46 5.5 5.5" stroke="#3dffa0" strokeWidth="1.2" strokeLinecap="round" />
               </svg>
             </div>
             <span className="lob-hero-brand">emo<span>-detect</span></span>
@@ -208,60 +215,60 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
               >
                 <defs>
                   {/* Glow filters */}
-                  <filter id="glow-green"><feGaussianBlur stdDeviation="1.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-                  <filter id="glow-blue"><feGaussianBlur stdDeviation="1.5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                  <filter id="glow-green"><feGaussianBlur stdDeviation="1.5" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+                  <filter id="glow-blue"><feGaussianBlur stdDeviation="1.5" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
                   {/* Gradient fills under each line */}
                   <linearGradient id="grd-green" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3dffa0" stopOpacity="0.18"/>
-                    <stop offset="100%" stopColor="#3dffa0" stopOpacity="0"/>
+                    <stop offset="0%" stopColor="#3dffa0" stopOpacity="0.18" />
+                    <stop offset="100%" stopColor="#3dffa0" stopOpacity="0" />
                   </linearGradient>
                   <linearGradient id="grd-blue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#5b9cf6" stopOpacity="0.14"/>
-                    <stop offset="100%" stopColor="#5b9cf6" stopOpacity="0"/>
+                    <stop offset="0%" stopColor="#5b9cf6" stopOpacity="0.14" />
+                    <stop offset="100%" stopColor="#5b9cf6" stopOpacity="0" />
                   </linearGradient>
                   <linearGradient id="grd-amber" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#ffb347" stopOpacity="0.12"/>
-                    <stop offset="100%" stopColor="#ffb347" stopOpacity="0"/>
+                    <stop offset="0%" stopColor="#ffb347" stopOpacity="0.12" />
+                    <stop offset="100%" stopColor="#ffb347" stopOpacity="0" />
                   </linearGradient>
                   <linearGradient id="grd-red" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#ff6b6b" stopOpacity="0.1"/>
-                    <stop offset="100%" stopColor="#ff6b6b" stopOpacity="0"/>
+                    <stop offset="0%" stopColor="#ff6b6b" stopOpacity="0.1" />
+                    <stop offset="100%" stopColor="#ff6b6b" stopOpacity="0" />
                   </linearGradient>
                 </defs>
 
                 {/* Grid lines */}
                 {[16, 32, 48, 64].map(y => (
-                  <line key={y} x1="0" y1={y} x2="320" y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5"/>
+                  <line key={y} x1="0" y1={y} x2="320" y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
                 ))}
-                {[0,40,80,120,160,200,240,280,320].map(x => (
-                  <line key={x} x1={x} y1="0" x2={x} y2="80" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5"/>
+                {[0, 40, 80, 120, 160, 200, 240, 280, 320].map(x => (
+                  <line key={x} x1={x} y1="0" x2={x} y2="80" stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" />
                 ))}
 
                 {/* Happy — green */}
                 <polyline className="chart-line chart-happy" filter="url(#glow-green)"
-                  points="0,58 20,42 40,30 60,22 80,34 100,28 120,18 140,26 160,32 180,20 200,30 220,16 240,26 260,20 280,32 300,22 320,18"/>
+                  points="0,58 20,42 40,30 60,22 80,34 100,28 120,18 140,26 160,32 180,20 200,30 220,16 240,26 260,20 280,32 300,22 320,18" />
                 <polygon className="chart-fill chart-fill-happy"
-                  points="0,58 20,42 40,30 60,22 80,34 100,28 120,18 140,26 160,32 180,20 200,30 220,16 240,26 260,20 280,32 300,22 320,18 320,80 0,80"/>
+                  points="0,58 20,42 40,30 60,22 80,34 100,28 120,18 140,26 160,32 180,20 200,30 220,16 240,26 260,20 280,32 300,22 320,18 320,80 0,80" />
 
                 {/* Neutral — blue */}
                 <polyline className="chart-line chart-neutral" filter="url(#glow-blue)"
-                  points="0,44 20,50 40,46 60,52 80,44 100,48 120,52 140,46 160,50 180,44 200,52 220,46 240,52 260,46 280,50 300,46 320,52"/>
+                  points="0,44 20,50 40,46 60,52 80,44 100,48 120,52 140,46 160,50 180,44 200,52 220,46 240,52 260,46 280,50 300,46 320,52" />
                 <polygon className="chart-fill chart-fill-neutral"
-                  points="0,44 20,50 40,46 60,52 80,44 100,48 120,52 140,46 160,50 180,44 200,52 220,46 240,52 260,46 280,50 300,46 320,52 320,80 0,80"/>
+                  points="0,44 20,50 40,46 60,52 80,44 100,48 120,52 140,46 160,50 180,44 200,52 220,46 240,52 260,46 280,50 300,46 320,52 320,80 0,80" />
 
                 {/* Sad — amber */}
                 <polyline className="chart-line chart-sad"
-                  points="0,68 20,64 40,70 60,66 80,72 100,68 120,66 140,72 160,68 180,70 200,64 220,70 240,66 260,72 280,68 300,70 320,66"/>
+                  points="0,68 20,64 40,70 60,66 80,72 100,68 120,66 140,72 160,68 180,70 200,64 220,70 240,66 260,72 280,68 300,70 320,66" />
 
                 {/* Angry — red */}
                 <polyline className="chart-line chart-angry"
-                  points="0,74 20,70 40,76 60,72 80,74 100,76 120,70 140,74 160,76 180,72 200,74 220,76 240,72 260,74 280,76 300,70 320,74"/>
+                  points="0,74 20,70 40,76 60,72 80,74 100,76 120,70 140,74 160,76 180,72 200,74 220,76 240,72 260,74 280,76 300,70 320,74" />
 
                 {/* Animated scan cursor */}
-                <line className="chart-cursor" x1="0" y1="0" x2="0" y2="80"/>
+                <line className="chart-cursor" x1="0" y1="0" x2="0" y2="80" />
 
                 {/* Current peak dot */}
-                <circle className="chart-dot" cx="220" cy="16" r="3" fill="#3dffa0" filter="url(#glow-green)"/>
+                <circle className="chart-dot" cx="220" cy="16" r="3" fill="#3dffa0" filter="url(#glow-green)" />
               </svg>
             </div>
 
@@ -337,14 +344,53 @@ export default function Lobby({ onStart, webRTC, onDash, session }) {
               <input className="fi" type="text" value={uName} onChange={e => { setUName(e.target.value); setValidationError(''); }} />
             </div>
             <div className="fl">
-              <label className="fl-l">Your Country</label>
-              <input
-                className="fi"
-                type="text"
-                placeholder="e.g. Zimbabwe, China, USA…"
-                value={ctx}
-                onChange={e => { setCtx(e.target.value); setValidationError(''); }}
-              />
+              <label className="fl-l">Business Culture Profile</label>
+              <div className="ctx-grid">
+                <div
+                  className={`ctx-c ${selectedCulture === 'ZW' ? 'sel' : ''}`}
+                  onClick={() => { setSelectedCulture('ZW'); setCtx('Zimbabwe'); setValidationError(''); }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '6px', height: '100%' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className="ctx-flags">🇿🇼</span>
+                    <span className="ctx-lbl" style={{ fontWeight: '700', fontSize: '12px' }}>Zimbabwe</span>
+                  </div>
+                  <div style={{ fontSize: '10px', color: 'var(--muted)', lineHeight: '1.4' }}>
+                    Ubuntu Focus: communal social harmony, active warmth &amp; deep empathy mapping.
+                  </div>
+                </div>
+                <div
+                  className={`ctx-c ${selectedCulture === 'CN' ? 'sel' : ''}`}
+                  onClick={() => { setSelectedCulture('CN'); setCtx('China'); setValidationError(''); }}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '6px', height: '100%' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className="ctx-flags">🇨🇳</span>
+                    <span className="ctx-lbl" style={{ fontWeight: '700', fontSize: '12px' }}>China</span>
+                  </div>
+                  <div style={{ fontSize: '10px', color: 'var(--muted)', lineHeight: '1.4' }}>
+                    Guanxi Focus: face-saving etiquette, polite reserve &amp; subtle harmony indicators.
+                  </div>
+                </div>
+              </div>
+              <div
+                className={`ctx-c ${selectedCulture === 'Other' ? 'sel' : ''}`}
+                style={{ width: '100%', marginTop: '8px', flexDirection: 'row', alignItems: 'center', gap: '8px', padding: '10px 14px' }}
+                onClick={() => { setSelectedCulture('Other'); if (ctx === 'Zimbabwe' || ctx === 'China') setCtx(''); setValidationError(''); }}
+              >
+                <span className="ctx-flags" style={{ fontSize: '15px' }}>🌐</span>
+                <span className="ctx-lbl" style={{ margin: 0 }}>Custom / International (Base Model)</span>
+              </div>
+              {selectedCulture === 'Other' && (
+                <input
+                  className="fi"
+                  type="text"
+                  placeholder="e.g. USA, UK, Kenya…"
+                  value={ctx}
+                  onChange={e => { setCtx(e.target.value); setValidationError(''); }}
+                  style={{ marginTop: '6px' }}
+                />
+              )}
             </div>
           </div>
 

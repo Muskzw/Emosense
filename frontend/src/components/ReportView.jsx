@@ -3,10 +3,10 @@ import html2pdf from 'html2pdf.js';
 import { supabase } from '../supabase';
 
 const EMO_COLORS = {
-  happy:   { stroke: '#34c759', label: 'Happy',   fill: 'rgba(52,199,89,0.12)' },
-  neutral: { stroke: '#8899bb', label: 'Neutral',  fill: 'rgba(136,153,187,0.1)' },
-  sad:     { stroke: '#5b9cf6', label: 'Sad',      fill: 'rgba(91,156,246,0.12)' },
-  angry:   { stroke: '#ff3b30', label: 'Angry',    fill: 'rgba(255,59,48,0.12)' },
+  happy:   { stroke: 'var(--green)', label: 'Happy',   fill: 'var(--gd)' },
+  neutral: { stroke: 'var(--slate)', label: 'Neutral',  fill: 'var(--surf2)' },
+  sad:     { stroke: 'var(--blue)', label: 'Sad',      fill: 'rgba(0,122,255,0.12)' },
+  angry:   { stroke: 'var(--red)', label: 'Angry',    fill: 'rgba(255,59,48,0.12)' },
 };
 
 // Build a single valence path based on sequential Turns
@@ -309,7 +309,7 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
             <button className="btn-new" onClick={handleDownloadPDF}
-              style={{ background: 'rgba(91,156,246,0.2)', color: '#5b9cf6', borderColor: 'rgba(91,156,246,0.4)' }}>
+              style={{ background: 'rgba(0,122,255,0.15)', color: 'var(--blue)', borderColor: 'rgba(0,122,255,0.3)' }}>
               ↓ PDF
             </button>
             <button className="btn-new" onClick={onBack}>+ New call</button>
@@ -532,7 +532,7 @@ export default function ReportView({ onBack, emoCounts, duration, sessionInfo, t
                          <span style={{ fontSize: '11px', color: 'var(--muted)' }}>They showed:</span>
                          <span style={{ fontSize: '11px', fontWeight: '700', color: stroke, textTransform: 'uppercase' }}>{trig.emotion}</span>
                        </div>
-                       <div style={{ fontSize: '11px', color: 'var(--amber)', marginTop: '8px', background: 'rgba(255,183,71,0.1)', padding: '6px 8px', borderRadius: '6px', border: '1px solid rgba(255,183,71,0.2)' }}>
+                       <div style={{ fontSize: '11px', color: 'var(--amber-text)', marginTop: '8px', background: 'rgba(255,183,71,0.1)', padding: '6px 8px', borderRadius: '6px', border: '1px solid rgba(255,183,71,0.2)' }}>
                          <strong>Advice:</strong> {advice}
                        </div>
                      </div>

@@ -204,7 +204,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           max-width: 900px;
           /* Use aspect-ratio but cap height so it never overflows on laptop */
           aspect-ratio: 16/9;
-          max-height: calc(100vh - 220px);
+          max-height: calc(100vh - 280px);
           border-radius: 32px;
           overflow: hidden;
           position: relative;
@@ -214,6 +214,12 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           flex-shrink: 0;
         }
 
+        @media (max-height: 800px) {
+          .mr-video-container {
+            max-height: calc(100vh - 300px);
+          }
+        }
+
         .mr-video-container video {
           width: 100%;
           height: 100%;
@@ -221,7 +227,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           transform: scaleX(-1);
         }
 
-        .mr-video-container svg {
+        .mr-landmark-overlay {
           position: absolute;
           inset: 0;
           width: 100%;
@@ -413,7 +419,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
         {/* VIDEO CONTAINER */}
         <div className="mr-video-container">
           <video ref={localVideoRef} autoPlay muted playsInline />
-          <svg ref={svgRef} />
+          <div ref={svgRef} className="mr-landmark-overlay" />
           <canvas ref={canvasRef} style={{ display: 'none' }} />
 
           {/* AI Emotion Badge */}
