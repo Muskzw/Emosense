@@ -449,13 +449,12 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
                 svg.appendChild(c);
               }
             }
-            const dims = faceapi.matchDimensions(
-              { width: video.videoWidth, height: video.videoHeight },
-              video
-            );
-            svg.setAttribute('viewBox', `0 0 ${video.videoWidth} ${video.videoHeight}`);
-            const rDet  = faceapi.resizeResults(det, dims);
-            const pts   = rDet.landmarks.positions;
+            const currentViewBox = svg.getAttribute('viewBox');
+            const targetViewBox = `0 0 ${video.videoWidth} ${video.videoHeight}`;
+            if (currentViewBox !== targetViewBox) {
+              svg.setAttribute('viewBox', targetViewBox);
+            }
+            const pts   = det.landmarks.positions;
             const nodes = svg.children;
             const color = { happy:'#3dffa0', neutral:'#8899bb',
                              sad:'#5b9cf6', angry:'#ff6b6b' };
