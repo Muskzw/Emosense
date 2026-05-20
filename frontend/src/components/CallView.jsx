@@ -811,6 +811,81 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           border-radius: 50%;
           animation: blink 1.5s infinite;
         }
+        .remote-info-card {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          min-width: 280px;
+          max-width: 340px;
+        }
+        .remote-info-row-primary {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          width: 100%;
+        }
+        .remote-name-text {
+          font-size: 14px;
+          font-weight: 700;
+          color: #ffffff;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          flex: 1;
+          min-width: 0;
+        }
+        .emotion-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 10px;
+          border-radius: 999px;
+          font-size: 9.5px;
+          font-weight: 800;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+        }
+        .remote-info-row-secondary {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          border-top: 1px solid rgba(255,255,255,0.06);
+          padding-top: 6px;
+          width: 100%;
+        }
+        .context-engine-text {
+          font-size: 10px;
+          color: rgba(255,255,255,0.5);
+          font-family: var(--mono);
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          flex: 1;
+          min-width: 0;
+        }
+        .engine-status-dot {
+          display: inline-block;
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+        }
+        .scans-count-text {
+          font-size: 9.5px;
+          font-weight: 700;
+          color: rgba(255,255,255,0.45);
+          background: rgba(255,255,255,0.05);
+          padding: 2px 6px;
+          border-radius: 4px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          font-family: var(--mono);
+          flex-shrink: 0;
+        }
       `}</style>
 
       {/* ── DESKTOP CONTENT WRAPPER ── */}
@@ -853,22 +928,35 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             {/* Glassmorphic Remote HUD Overlay */}
             {isConnected && (
               <div className="remote-stats-overlay">
-                <div className="glass-stats-card">
-                  <div className="stat-indicator-dot" style={{
-                    background: curE.c,
-                    boxShadow: `0 0 8px ${curE.c}`
-                  }} />
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '10px', fontWeight: '800', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Remote Participant</span>
-                    <span style={{ fontSize: '14px', fontWeight: '700', color: '#ffffff' }}>{remoteName} {isZw ? '🇿🇼' : isCn ? '🇨🇳' : '🌐'}</span>
+                <div className="glass-stats-card remote-info-card">
+                  {/* Top Row: Name and Active Emotion Badge */}
+                  <div className="remote-info-row-primary">
+                    <span className="remote-name-text" title={remoteName}>
+                      {remoteName} {isZw ? '🇿🇼' : isCn ? '🇨🇳' : '🌐'}
+                    </span>
+                    <span className="emotion-badge" style={{
+                      background: `${curE.c}18`,
+                      color: curE.c,
+                      border: `1px solid ${curE.c}44`
+                    }}>
+                      <span className="stat-indicator-dot" style={{
+                        background: curE.c,
+                        boxShadow: `0 0 8px ${curE.c}`
+                      }} />
+                      {curE.n.toUpperCase()}
+                    </span>
                   </div>
-                </div>
-                
-                <div className="glass-stats-card" style={{ padding: '8px 14px', background: 'rgba(10, 10, 15, 0.4)' }}>
-                  <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)', fontFamily: 'var(--mono)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: modelsLoaded ? '#34c759' : '#ffb347' }} />
-                    Context Engine: {isZw ? 'ZW CNN Ensemble' : isCn ? 'CN CNN Ensemble' : 'Standard TFJS Model'}
-                  </span>
+                  
+                  {/* Bottom Row: Context Engine and Scans count */}
+                  <div className="remote-info-row-secondary">
+                    <span className="context-engine-text">
+                      <span className="engine-status-dot" style={{ background: modelsLoaded ? '#34c759' : '#ffb347' }} />
+                      Context: {isZw ? 'ZW CNN Ensemble' : isCn ? 'CN CNN Ensemble' : 'Standard TFJS'}
+                    </span>
+                    <span className="scans-count-text">
+                      {detCount} scans
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
