@@ -196,7 +196,7 @@ video{display:block;background:#000}
 @keyframes rp{0%,100%{opacity:0;transform:scale(.96)}40%{opacity:.5}65%{opacity:.2}}
 .sweep{position:absolute;left:0;right:0;height:1.5px;background:linear-gradient(90deg,transparent,currentColor,transparent);animation:swp 3.2s linear infinite;opacity:.5}
 @keyframes swp{0%{top:0;opacity:0}4%{opacity:.6}96%{opacity:.4}100%{top:100%;opacity:0}}
-.lm{position:absolute;border-radius:50%;transition:background .35s,box-shadow .35s,transform .3s;transform-origin:center}
+.lm{position:absolute;border-radius:50%;transition:background .35s,box-shadow .35s,transform .3s;transform-origin:center;width:6px;height:6px;margin-left:-3px;margin-top:-3px;z-index:10}
 .lm.md{width:4px;height:4px}.lm.sm{width:3px;height:3px}
 .lm.cg{background:var(--green);box-shadow:0 0 5px var(--green)}.lm.cb{background:var(--blue);box-shadow:0 0 5px var(--blue)}.lm.cr{background:var(--red);box-shadow:0 0 6px var(--red)}.lm.cs{background:var(--slate);box-shadow:0 0 4px var(--slate)}
 .lm.beat{animation:lb .38s ease}
@@ -469,8 +469,10 @@ video{display:block;background:#000}
     overflow-y: hidden !important;
     width: 100vw !important;
     height: 100vh !important;
+    height: 100dvh !important;
     position: fixed !important;
     inset: 0 !important;
+    background: radial-gradient(ellipse at top, #1a1a2e 0%, #0a0a0f 100%) !important;
   }
   .cv-desktop-main {
     display: block !important;
@@ -482,32 +484,37 @@ video{display:block;background:#000}
   }
   .cv-stage {
     display: block !important;
-    width: 100% !important;
-    height: 100% !important;
+    width: 90vw !important;
+    max-width: 440px !important;
+    aspect-ratio: 4 / 3 !important;
+    height: auto !important;
     position: absolute !important;
-    inset: 0 !important;
-    z-index: 1 !important;
+    top: 48% !important; /* Balanced position above bottom bar */
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 10 !important;
+    box-sizing: border-box !important;
   }
   .cv-video-card {
     width: 100% !important;
     height: 100% !important;
-    border-radius: 0 !important; /* Edge-to-edge video card on mobile */
-    border: none !important;
-    box-shadow: none !important;
+    border-radius: 20px !important; /* Gorgeous floating rounded tile */
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6) !important;
     background: #000 !important;
     position: absolute !important;
     inset: 0 !important;
     overflow: hidden !important;
   }
   .cv-video-card video {
-    object-fit: contain !important; /* Fix video over-cropping */
+    object-fit: cover !important; /* Zero black bars! Fills the beautiful 4:3 card completely */
     width: 100% !important;
     height: 100% !important;
     position: absolute !important;
     inset: 0 !important;
   }
   .cv-sidebar {
-    display: none !important; /* Hide desktop sidebar completely on mobile to prevent overlaps */
+    display: none !important; /* Hide desktop sidebar completely on mobile */
   }
   .cv-hud {
     display: none !important;
@@ -515,35 +522,39 @@ video{display:block;background:#000}
 
   /* TOP BAR & COMPACT OVERLAY */
   .cv-topbar {
-    padding: max(12px, calc(8px + env(safe-area-inset-top))) 16px 0 !important;
-    pointer-events: none !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
     z-index: 50 !important;
+    padding: max(16px, calc(12px + env(safe-area-inset-top))) 20px 0 !important;
+    pointer-events: none !important;
   }
   .remote-stats-overlay {
     position: absolute !important;
-    top: max(72px, calc(60px + env(safe-area-inset-top))) !important;
-    left: 5vw !important;
-    right: 5vw !important;
-    width: 90vw !important;
-    max-width: 90vw !important;
+    top: 12px !important;
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    max-width: none !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 0 !important;
     pointer-events: auto !important;
-    z-index: 50 !important;
+    z-index: 20 !important;
   }
   .remote-info-card {
     width: 100% !important;
     box-sizing: border-box !important;
-    background: rgba(10, 10, 15, 0.75) !important;
-    backdrop-filter: blur(24px) saturate(180%) !important;
+    background: rgba(10, 10, 15, 0.65) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    border-radius: 16px !important;
-    padding: 12px 14px !important;
+    border-radius: 12px !important;
+    padding: 10px 12px !important;
     display: flex !important;
     flex-direction: column !important;
-    gap: 8px !important;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.6) !important;
+    gap: 6px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
     min-width: 0 !important;
   }
   .remote-info-row-primary {
@@ -555,7 +566,7 @@ video{display:block;background:#000}
     min-width: 0 !important;
   }
   .remote-name-text {
-    font-size: 14px !important;
+    font-size: 13px !important;
     font-weight: 700 !important;
     color: #ffffff !important;
     white-space: nowrap !important;
@@ -567,18 +578,18 @@ video{display:block;background:#000}
   .emotion-badge {
     display: inline-flex !important;
     align-items: center !important;
-    gap: 6px !important;
-    padding: 4px 10px !important;
+    gap: 5px !important;
+    padding: 3px 8px !important;
     border-radius: 999px !important;
-    font-size: 10px !important;
+    font-size: 9px !important;
     font-weight: 800 !important;
     letter-spacing: 0.05em !important;
     text-transform: uppercase !important;
     flex-shrink: 0 !important;
   }
   .emotion-badge .stat-indicator-dot {
-    width: 6px !important;
-    height: 6px !important;
+    width: 5px !important;
+    height: 5px !important;
     border-radius: 50% !important;
     animation: blink 1.5s infinite !important;
   }
@@ -587,18 +598,18 @@ video{display:block;background:#000}
     align-items: center !important;
     justify-content: space-between !important;
     gap: 12px !important;
-    border-top: 1px solid rgba(255,255,255,0.08) !important;
-    padding-top: 8px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    padding-top: 6px !important;
     width: 100% !important;
     min-width: 0 !important;
   }
   .context-engine-text {
-    font-size: 10.5px !important;
-    color: rgba(255,255,255,0.6) !important;
+    font-size: 9.5px !important;
+    color: rgba(255, 255, 255, 0.6) !important;
     font-family: var(--mono) !important;
     display: flex !important;
     align-items: center !important;
-    gap: 6px !important;
+    gap: 5px !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
@@ -607,17 +618,17 @@ video{display:block;background:#000}
   }
   .engine-status-dot {
     display: inline-block !important;
-    width: 6px !important;
-    height: 6px !important;
+    width: 5px !important;
+    height: 5px !important;
     border-radius: 50% !important;
     flex-shrink: 0 !important;
   }
   .scans-count-text {
-    font-size: 10px !important;
+    font-size: 9px !important;
     font-weight: 700 !important;
-    color: rgba(255,255,255,0.5) !important;
-    background: rgba(255,255,255,0.08) !important;
-    padding: 2px 8px !important;
+    color: rgba(255, 255, 255, 0.5) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    padding: 1px 6px !important;
     border-radius: 4px !important;
     text-transform: uppercase !important;
     letter-spacing: 0.05em !important;
@@ -628,17 +639,17 @@ video{display:block;background:#000}
   /* PiP SELF-VIEW */
   .cv-pip {
     position: absolute !important;
-    left: 16px !important;
-    bottom: 80px !important;
+    left: 12px !important;
+    bottom: 12px !important;
     right: auto !important;
     top: auto !important;
-    width: 90px !important;
-    height: 120px !important;
-    border-radius: 8px !important;
+    width: 80px !important;
+    height: 100px !important;
+    border-radius: 12px !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
     overflow: hidden !important;
-    z-index: 40 !important;
+    z-index: 30 !important;
     background: #0a0a0f !important;
   }
   .cv-pip video {
@@ -649,13 +660,13 @@ video{display:block;background:#000}
 
   /* BOTTOM CONTROL BAR & BUTTONS */
   .cv-botbar {
-    position: absolute !important;
+    position: fixed !important;
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    z-index: 30 !important;
-    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%) !important;
-    padding: 16px 16px calc(16px + env(safe-area-inset-bottom)) !important;
+    z-index: 40 !important;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.4) 50%, transparent 100%) !important;
+    padding: 24px 20px calc(24px + env(safe-area-inset-bottom)) !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
@@ -665,10 +676,10 @@ video{display:block;background:#000}
   }
   .cv-controls {
     width: 100% !important;
-    max-width: 480px !important;
+    max-width: 440px !important;
     display: flex !important;
-    flex-direction: row !important; /* side by side */
-    gap: 12px !important;
+    flex-direction: row !important;
+    gap: 16px !important;
     pointer-events: auto !important;
     justify-content: center !important;
   }
@@ -676,7 +687,7 @@ video{display:block;background:#000}
     flex: 1 !important;
     height: 48px !important;
     min-height: 48px !important;
-    border-radius: 24px !important; /* premium pill shape */
+    border-radius: 24px !important; /* Premium pill shape */
     font-size: 14px !important;
     font-weight: 700 !important;
     display: flex !important;
@@ -690,7 +701,7 @@ video{display:block;background:#000}
 
   /* Compact mobile emotion strip */
   .cv-emo-strip {
-    display: flex !important;
+    display: none !important; /* Hidden because remote-info-card is integrated perfectly inside the video tile! */
   }
 
   /* Subtitles — smaller text on mobile */

@@ -196,7 +196,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
 
       try {
         const det = await faceapi
-          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.3 }))
+          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.25 }))
           .withFaceLandmarks(true)
           .withFaceExpressions();
 
@@ -324,25 +324,31 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
         submitSample(video, dEmo, maxConf);
 
         // Render face landmark dots
-        if (svg) {
+        if (svg && det) {
+          const clientW = video.clientWidth || video.videoWidth || 300;
+          const clientH = video.clientHeight || video.videoHeight || 200;
+
           if (svg.children.length === 0) {
             for (let i = 0; i < 68; i++) {
               const d = document.createElement('div');
-              d.className = 'lm cg';
+              d.className = 'lm cs';
               d.style.position = 'absolute';
               svg.appendChild(d);
             }
           }
-          const dims = faceapi.matchDimensions({ width: video.videoWidth, height: video.videoHeight }, video);
+
+          const dims = { width: clientW, height: clientH };
           const rDet = faceapi.resizeResults(det, dims);
-          const pts  = rDet.landmarks.positions;
-          const nodes = svg.children;
-          if (nodes.length === pts.length) {
-            pts.forEach((pt, i) => {
-              nodes[i].className   = `lm ${CMAP[dEmo] || 'cs'}`;
-              nodes[i].style.left  = `${(pt.x / video.videoWidth)  * 100}%`;
-              nodes[i].style.top   = `${(pt.y / video.videoHeight) * 100}%`;
-            });
+          if (rDet && rDet.landmarks) {
+            const pts = rDet.landmarks.positions;
+            const nodes = svg.children;
+            if (nodes.length === pts.length) {
+              pts.forEach((pt, i) => {
+                nodes[i].className   = `lm ${CMAP[dEmo] || 'cs'}`;
+                nodes[i].style.left  = `${(pt.x / clientW) * 100}%`;
+                nodes[i].style.top   = `${(pt.y / clientH) * 100}%`;
+              });
+            }
           }
         }
       } catch (err) {
