@@ -314,10 +314,11 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
                 const p1Data = await p1.data();
 
                 if (culture === 'ZW') {
-                  // ZW: Level 1 (down_up): Class 0 = 'down', Class 1 = 'up'
+                  // ZW: Level 1 (down_up): Class 0 = 'down' (negative), Class 1 = 'up' (positive)
+                  // FIX: 'up' (positive valence) → happy_neutral; 'down' (negative) → anger_sad
                   const classIdx = p1Data[0] > p1Data[1] ? 0 : 1;
-                  if (classIdx === 0) {
-                    // Route to happy_neutral: Class 0 = 'happy', Class 1 = 'neutral'
+                  if (classIdx === 1) {
+                    // 'up' → Route to happy_neutral: Class 0 = 'happy', Class 1 = 'neutral'
                     const p2 = m2.predict(processed);
                     const p2Data = await p2.data();
                     const class2Idx = p2Data[0] > p2Data[1] ? 0 : 1;
@@ -325,7 +326,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
                     maxConf = p2Data[class2Idx];
                     tf.dispose(p2);
                   } else {
-                    // Route to anger_sad: Class 0 = 'anger' (angry), Class 1 = 'sad'
+                    // 'down' → Route to anger_sad: Class 0 = 'anger' (angry), Class 1 = 'sad'
                     const p3 = m3.predict(processed);
                     const p3Data = await p3.data();
                     const class2Idx = p3Data[0] > p3Data[1] ? 0 : 1;
@@ -337,7 +338,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
                   // CN: Level 1 (up_down): Class 0 = 'down', Class 1 = 'up'
                   const classIdx = p1Data[0] > p1Data[1] ? 0 : 1;
                   if (classIdx === 1) {
-                    // Route to happy_neutral: Class 0 = 'happiness' (happy), Class 1 = 'neutral'
+                    // 'up' → Route to happy_neutral: Class 0 = 'happiness' (happy), Class 1 = 'neutral'
                     const p2 = m2.predict(processed);
                     const p2Data = await p2.data();
                     const class2Idx = p2Data[0] > p2Data[1] ? 0 : 1;
@@ -345,7 +346,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
                     maxConf = p2Data[class2Idx];
                     tf.dispose(p2);
                   } else {
-                    // Route to anger_sad: Class 0 = 'anger' (angry), Class 1 = 'sadness' (sad)
+                    // 'down' → Route to anger_sad: Class 0 = 'anger' (angry), Class 1 = 'sadness' (sad)
                     const p3 = m3.predict(processed);
                     const p3Data = await p3.data();
                     const class2Idx = p3Data[0] > p3Data[1] ? 0 : 1;
@@ -357,22 +358,36 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
 
                 tf.dispose(p1);
                 processed.dispose();
-                customSuccess = true;
+                // Only trust custom CNN result if confidence is high enough.
+                // Below 0.60, the standard face-api.js model is more reliable.
+                customSuccess = maxConf >= 0.60;
               }
             } catch (customErr) {
               console.warn('[FaceAPI] Custom CNN execution failed, falling back to face-api.js expressions:', customErr);
             }
           }
 
-          // Fallback to standard face-api.js expression model
-          if (!customSuccess) {
-            const exps = det.expressions;
-            for (const [e, c] of Object.entries(exps)) {
-              if (c > maxConf) { maxConf = c; dEmo = e; }
-            }
-            if (dEmo === 'surprised' || dEmo === 'disgusted') dEmo = 'neutral';
-            if (dEmo === 'fearful') dEmo = 'sad';
+          // Always compute face-api.js standard expression result as ground truth
+          const exps = det.expressions;
+          let baseEmo = 'neutral';
+          let baseConf = 0;
+          for (const [e, c] of Object.entries(exps)) {
+            if (c > baseConf) { baseConf = c; baseEmo = e; }
           }
+          if (baseEmo === 'surprised' || baseEmo === 'disgusted') baseEmo = 'neutral';
+          if (baseEmo === 'fearful') baseEmo = 'sad';
+
+          if (!customSuccess) {
+            // Custom CNN was not confident enough — trust the standard model
+            dEmo = baseEmo;
+            maxConf = baseConf;
+          } else if (baseConf > 0.85 && baseEmo !== dEmo) {
+            // Standard model is very confident and disagrees with custom CNN —
+            // blend: the well-trained standard model wins on high-confidence calls
+            dEmo = baseEmo;
+            maxConf = baseConf;
+          }
+          // Otherwise: customSuccess=true and confidence ≥ 0.60 → use custom CNN result
 
           // Micro-interactions on emotion change
           if (dEmo !== lastEmoRef.current) {
