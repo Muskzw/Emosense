@@ -103,6 +103,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
   const [curEmo, setCurEmo]             = useState('neutral');
   const [emoCounts, setEmoCounts]       = useState({ happy: 0, neutral: 0, sad: 0, angry: 0 });
   const [detCount, setDetCount]         = useState(0);
+  const [debug, setDebug]               = useState({ loopTicks: 0, videoSize: '0x0', lastError: 'none', lastDet: 'none' });
   const isConnectedRef = useRef(isConnected);
   useEffect(() => { isConnectedRef.current = isConnected; }, [isConnected]);
 
@@ -273,10 +274,13 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
     const loop = async () => {
       if (!active) return;
 
+      setDebug(d => ({ ...d, loopTicks: d.loopTicks + 1 }));
+
       const video = videoRef.current;
       const svg   = svgRef.current;
 
       if (!video || video.videoWidth === 0) {
+        setDebug(d => ({ ...d, videoSize: video ? `${video.videoWidth}x${video.videoHeight}` : 'null' }));
         // Video not ready, retry in 100ms
         if (active) {
           reqRef.current = setTimeout(loop, 100);
@@ -284,13 +288,17 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
         return;
       }
 
+      setDebug(d => ({ ...d, videoSize: `${video.videoWidth}x${video.videoHeight}` }));
+
       const startTime = Date.now();
 
       try {
         const det = await faceapi
-          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.15 }))
+          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.25 }))
           .withFaceLandmarks(true)
           .withFaceExpressions();
+
+        setDebug(d => ({ ...d, lastDet: det ? 'found' : 'not found' }));
 
         if (active && det) {
           let dEmo = 'neutral';
@@ -471,6 +479,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
         }
       } catch (err) {
         console.warn('[FaceAPI] Detection error:', err.message);
+        setDebug(d => ({ ...d, lastError: err.message }));
         if (svg) {
           const nodes = svg.children;
           for (let i = 0; i < nodes.length; i++) {
@@ -502,6 +511,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
     emoCounts,
     detCount,
     getTimeline: () => [...timelineRef.current],
+    debug,
   };
 }
 
