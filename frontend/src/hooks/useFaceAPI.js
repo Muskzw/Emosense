@@ -132,6 +132,16 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
   useEffect(() => {
     (async () => {
       try {
+        // Force face-api.js internal TensorFlow.js to use CPU backend
+        if (faceapi.tf && typeof faceapi.tf.setBackend === 'function') {
+          try {
+            await faceapi.tf.setBackend('cpu');
+            console.log('[FaceAPI] Internal faceapi.tf backend successfully set to CPU ✓');
+          } catch (tfErr) {
+            console.warn('[FaceAPI] Failed to set internal faceapi.tf backend to CPU:', tfErr);
+          }
+        }
+        
         const M = '/models/base';
         await Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri(M),
@@ -272,7 +282,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
 
       try {
         const det = await faceapi
-          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.25 }))
+          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.15 }))
           .withFaceLandmarks(true)
           .withFaceExpressions();
 
