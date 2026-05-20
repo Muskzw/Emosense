@@ -314,11 +314,10 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
                 const p1Data = await p1.data();
 
                 if (culture === 'ZW') {
-                  // ZW: Level 1 (down_up): Class 0 = 'down' (negative), Class 1 = 'up' (positive)
-                  // FIX: 'up' (positive valence) → happy_neutral; 'down' (negative) → anger_sad
+                  // ZW: Level 1 (down_up): Class 0 = 'down', Class 1 = 'up'
                   const classIdx = p1Data[0] > p1Data[1] ? 0 : 1;
-                  if (classIdx === 1) {
-                    // 'up' → Route to happy_neutral: Class 0 = 'happy', Class 1 = 'neutral'
+                  if (classIdx === 0) {
+                    // 'down' (Class 0) → Route to happy_neutral
                     const p2 = m2.predict(processed);
                     const p2Data = await p2.data();
                     const class2Idx = p2Data[0] > p2Data[1] ? 0 : 1;
@@ -326,7 +325,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
                     maxConf = p2Data[class2Idx];
                     tf.dispose(p2);
                   } else {
-                    // 'down' → Route to anger_sad: Class 0 = 'anger' (angry), Class 1 = 'sad'
+                    // 'up' (Class 1) → Route to anger_sad: Class 0 = 'anger' (angry), Class 1 = 'sad'
                     const p3 = m3.predict(processed);
                     const p3Data = await p3.data();
                     const class2Idx = p3Data[0] > p3Data[1] ? 0 : 1;
