@@ -103,6 +103,20 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
   const [curEmo, setCurEmo]             = useState('neutral');
   const [emoCounts, setEmoCounts]       = useState({ happy: 0, neutral: 0, sad: 0, angry: 0 });
   const [detCount, setDetCount]         = useState(0);
+  const isConnectedRef = useRef(isConnected);
+  useEffect(() => { isConnectedRef.current = isConnected; }, [isConnected]);
+
+  // Reset counts when a new session connection is established
+  useEffect(() => {
+    if (isConnected) {
+      setEmoCounts({ happy: 0, neutral: 0, sad: 0, angry: 0 });
+      setDetCount(0);
+      setCurEmo('neutral');
+      timelineRef.current = [];
+      lastSnapRef.current = 0;
+      callStartRef.current = Date.now();
+    }
+  }, [isConnected]);
 
   const lastEmoRef    = useRef('');
   const audioCtxRef   = useRef(null);
@@ -232,11 +246,9 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
 
   // ── Detection loop ────────────────────────────────────────────
   useEffect(() => {
-    if (!isConnected || !modelsLoaded) return;
-
-    timelineRef.current  = [];
-    lastSnapRef.current  = 0;
-    callStartRef.current = Date.now();
+    // Start detection loop as soon as models are loaded — don't hard-gate on
+    // isConnected because WebRTC state can lag behind actual video availability.
+    if (!modelsLoaded) return;
 
     console.log('[FaceAPI] Detection loop starting');
 
@@ -450,7 +462,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
       active = false;
       if (reqRef.current) clearTimeout(reqRef.current);
     };
-  }, [isConnected, modelsLoaded, customModelsLoaded, sessionCtx]);
+  }, [modelsLoaded, customModelsLoaded, sessionCtx]);
 
   return {
     modelsLoaded,
