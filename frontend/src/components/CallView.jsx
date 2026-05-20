@@ -494,8 +494,10 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
 
   // Attach local camera stream
   useEffect(() => {
-    if (localVideoRef.current && webRTC.faceStream) {
-      localVideoRef.current.srcObject = webRTC.faceStream;
+    const video = localVideoRef.current;
+    if (video && webRTC.faceStream) {
+      video.srcObject = webRTC.faceStream;
+      video.play().catch(e => console.warn('[CallView] Local PiP play was prevented:', e));
     }
   }, [webRTC.faceStream]);
 

@@ -14,14 +14,34 @@ const CMAP = { happy: 'cg', neutral: 'cs', sad: 'cb', angry: 'cr' };
 function loadTFJS() {
   return new Promise((resolve, reject) => {
     if (window.tf) {
-      resolve(window.tf);
+      if (typeof window.tf.setBackend === 'function') {
+        window.tf.setBackend('cpu')
+          .then(() => {
+            console.log('[FaceAPI] Existing TensorFlow.js backend set to CPU ✓');
+            resolve(window.tf);
+          })
+          .catch((err) => {
+            console.warn('[FaceAPI] Failed to set existing TFJS backend to CPU:', err);
+            resolve(window.tf);
+          });
+      } else {
+        resolve(window.tf);
+      }
       return;
     }
     const script = document.createElement('script');
     script.src = '/tf.min.js';
     script.async = true;
-    script.onload = () => {
+    script.onload = async () => {
       console.log('[FaceAPI] TensorFlow.js loaded dynamically ✓');
+      try {
+        if (window.tf && typeof window.tf.setBackend === 'function') {
+          await window.tf.setBackend('cpu');
+          console.log('[FaceAPI] Forced TensorFlow.js backend to CPU ✓');
+        }
+      } catch (backendErr) {
+        console.error('[FaceAPI] Failed to set CPU backend for TensorFlow.js:', backendErr);
+      }
       resolve(window.tf);
     };
     script.onerror = (err) => {
@@ -240,7 +260,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
 
       try {
         const det = await faceapi
-          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.3 }))
+          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.25 }))
           .withFaceLandmarks(true)
           .withFaceExpressions();
 
@@ -386,13 +406,35 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
                   nodes[i].className   = `lm ${CMAP[dEmo] || 'cs'}`;
                   nodes[i].style.left  = `${mapped.x}%`;
                   nodes[i].style.top   = `${mapped.y}%`;
+                  nodes[i].style.display = ''; // Show dot
                 });
               }
+            } else {
+              // Hide landmarks if det has no landmarks
+              const nodes = svg.children;
+              for (let i = 0; i < nodes.length; i++) {
+                nodes[i].style.display = 'none';
+              }
+            }
+          }
+        } else if (active && !det) {
+          // Face lost: reset current emotion to neutral and hide landmarks
+          setCurEmo('neutral');
+          if (svg) {
+            const nodes = svg.children;
+            for (let i = 0; i < nodes.length; i++) {
+              nodes[i].style.display = 'none';
             }
           }
         }
       } catch (err) {
         console.warn('[FaceAPI] Detection error:', err.message);
+        if (svg) {
+          const nodes = svg.children;
+          for (let i = 0; i < nodes.length; i++) {
+            nodes[i].style.display = 'none';
+          }
+        }
       }
 
       if (active) {

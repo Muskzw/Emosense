@@ -28,7 +28,9 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
     if (!faceStream) {
       startCamera();
     } else if (localVideoRef.current) {
-      localVideoRef.current.srcObject = faceStream;
+      const video = localVideoRef.current;
+      video.srcObject = faceStream;
+      video.play().catch(e => console.warn('[MirrorRoom] Autoplay was prevented:', e));
     }
   }, [faceStream, startCamera]);
 
