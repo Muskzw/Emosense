@@ -60,7 +60,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
   useEffect(() => {
     (async () => {
       try {
-        const M = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+        const M = '/models/base';
         await Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri(M),
           faceapi.nets.faceLandmark68TinyNet.loadFromUri(M),
