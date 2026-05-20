@@ -18,7 +18,7 @@ function loadTFJS() {
       return;
     }
     const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js';
+    script.src = '/tf.min.js';
     script.async = true;
     script.onload = () => {
       console.log('[FaceAPI] TensorFlow.js loaded dynamically ✓');
@@ -196,7 +196,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
 
       try {
         const det = await faceapi
-          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.35 }))
+          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.3 }))
           .withFaceLandmarks(true)
           .withFaceExpressions();
 
