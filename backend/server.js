@@ -84,24 +84,26 @@ app.get('/api/ice-config', (req, res) => {
     const user = process.env.TURN_USERNAME;
     const pass = process.env.TURN_PASSWORD?.replace(/['"]/g, ''); // strip quotes
     
-    if (!url) return [
-      {
-        urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turn:openrelay.metered.ca:443?transport=tcp'],
-        username: 'openrelayproject',
-        credential: 'openrelayproject',
-      }
-    ];
-
-    // Some browsers/networks prefer turns: (TLS)
-    const tlsUrl = url.replace('turn:', 'turns:').replace(':80', ':443');
-
-    return [
-      {
+    const turnServers = [];
+    
+    if (url) {
+      // Some browsers/networks prefer turns: (TLS)
+      const tlsUrl = url.replace('turn:', 'turns:').replace(':80', ':443');
+      turnServers.push({
         urls: [url, tlsUrl],
         username: user,
         credential: pass,
-      }
-    ];
+      });
+    }
+
+    // Always include Open Relay public TURN servers as a fallback
+    turnServers.push({
+      urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turn:openrelay.metered.ca:443?transport=tcp'],
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    });
+
+    return turnServers;
   };
 
   const iceServers = [

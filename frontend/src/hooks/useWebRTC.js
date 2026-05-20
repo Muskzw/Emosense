@@ -66,6 +66,20 @@ export function useWebRTC(onRemoteEnd, localName) {
         console.log('[WebRTC] Peer opened with ID:', id);
         setPeerId(id);
       });
+
+      peer.on('disconnected', () => {
+        console.warn('[WebRTC] Peer disconnected from signaling server. Attempting reconnection...');
+        peer.reconnect();
+      });
+
+      peer.on('error', err => {
+        console.error('[WebRTC] PeerJS client error:', err.type, err.message || err);
+        if (err.type === 'peer-unavailable') {
+          console.warn('[WebRTC] Target peer was not found. Ensure host has started the session first.');
+        } else if (err.type === 'network') {
+          console.warn('[WebRTC] Network error. Signaling server may be offline or connection was dropped.');
+        }
+      });
       const handleData = (d) => {
         if(d.name) setRemoteName(d.name); 
         if(d.type === 'END_SESSION') {
