@@ -10,47 +10,7 @@ export const EMO = {
 
 const CMAP = { happy: 'cg', neutral: 'cs', sad: 'cb', angry: 'cr' };
 
-// ── Dynamic TensorFlow.js Script Loader ─────────────────────────
-function loadTFJS() {
-  return new Promise((resolve, reject) => {
-    if (window.tf) {
-      if (typeof window.tf.setBackend === 'function') {
-        window.tf.setBackend('cpu')
-          .then(() => {
-            console.log('[FaceAPI] Existing TensorFlow.js backend set to CPU ✓');
-            resolve(window.tf);
-          })
-          .catch((err) => {
-            console.warn('[FaceAPI] Failed to set existing TFJS backend to CPU:', err);
-            resolve(window.tf);
-          });
-      } else {
-        resolve(window.tf);
-      }
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = '/tf.min.js';
-    script.async = true;
-    script.onload = async () => {
-      console.log('[FaceAPI] TensorFlow.js loaded dynamically ✓');
-      try {
-        if (window.tf && typeof window.tf.setBackend === 'function') {
-          await window.tf.setBackend('cpu');
-          console.log('[FaceAPI] Forced TensorFlow.js backend to CPU ✓');
-        }
-      } catch (backendErr) {
-        console.error('[FaceAPI] Failed to set CPU backend for TensorFlow.js:', backendErr);
-      }
-      resolve(window.tf);
-    };
-    script.onerror = (err) => {
-      console.error('[FaceAPI] Failed to load TensorFlow.js:', err);
-      reject(err);
-    };
-    document.head.appendChild(script);
-  });
-}
+// Dynamic script loader removed in favor of using built-in faceapi.tf
 
 const getCultureCode = (ctx) => {
   const s = String(ctx || '').toLowerCase();
@@ -178,7 +138,10 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
     (async () => {
       try {
         console.log(`[FaceAPI] Loading custom models for culture: ${culture}...`);
-        const tf = await loadTFJS();
+        const tf = faceapi.tf;
+        if (!tf) {
+          throw new Error('TensorFlow.js is not loaded within face-api');
+        }
         
         const base = `/models/${culture.toLowerCase()}`;
         const m1Path = culture === 'ZW' ? `${base}/down_up/model.json` : `${base}/up_down/model.json`;
@@ -308,9 +271,9 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
           let customSuccess = false;
 
           // Run custom hierarchical CNN if loaded
-          if (customModelsLoaded && customModelsRef.current && window.tf) {
+          const tf = faceapi.tf;
+          if (customModelsLoaded && customModelsRef.current && tf) {
             try {
-              const tf = window.tf;
               const { m1, m2, m3, culture } = customModelsRef.current;
 
               const processed = tf.tidy(() => {

@@ -39,12 +39,12 @@ export function useWebRTC(onRemoteEnd, localName) {
       } catch(e) { console.warn('ICE fetch failed', e); }
 
       // Always use our own self-hosted PeerJS signaling server.
-      // For localhost dev, the backend is always on port 3000 regardless of Vite's port.
-      // In production, the backend is co-located so use port 443 (HTTPS) or 80 (HTTP).
+      // For localhost dev or local network dev via Vite (port 5173, etc.), the backend is always on port 3000.
+      // In production, the backend is co-located so use co-located port or defaults.
       const host = window.location.hostname;
       const isSecure = window.location.protocol === 'https:';
-      const isLocalhost = host === 'localhost' || host === '127.0.0.1';
-      const port = isLocalhost
+      const isLocalDev = window.location.port && window.location.port !== '3000';
+      const port = isLocalDev
         ? 3000                                         // Vite dev server ≠ backend port
         : (window.location.port                        // production: co-located port
             ? parseInt(window.location.port)
