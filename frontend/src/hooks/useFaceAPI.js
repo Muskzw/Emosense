@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import * as faceapi from 'face-api.js';
+import * as faceapi from '@vladmandic/face-api';
 
 export const EMO = {
   happy:   { n: 'Happy',   c: '#3dffa0', rc: 'rgba(61,255,160,0.8)',   cv: 80, co: 30 },
@@ -100,6 +100,7 @@ function mapVideoCoordinates(pt, video) {
 export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx, optIn = false) {
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [customModelsLoaded, setCustomModelsLoaded] = useState(false);
+  const [modelError, setModelError]     = useState(false);
   const [curEmo, setCurEmo]             = useState('neutral');
   const [emoCounts, setEmoCounts]       = useState({ happy: 0, neutral: 0, sad: 0, angry: 0 });
   const [detCount, setDetCount]         = useState(0);
@@ -158,7 +159,8 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
         setModelsLoaded(true);
         console.log('[FaceAPI] Base models loaded ✓');
       } catch (e) {
-        console.error('[FaceAPI] Base model load failed:', e);
+        console.error('[FaceAPI] Model load failed:', e);
+        setModelError(true);
       }
     })();
   }, []);
@@ -438,33 +440,33 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
 
           // Render face landmark dots
           if (svg) {
+            const NS = 'http://www.w3.org/2000/svg';
             if (svg.children.length === 0) {
               for (let i = 0; i < 68; i++) {
-                const d = document.createElement('div');
-                d.className = 'lm cs';
-                d.style.position = 'absolute';
-                svg.appendChild(d);
+                const c = document.createElementNS(NS, 'circle');
+                c.setAttribute('r', '2.5');
+                c.setAttribute('fill', 'transparent');
+                svg.appendChild(c);
               }
             }
-
-            if (det.landmarks) {
-              const pts = det.landmarks.positions;
-              const nodes = svg.children;
-              if (nodes.length === pts.length) {
-                pts.forEach((pt, i) => {
-                  const mapped = mapVideoCoordinates(pt, video);
-                  nodes[i].className   = `lm ${CMAP[dEmo] || 'cs'}`;
-                  nodes[i].style.left  = `${mapped.x}%`;
-                  nodes[i].style.top   = `${mapped.y}%`;
-                  nodes[i].style.display = ''; // Show dot
-                });
-              }
-            } else {
-              // Hide landmarks if det has no landmarks
-              const nodes = svg.children;
-              for (let i = 0; i < nodes.length; i++) {
-                nodes[i].style.display = 'none';
-              }
+            const dims = faceapi.matchDimensions(
+              { width: video.videoWidth, height: video.videoHeight },
+              video
+            );
+            svg.setAttribute('viewBox', `0 0 ${video.videoWidth} ${video.videoHeight}`);
+            const rDet  = faceapi.resizeResults(det, dims);
+            const pts   = rDet.landmarks.positions;
+            const nodes = svg.children;
+            const color = { happy:'#3dffa0', neutral:'#8899bb',
+                             sad:'#5b9cf6', angry:'#ff6b6b' };
+            const col = color[dEmo] || color.neutral;
+            if (nodes.length === pts.length) {
+              pts.forEach((pt, i) => {
+                nodes[i].setAttribute('cx', pt.x);
+                nodes[i].setAttribute('cy', pt.y);
+                nodes[i].setAttribute('fill', col);
+                nodes[i].setAttribute('fill-opacity', '0.85');
+              });
             }
           }
         } else if (active && !det) {
@@ -473,7 +475,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
           if (svg) {
             const nodes = svg.children;
             for (let i = 0; i < nodes.length; i++) {
-              nodes[i].style.display = 'none';
+              nodes[i].setAttribute('fill', 'transparent');
             }
           }
         }
@@ -483,7 +485,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
         if (svg) {
           const nodes = svg.children;
           for (let i = 0; i < nodes.length; i++) {
-            nodes[i].style.display = 'none';
+            nodes[i].setAttribute('fill', 'transparent');
           }
         }
       }
@@ -506,6 +508,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
   return {
     modelsLoaded,
     customModelsLoaded,
+    modelError,
     customCulture: customModelsRef.current?.culture || null,
     curEmo,
     emoCounts,

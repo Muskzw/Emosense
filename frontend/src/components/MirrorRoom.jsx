@@ -20,7 +20,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
     };
   }, []);
 
-  const { modelsLoaded, curEmo } = useFaceAPI(
+  const { modelsLoaded, curEmo, modelError } = useFaceAPI(
     localVideoRef, svgRef, canvasRef, true, sessionInfo.ctx, sessionInfo.optIn
   );
 
@@ -446,7 +446,17 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
         {/* VIDEO CONTAINER */}
         <div className="mr-video-container">
           <video ref={localVideoRef} autoPlay muted playsInline />
-          <div ref={svgRef} className="mr-landmark-overlay" />
+          <svg
+            ref={svgRef}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              pointerEvents: 'none',
+              transform: 'scaleX(-1)',
+            }}
+          />
           <canvas ref={canvasRef} style={{ display: 'none' }} />
 
           {/* AI Emotion Badge */}
@@ -504,6 +514,11 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           </div>
 
           <div className="mr-action-wrap">
+            {modelError && (
+              <div style={{ color: '#ff6b6b', fontSize: '13px', fontWeight: '600', marginBottom: '8px', textAlign: 'center' }}>
+                ⚠ AI models failed to load. Check your connection.
+              </div>
+            )}
             {waitingForHost ? (
               <button className="mr-btn-cancel" onClick={() => {
                 setWaitingForHost(false);
