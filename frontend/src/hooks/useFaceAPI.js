@@ -132,13 +132,19 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
   useEffect(() => {
     (async () => {
       try {
-        // Force face-api.js internal TensorFlow.js to use CPU backend
+        // Force face-api.js internal TensorFlow.js to use WebGL backend
         if (faceapi.tf && typeof faceapi.tf.setBackend === 'function') {
           try {
-            await faceapi.tf.setBackend('cpu');
-            console.log('[FaceAPI] Internal faceapi.tf backend successfully set to CPU ✓');
+            await faceapi.tf.setBackend('webgl');
+            console.log('[FaceAPI] Internal faceapi.tf backend successfully set to WebGL ✓');
           } catch (tfErr) {
-            console.warn('[FaceAPI] Failed to set internal faceapi.tf backend to CPU:', tfErr);
+            console.warn('[FaceAPI] Failed to set internal faceapi.tf backend to WebGL, trying CPU:', tfErr);
+            try {
+              await faceapi.tf.setBackend('cpu');
+              console.log('[FaceAPI] Internal faceapi.tf backend successfully fell back to CPU ✓');
+            } catch (cpuErr) {
+              console.error('[FaceAPI] Failed to set internal faceapi.tf backend to CPU:', cpuErr);
+            }
           }
         }
         
