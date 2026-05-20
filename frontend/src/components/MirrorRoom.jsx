@@ -393,10 +393,35 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
         }
 
         @media (max-width: 768px) {
-          .mr-video-container { border-radius: 20px; animation: none; max-height: none; }
-          .mr-controls { flex-direction: column; padding: 20px; gap: 20px; }
-          .mr-action-wrap { width: 100%; align-items: stretch; }
-          .mr-btn-primary { justify-content: center; }
+          .mr-main {
+            padding: 10px 16px;
+            justify-content: flex-start;
+            overflow-y: auto;
+            gap: 12px;
+          }
+          .mr-video-container {
+            aspect-ratio: 4/3;
+            max-width: 440px;
+            max-height: none;
+            border-radius: 24px;
+            animation: none;
+            margin: 0 auto;
+          }
+          .mr-controls {
+            flex-direction: column;
+            padding: 20px;
+            gap: 20px;
+            max-width: 440px;
+            margin: 0 auto;
+            border-radius: 20px;
+          }
+          .mr-action-wrap {
+            width: 100%;
+            align-items: stretch;
+          }
+          .mr-btn-primary {
+            justify-content: center;
+          }
         }
       `}</style>
 

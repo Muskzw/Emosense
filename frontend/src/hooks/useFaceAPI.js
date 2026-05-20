@@ -39,6 +39,44 @@ const getCultureCode = (ctx) => {
   return null;
 };
 
+function mapVideoCoordinates(pt, video) {
+  const videoWidth = video.videoWidth;
+  const videoHeight = video.videoHeight;
+  const clientWidth = video.clientWidth;
+  const clientHeight = video.clientHeight;
+
+  if (!videoWidth || !videoHeight || !clientWidth || !clientHeight) {
+    return { x: 0, y: 0 };
+  }
+
+  const computedStyle = window.getComputedStyle(video);
+  const fit = computedStyle.objectFit || 'fill';
+
+  let scaleX = clientWidth / videoWidth;
+  let scaleY = clientHeight / videoHeight;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  if (fit === 'cover' || fit === 'contain') {
+    const scale = fit === 'cover' 
+      ? Math.max(scaleX, scaleY) 
+      : Math.min(scaleX, scaleY);
+    
+    scaleX = scale;
+    scaleY = scale;
+    offsetX = (clientWidth - (videoWidth * scale)) / 2;
+    offsetY = (clientHeight - (videoHeight * scale)) / 2;
+  }
+
+  const x_elem = pt.x * scaleX + offsetX;
+  const y_elem = pt.y * scaleY + offsetY;
+
+  return {
+    x: (x_elem / clientWidth) * 100, // as percentage
+    y: (y_elem / clientHeight) * 100  // as percentage
+  };
+}
+
 export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx, optIn = false) {
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [customModelsLoaded, setCustomModelsLoaded] = useState(false);
@@ -179,187 +217,196 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
     timelineRef.current  = [];
     lastSnapRef.current  = 0;
     callStartRef.current = Date.now();
-    lastFrameRef.current = 0;
 
     console.log('[FaceAPI] Detection loop starting');
 
-    const loop = async (time) => {
-      reqRef.current = requestAnimationFrame(loop);
+    let active = true;
 
-      // Throttle to ~3 fps (300 ms interval)
-      if (time - lastFrameRef.current < 300) return;
-      lastFrameRef.current = time;
+    const loop = async () => {
+      if (!active) return;
 
       const video = videoRef.current;
       const svg   = svgRef.current;
-      if (!video || video.videoWidth === 0) return;
+
+      if (!video || video.videoWidth === 0) {
+        // Video not ready, retry in 100ms
+        if (active) {
+          reqRef.current = setTimeout(loop, 100);
+        }
+        return;
+      }
+
+      const startTime = Date.now();
 
       try {
         const det = await faceapi
-          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.25 }))
+          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.3 }))
           .withFaceLandmarks(true)
           .withFaceExpressions();
 
-        if (!det) return;
+        if (active && det) {
+          let dEmo = 'neutral';
+          let maxConf = 0;
+          let customSuccess = false;
 
-        let dEmo = 'neutral';
-        let maxConf = 0;
-        let customSuccess = false;
+          // Run custom hierarchical CNN if loaded
+          if (customModelsLoaded && customModelsRef.current && window.tf) {
+            try {
+              const tf = window.tf;
+              const { m1, m2, m3, culture } = customModelsRef.current;
 
-        // Run custom hierarchical CNN if loaded
-        if (customModelsLoaded && customModelsRef.current && window.tf) {
-          try {
-            const tf = window.tf;
-            const { m1, m2, m3, culture } = customModelsRef.current;
+              const processed = tf.tidy(() => {
+                const fullTensor = tf.browser.fromPixels(video);
+                const { x, y, width, height } = det.detection.box;
+                const startY = Math.max(0, Math.floor(y));
+                const startX = Math.max(0, Math.floor(x));
+                const sizeY = Math.min(video.videoHeight - startY, Math.floor(height));
+                const sizeX = Math.min(video.videoWidth - startX, Math.floor(width));
 
-            const processed = tf.tidy(() => {
-              const fullTensor = tf.browser.fromPixels(video);
-              const { x, y, width, height } = det.detection.box;
-              const startY = Math.max(0, Math.floor(y));
-              const startX = Math.max(0, Math.floor(x));
-              const sizeY = Math.min(video.videoHeight - startY, Math.floor(height));
-              const sizeX = Math.min(video.videoWidth - startX, Math.floor(width));
+                if (sizeY <= 0 || sizeX <= 0) return null;
 
-              if (sizeY <= 0 || sizeX <= 0) return null;
+                const cropped = tf.slice(fullTensor, [startY, startX, 0], [sizeY, sizeX, 3]);
+                const resized = tf.image.resizeBilinear(cropped, [96, 96]);
+                const normalized = tf.cast(resized, 'float32').div(255.0);
 
-              const cropped = tf.slice(fullTensor, [startY, startX, 0], [sizeY, sizeX, 3]);
-              const resized = tf.image.resizeBilinear(cropped, [96, 96]);
-              const normalized = tf.cast(resized, 'float32').div(255.0);
-
-              if (culture === 'ZW') {
-                const gray = tf.image.rgbToGrayscale(normalized);
-                return gray.expandDims(0); // [1, 96, 96, 1]
-              } else {
-                return normalized.expandDims(0); // [1, 96, 96, 3]
-              }
-            });
-
-            if (processed) {
-              const p1 = m1.predict(processed);
-              const p1Data = await p1.data();
-
-              if (culture === 'ZW') {
-                // ZW: Level 1 (down_up): Class 0 = 'down', Class 1 = 'up'
-                const classIdx = p1Data[0] > p1Data[1] ? 0 : 1;
-                if (classIdx === 0) {
-                  // Route to happy_neutral: Class 0 = 'happy', Class 1 = 'neutral'
-                  const p2 = m2.predict(processed);
-                  const p2Data = await p2.data();
-                  const class2Idx = p2Data[0] > p2Data[1] ? 0 : 1;
-                  dEmo = class2Idx === 0 ? 'happy' : 'neutral';
-                  maxConf = p2Data[class2Idx];
-                  tf.dispose(p2);
+                if (culture === 'ZW') {
+                  const gray = tf.image.rgbToGrayscale(normalized);
+                  return gray.expandDims(0); // [1, 96, 96, 1]
                 } else {
-                  // Route to anger_sad: Class 0 = 'anger' (angry), Class 1 = 'sad'
-                  const p3 = m3.predict(processed);
-                  const p3Data = await p3.data();
-                  const class2Idx = p3Data[0] > p3Data[1] ? 0 : 1;
-                  dEmo = class2Idx === 0 ? 'angry' : 'sad';
-                  maxConf = p3Data[class2Idx];
-                  tf.dispose(p3);
+                  return normalized.expandDims(0); // [1, 96, 96, 3]
                 }
-              } else {
-                // CN: Level 1 (up_down): Class 0 = 'down', Class 1 = 'up'
-                const classIdx = p1Data[0] > p1Data[1] ? 0 : 1;
-                if (classIdx === 1) {
-                  // Route to happy_neutral: Class 0 = 'happiness' (happy), Class 1 = 'neutral'
-                  const p2 = m2.predict(processed);
-                  const p2Data = await p2.data();
-                  const class2Idx = p2Data[0] > p2Data[1] ? 0 : 1;
-                  dEmo = class2Idx === 0 ? 'happy' : 'neutral';
-                  maxConf = p2Data[class2Idx];
-                  tf.dispose(p2);
-                } else {
-                  // Route to anger_sad: Class 0 = 'anger' (angry), Class 1 = 'sadness' (sad)
-                  const p3 = m3.predict(processed);
-                  const p3Data = await p3.data();
-                  const class2Idx = p3Data[0] > p3Data[1] ? 0 : 1;
-                  dEmo = class2Idx === 0 ? 'angry' : 'sad';
-                  maxConf = p3Data[class2Idx];
-                  tf.dispose(p3);
-                }
-              }
-
-              tf.dispose(p1);
-              processed.dispose();
-              customSuccess = true;
-            }
-          } catch (customErr) {
-            console.warn('[FaceAPI] Custom CNN execution failed, falling back to face-api.js expressions:', customErr);
-          }
-        }
-
-        // Fallback to standard face-api.js expression model
-        if (!customSuccess) {
-          const exps = det.expressions;
-          for (const [e, c] of Object.entries(exps)) {
-            if (c > maxConf) { maxConf = c; dEmo = e; }
-          }
-          if (dEmo === 'surprised' || dEmo === 'disgusted') dEmo = 'neutral';
-          if (dEmo === 'fearful') dEmo = 'sad';
-        }
-
-        // Micro-interactions on emotion change
-        if (dEmo !== lastEmoRef.current) {
-          if (dEmo === 'angry' || dEmo === 'sad' || dEmo === 'happy') {
-            playPop();
-            if (navigator.vibrate) navigator.vibrate([30]);
-          }
-          lastEmoRef.current = dEmo;
-        }
-
-        // Update detection state
-        setCurEmo(dEmo);
-        setDetCount(p => p + 1);
-        setEmoCounts(p => ({ ...p, [dEmo]: (p[dEmo] || 0) + 1 }));
-
-        // Timeline snapshot every 2 s
-        const now = Date.now();
-        if (now - lastSnapRef.current >= 2000) {
-          timelineRef.current.push({ t: Math.floor((now - callStartRef.current) / 1000), emo: dEmo });
-          lastSnapRef.current = now;
-        }
-
-        // Data collection
-        submitSample(video, dEmo, maxConf);
-
-        // Render face landmark dots
-        if (svg && det) {
-          const clientW = video.clientWidth || video.videoWidth || 300;
-          const clientH = video.clientHeight || video.videoHeight || 200;
-
-          if (svg.children.length === 0) {
-            for (let i = 0; i < 68; i++) {
-              const d = document.createElement('div');
-              d.className = 'lm cs';
-              d.style.position = 'absolute';
-              svg.appendChild(d);
-            }
-          }
-
-          const dims = { width: clientW, height: clientH };
-          const rDet = faceapi.resizeResults(det, dims);
-          if (rDet && rDet.landmarks) {
-            const pts = rDet.landmarks.positions;
-            const nodes = svg.children;
-            if (nodes.length === pts.length) {
-              pts.forEach((pt, i) => {
-                nodes[i].className   = `lm ${CMAP[dEmo] || 'cs'}`;
-                nodes[i].style.left  = `${(pt.x / clientW) * 100}%`;
-                nodes[i].style.top   = `${(pt.y / clientH) * 100}%`;
               });
+
+              if (processed) {
+                const p1 = m1.predict(processed);
+                const p1Data = await p1.data();
+
+                if (culture === 'ZW') {
+                  // ZW: Level 1 (down_up): Class 0 = 'down', Class 1 = 'up'
+                  const classIdx = p1Data[0] > p1Data[1] ? 0 : 1;
+                  if (classIdx === 0) {
+                    // Route to happy_neutral: Class 0 = 'happy', Class 1 = 'neutral'
+                    const p2 = m2.predict(processed);
+                    const p2Data = await p2.data();
+                    const class2Idx = p2Data[0] > p2Data[1] ? 0 : 1;
+                    dEmo = class2Idx === 0 ? 'happy' : 'neutral';
+                    maxConf = p2Data[class2Idx];
+                    tf.dispose(p2);
+                  } else {
+                    // Route to anger_sad: Class 0 = 'anger' (angry), Class 1 = 'sad'
+                    const p3 = m3.predict(processed);
+                    const p3Data = await p3.data();
+                    const class2Idx = p3Data[0] > p3Data[1] ? 0 : 1;
+                    dEmo = class2Idx === 0 ? 'angry' : 'sad';
+                    maxConf = p3Data[class2Idx];
+                    tf.dispose(p3);
+                  }
+                } else {
+                  // CN: Level 1 (up_down): Class 0 = 'down', Class 1 = 'up'
+                  const classIdx = p1Data[0] > p1Data[1] ? 0 : 1;
+                  if (classIdx === 1) {
+                    // Route to happy_neutral: Class 0 = 'happiness' (happy), Class 1 = 'neutral'
+                    const p2 = m2.predict(processed);
+                    const p2Data = await p2.data();
+                    const class2Idx = p2Data[0] > p2Data[1] ? 0 : 1;
+                    dEmo = class2Idx === 0 ? 'happy' : 'neutral';
+                    maxConf = p2Data[class2Idx];
+                    tf.dispose(p2);
+                  } else {
+                    // Route to anger_sad: Class 0 = 'anger' (angry), Class 1 = 'sadness' (sad)
+                    const p3 = m3.predict(processed);
+                    const p3Data = await p3.data();
+                    const class2Idx = p3Data[0] > p3Data[1] ? 0 : 1;
+                    dEmo = class2Idx === 0 ? 'angry' : 'sad';
+                    maxConf = p3Data[class2Idx];
+                    tf.dispose(p3);
+                  }
+                }
+
+                tf.dispose(p1);
+                processed.dispose();
+                customSuccess = true;
+              }
+            } catch (customErr) {
+              console.warn('[FaceAPI] Custom CNN execution failed, falling back to face-api.js expressions:', customErr);
+            }
+          }
+
+          // Fallback to standard face-api.js expression model
+          if (!customSuccess) {
+            const exps = det.expressions;
+            for (const [e, c] of Object.entries(exps)) {
+              if (c > maxConf) { maxConf = c; dEmo = e; }
+            }
+            if (dEmo === 'surprised' || dEmo === 'disgusted') dEmo = 'neutral';
+            if (dEmo === 'fearful') dEmo = 'sad';
+          }
+
+          // Micro-interactions on emotion change
+          if (dEmo !== lastEmoRef.current) {
+            if (dEmo === 'angry' || dEmo === 'sad' || dEmo === 'happy') {
+              playPop();
+              if (navigator.vibrate) navigator.vibrate([30]);
+            }
+            lastEmoRef.current = dEmo;
+          }
+
+          // Update detection state
+          setCurEmo(dEmo);
+          setDetCount(p => p + 1);
+          setEmoCounts(p => ({ ...p, [dEmo]: (p[dEmo] || 0) + 1 }));
+
+          // Timeline snapshot every 2 s
+          const now = Date.now();
+          if (now - lastSnapRef.current >= 2000) {
+            timelineRef.current.push({ t: Math.floor((now - callStartRef.current) / 1000), emo: dEmo });
+            lastSnapRef.current = now;
+          }
+
+          // Data collection
+          submitSample(video, dEmo, maxConf);
+
+          // Render face landmark dots
+          if (svg) {
+            if (svg.children.length === 0) {
+              for (let i = 0; i < 68; i++) {
+                const d = document.createElement('div');
+                d.className = 'lm cs';
+                d.style.position = 'absolute';
+                svg.appendChild(d);
+              }
+            }
+
+            if (det.landmarks) {
+              const pts = det.landmarks.positions;
+              const nodes = svg.children;
+              if (nodes.length === pts.length) {
+                pts.forEach((pt, i) => {
+                  const mapped = mapVideoCoordinates(pt, video);
+                  nodes[i].className   = `lm ${CMAP[dEmo] || 'cs'}`;
+                  nodes[i].style.left  = `${mapped.x}%`;
+                  nodes[i].style.top   = `${mapped.y}%`;
+                });
+              }
             }
           }
         }
       } catch (err) {
         console.warn('[FaceAPI] Detection error:', err.message);
       }
+
+      if (active) {
+        const elapsed = Date.now() - startTime;
+        const delay = Math.max(30, 300 - elapsed);
+        reqRef.current = setTimeout(loop, delay);
+      }
     };
 
-    reqRef.current = requestAnimationFrame(loop);
+    reqRef.current = setTimeout(loop, 100);
     return () => {
       console.log('[FaceAPI] Detection loop stopped');
-      cancelAnimationFrame(reqRef.current);
+      active = false;
+      if (reqRef.current) clearTimeout(reqRef.current);
     };
   }, [isConnected, modelsLoaded, customModelsLoaded, sessionCtx]);
 
