@@ -158,6 +158,10 @@ export function useWebRTC(onRemoteEnd, localName) {
 
     call.on('stream', rs => {
       console.log('[WebRTC] Received remote stream');
+      rs.getAudioTracks().forEach(track => {
+        console.log('[WebRTC] Enabling remote audio track:', track.id);
+        track.enabled = true;
+      });
       setRemoteStream(rs);
       setIsConnected(true);
     });
@@ -194,6 +198,10 @@ export function useWebRTC(onRemoteEnd, localName) {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      stream.getAudioTracks().forEach(track => {
+        console.log('[WebRTC] Enabling local audio track:', track.id);
+        track.enabled = true;
+      });
       setFaceStream(stream);
       setCameraError('');
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;

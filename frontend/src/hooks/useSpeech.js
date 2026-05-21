@@ -1,12 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 
-export function useSpeech(isConnected) {
+export function useSpeech(isConnected, enabled = false) {
   const [transcript, setTranscript] = useState('');
   const [finalTranscripts, setFinalTranscripts] = useState([]);
   const recognitionRef = useRef(null);
 
   useEffect(() => {
-    if (!isConnected) return;
+    if (!isConnected || !enabled) {
+      if (recognitionRef.current) {
+        console.log('[useSpeech] Disabling Speech Recognition and releasing mic');
+        try { recognitionRef.current.stop(); } catch(e) {}
+        recognitionRef.current = null;
+      }
+      return;
+    }
     
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -14,6 +21,7 @@ export function useSpeech(isConnected) {
       return;
     }
 
+    console.log('[useSpeech] Starting Speech Recognition (acquiring mic)');
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
@@ -39,8 +47,8 @@ export function useSpeech(isConnected) {
     };
     
     recognition.onend = () => {
-      // Auto-restart if still connected
-      if (isConnected && recognitionRef.current) {
+      // Auto-restart if still connected and enabled
+      if (isConnected && enabled && recognitionRef.current) {
         try { recognition.start(); } catch(e) {}
       }
     };
@@ -54,11 +62,13 @@ export function useSpeech(isConnected) {
 
     return () => {
       if (recognitionRef.current) {
+        console.log('[useSpeech] Cleaning up Speech Recognition');
         try { recognitionRef.current.stop(); } catch(e) {}
         recognitionRef.current = null;
       }
     };
-  }, [isConnected]);
+  }, [isConnected, enabled]);
 
   return { transcript, finalTranscripts };
 }
+

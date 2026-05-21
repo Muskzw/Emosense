@@ -167,6 +167,19 @@ const S = {
     transition: 'all 0.2s ease',
     whiteSpace: 'nowrap',
   },
+  aiSpeechBtn: (enabled) => ({
+    padding: '13px 22px', borderRadius: '999px',
+    background: enabled ? 'rgba(61, 255, 160, 0.15)' : 'rgba(255,255,255,0.06)',
+    backdropFilter: 'blur(20px)',
+    border: enabled ? '1px solid rgba(61,255,160,0.4)' : '1px solid rgba(255,255,255,0.12)',
+    boxShadow: enabled ? '0 0 15px rgba(61,255,160,0.2), inset 0 1px 0 rgba(255,255,255,0.1)' : 'inset 0 1px 0 rgba(255,255,255,0.05)',
+    color: enabled ? '#3dffa0' : 'rgba(255,255,255,0.6)',
+    fontSize: '14px', fontWeight: '700',
+    cursor: 'pointer', letterSpacing: '-0.01em',
+    transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+    display: 'flex', alignItems: 'center', gap: '8px',
+    whiteSpace: 'nowrap',
+  }),
   aiStatus: {
     position: 'absolute', right: '20px',
     display: 'flex', alignItems: 'center', gap: '7px',
@@ -285,8 +298,9 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
   const curEmoRef = useRef('neutral');
   useEffect(() => { curEmoRef.current = curEmo; }, [curEmo]);
 
-  // AI Voice Analytics 
-  const { finalTranscripts } = useSpeech(isConnected);
+  // AI Voice Analytics - Default false to guarantee 100% direct WebRTC audio connection
+  const [speechEnabled, setSpeechEnabled] = useState(false);
+  const { finalTranscripts } = useSpeech(isConnected, speechEnabled);
   const voiceTriggersRef = useRef([]);
 
   // Subtitles
@@ -552,8 +566,9 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
 
       const playVideo = async () => {
         try {
+          video.muted = false; // Explicitly ensure video is unmuted
           await video.play();
-          console.log('[CallView] Remote video playing');
+          console.log('[CallView] Remote video playing unmuted');
           setIsRemoteMuted(false);
         } catch (e) {
           console.warn('[CallView] Autoplay blocked, trying muted...', e);
@@ -1325,6 +1340,22 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             {!isRecording && !waitingConsent && !isResetting && <span style={{ fontSize: '9px', fontWeight: '800', background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', color: '#1a1a2e', padding: '2px 6px', borderRadius: '4px', marginLeft: '4px' }}>PRO</span>}
           </button>
           
+          <button
+            className="cv-ai-speech-btn animate-spring-hover"
+            style={S.aiSpeechBtn(speechEnabled)}
+            onClick={() => setSpeechEnabled(prev => !prev)}
+          >
+            <div style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              background: speechEnabled ? '#3dffa0' : 'rgba(255,255,255,0.4)',
+              boxShadow: speechEnabled ? '0 0 8px #3dffa0' : 'none',
+              transition: 'all 0.3s ease'
+            }} />
+            AI Speech Coach: {speechEnabled ? 'ON' : 'OFF'}
+          </button>
+
           <button
             ref={endBtnRef}
             className="end-btn cv-end-btn"
