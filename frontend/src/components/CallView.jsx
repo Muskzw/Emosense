@@ -277,6 +277,9 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
   const [activeSubtitle, setActiveSubtitle] = useState(null);
   const subtitleTimeoutRef = useRef(null);
 
+  // Autoplay recovery tracking
+  const [isRemoteMuted, setIsRemoteMuted] = useState(false);
+
   useEffect(() => {
     if (finalTranscripts.length > 0 && isConnected) {
       const last = finalTranscripts[finalTranscripts.length - 1];
@@ -508,14 +511,45 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
       console.log('[CallView] Attaching remote stream:', remoteStream.id);
       video.srcObject = remoteStream;
       
+      let interactionListenersAdded = false;
+
+      const unmuteOnInteraction = () => {
+        if (video) {
+          video.muted = false;
+          setIsRemoteMuted(false);
+          video.play().then(() => {
+            console.log('[CallView] Unmuted remote video after user interaction');
+          }).catch(err => {
+            console.error('[CallView] Failed to play unmuted video on interaction:', err);
+          });
+        }
+        cleanupInteractionListeners();
+      };
+
+      const cleanupInteractionListeners = () => {
+        if (interactionListenersAdded) {
+          document.removeEventListener('click', unmuteOnInteraction);
+          document.removeEventListener('touchstart', unmuteOnInteraction);
+          interactionListenersAdded = false;
+        }
+      };
+
       const playVideo = async () => {
         try {
           await video.play();
           console.log('[CallView] Remote video playing');
+          setIsRemoteMuted(false);
         } catch (e) {
           console.warn('[CallView] Autoplay blocked, trying muted...', e);
           video.muted = true; // Muting often bypasses autoplay blocks
+          setIsRemoteMuted(true);
           video.play().catch(p2 => console.error('[CallView] Even muted play failed:', p2));
+          
+          if (!interactionListenersAdded) {
+            document.addEventListener('click', unmuteOnInteraction, { passive: true });
+            document.addEventListener('touchstart', unmuteOnInteraction, { passive: true });
+            interactionListenersAdded = true;
+          }
         }
       };
       playVideo();
@@ -533,6 +567,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
       });
 
       return () => {
+        cleanupInteractionListeners();
         remoteStream.getTracks().forEach(track => {
           track.removeEventListener('unmute', handleTrackEvent);
           track.removeEventListener('ended', handleTrackEvent);
@@ -888,6 +923,17 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           font-family: var(--mono);
           flex-shrink: 0;
         }
+        @keyframes pulse-banner {
+          0% { transform: translate(-50%, 0) scale(1); box-shadow: 0 8px 32px rgba(255, 59, 48, 0.4); }
+          50% { transform: translate(-50%, -2px) scale(1.04); box-shadow: 0 12px 36px rgba(255, 59, 48, 0.6); }
+          100% { transform: translate(-50%, 0) scale(1); box-shadow: 0 8px 32px rgba(255, 59, 48, 0.4); }
+        }
+        .unmute-banner {
+          animation: pulse-banner 2s infinite ease-in-out;
+        }
+        .unmute-banner:hover {
+          background: rgba(255, 75, 64, 0.95) !important;
+        }
       `}</style>
 
       {/* ── DESKTOP CONTENT WRAPPER ── */}
@@ -904,6 +950,47 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                 autoPlay
                 playsInline
               />
+              {isConnected && isRemoteMuted && (
+                <div 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const video = remoteVideoRef.current;
+                    if (video) {
+                      video.muted = false;
+                      setIsRemoteMuted(false);
+                      video.play().catch(err => console.error(err));
+                    }
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: '24px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    zIndex: 99,
+                    background: 'rgba(255, 59, 48, 0.85)',
+                    backdropFilter: 'blur(16px)',
+                    color: 'white',
+                    padding: '12px 24px',
+                    borderRadius: '24px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    letterSpacing: '0.03em',
+                    textTransform: 'uppercase',
+                    transition: 'background-color 0.2s'
+                  }}
+                  className="unmute-banner"
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                    <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM12 4L9.91 6.09 12 8.18V4zm-8.27-.27L2.3 5.16 7.13 10H3v4h3l4 4V12.87l6.63 6.63c-.88.63-1.87 1.09-2.96 1.34v2.01c1.63-.35 3.1-.1.97 4.39 1.42.42 2.69-.37 3.73-1.12l2.8 2.8 1.43-1.41L3.73 3.73z" />
+                  </svg>
+                  <span>Click to Unmute Peer</span>
+                </div>
+              )}
               <div
                 ref={svgRef}
                 style={{

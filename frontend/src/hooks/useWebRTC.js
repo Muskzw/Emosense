@@ -31,12 +31,26 @@ export function useWebRTC(onRemoteEnd, localName) {
 
     const initPeer = async () => {
       console.log('[WebRTC] Initializing Peer...');
-      let iceServers = [{urls:['stun:stun.l.google.com:19302']}];
+      let iceServers = [
+        { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] },
+        {
+          urls: [
+            'stun:openrelay.metered.ca:80',
+            'stun:openrelay.metered.ca:443',
+            'turn:openrelay.metered.ca:80',
+            'turn:openrelay.metered.ca:80?transport=tcp',
+            'turn:openrelay.metered.ca:443',
+            'turn:openrelay.metered.ca:443?transport=tcp'
+          ],
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        }
+      ];
       try {
         const res = await fetch('/api/ice-config');
         const data = await res.json();
         if (data.iceServers) iceServers = data.iceServers;
-      } catch(e) { console.warn('ICE fetch failed', e); }
+      } catch(e) { console.warn('ICE fetch failed, using robust fallbacks', e); }
 
       // Always use our own self-hosted PeerJS signaling server.
       // For localhost dev or local network dev via Vite (port 5173, etc.), the backend is always on port 3000.

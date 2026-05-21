@@ -87,10 +87,33 @@ app.get('/api/ice-config', (req, res) => {
     const turnServers = [];
     
     if (url) {
+      // url is e.g. turn:emosense.metered.live:80
+      const hostPort = url.replace('turn:', ''); // e.g. emosense.metered.live:80
+      const host = hostPort.split(':')[0];       // e.g. emosense.metered.live
+      
+      const stun80 = `stun:${host}:80`;
+      const stun443 = `stun:${host}:443`;
+      const turn80udp = `turn:${host}:80?transport=udp`;
+      const turn80tcp = `turn:${host}:80?transport=tcp`;
+      const turn443udp = `turn:${host}:443?transport=udp`;
+      const turn443tcp = `turn:${host}:443?transport=tcp`;
+      const turns443 = `turns:${host}:443?transport=tcp`;
+
       // Some browsers/networks prefer turns: (TLS)
       const tlsUrl = url.replace('turn:', 'turns:').replace(':80', ':443');
+
       turnServers.push({
-        urls: [url, tlsUrl],
+        urls: [
+          stun80,
+          stun443,
+          url,
+          tlsUrl,
+          turn80udp,
+          turn80tcp,
+          turn443udp,
+          turn443tcp,
+          turns443
+        ],
         username: user,
         credential: pass,
       });
@@ -98,7 +121,14 @@ app.get('/api/ice-config', (req, res) => {
 
     // Always include Open Relay public TURN servers as a fallback
     turnServers.push({
-      urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:443', 'turn:openrelay.metered.ca:443?transport=tcp'],
+      urls: [
+        'stun:openrelay.metered.ca:80',
+        'stun:openrelay.metered.ca:443',
+        'turn:openrelay.metered.ca:80',
+        'turn:openrelay.metered.ca:80?transport=tcp',
+        'turn:openrelay.metered.ca:443',
+        'turn:openrelay.metered.ca:443?transport=tcp'
+      ],
       username: 'openrelayproject',
       credential: 'openrelayproject',
     });

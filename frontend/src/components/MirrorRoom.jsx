@@ -20,9 +20,18 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
     };
   }, []);
 
-  const { modelsLoaded, curEmo, modelError } = useFaceAPI(
+  const { modelsLoaded, customModelsLoaded, curEmo, modelError } = useFaceAPI(
     localVideoRef, svgRef, canvasRef, true, sessionInfo.ctx, sessionInfo.optIn
   );
+
+  const needsCustomModel = !!(sessionInfo.ctx && (
+    sessionInfo.ctx.toLowerCase().includes('china') || 
+    sessionInfo.ctx.toLowerCase().includes('cn') || 
+    sessionInfo.ctx.toLowerCase().includes('zimbabwe') || 
+    sessionInfo.ctx.toLowerCase().includes('zw')
+  ));
+
+  const isReady = modelsLoaded && (!needsCustomModel || customModelsLoaded);
 
   useEffect(() => {
     if (!faceStream) {
@@ -468,11 +477,11 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           </div>
 
           {/* Loading Overlay */}
-          {!modelsLoaded && (
+          {!isReady && (
             <div className="mr-loading">
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#ffb347', fontWeight: '700', fontSize: '16px' }}>
                 <div className="mr-spinner" />
-                Initializing AI Models...
+                {!modelsLoaded ? "Initializing Base Neural Networks..." : `Activating ${sessionInfo.ctx} Cultural AI Models...`}
               </div>
             </div>
           )}
@@ -532,7 +541,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
               <button 
                 className="mr-btn-primary" 
                 onClick={handleJoinClick}
-                disabled={!modelsLoaded || !faceStream || joiningState}
+                disabled={!isReady || !faceStream || joiningState}
               >
                 {joiningState ? (
                   <><div className="mr-spinner" style={{ width: '18px', height: '18px', borderWidth: '2px', borderColor: 'rgba(255,255,255,0.5)', borderTopColor: 'white' }} /> Connecting...</>
