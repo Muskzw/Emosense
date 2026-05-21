@@ -5,6 +5,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
   const { startCamera, faceStream, localVideoRef, isConnected } = webRTC;
   const svgRef = useRef(null);
   const canvasRef = useRef(null);
+  const localVideoBgRef = useRef(null);
   const [micLevel, setMicLevel] = useState(0);
   const [joinError, setJoinError] = useState('');
   const [joiningState, setJoiningState] = useState(false);
@@ -36,10 +37,17 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
   useEffect(() => {
     if (!faceStream) {
       startCamera();
-    } else if (localVideoRef.current) {
-      const video = localVideoRef.current;
-      video.srcObject = faceStream;
-      video.play().catch(e => console.warn('[MirrorRoom] Autoplay was prevented:', e));
+    } else {
+      if (localVideoRef.current) {
+        const video = localVideoRef.current;
+        video.srcObject = faceStream;
+        video.play().catch(e => console.warn('[MirrorRoom] Autoplay was prevented:', e));
+      }
+      if (localVideoBgRef.current) {
+        const videoBg = localVideoBgRef.current;
+        videoBg.srcObject = faceStream;
+        videoBg.play().catch(e => console.warn('[MirrorRoom] Background Autoplay was prevented:', e));
+      }
     }
   }, [faceStream, startCamera]);
 
@@ -456,10 +464,42 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
         
         {/* VIDEO CONTAINER */}
         <div className="mr-video-container">
-          <video ref={localVideoRef} autoPlay muted playsInline />
+          <video
+            ref={localVideoBgRef}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              filter: 'blur(30px) brightness(0.35) saturate(1.3)',
+              opacity: 0.85,
+              pointerEvents: 'none',
+              zIndex: 1,
+              transform: 'scaleX(-1)',
+            }}
+            autoPlay
+            muted
+            playsInline
+          />
+          <video
+            ref={localVideoRef}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+              zIndex: 2,
+              transform: 'scaleX(-1)',
+            }}
+            autoPlay
+            muted
+            playsInline
+          />
           <svg
             ref={svgRef}
-            preserveAspectRatio="xMidYMid slice"
+            preserveAspectRatio="xMidYMid meet"
             style={{
               position: 'absolute',
               inset: 0,
@@ -467,6 +507,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
               height: '100%',
               pointerEvents: 'none',
               transform: 'scaleX(-1)',
+              zIndex: 3,
             }}
           />
           <canvas ref={canvasRef} style={{ display: 'none' }} />

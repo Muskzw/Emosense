@@ -576,10 +576,15 @@ button:active, .btn:active, .end-btn:active, .cv-btn:active, .lob-btn:active, .c
     z-index: 30 !important;
     background: #0a0a0f !important;
   }
-  .cv-pip video {
+  .cv-pip .local-bg-vid {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
+  }
+  .cv-pip .local-fg-vid {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
   }
   .cv-pip div {
     display: none !important; /* Hide You label on mobile */
@@ -592,9 +597,9 @@ button:active, .btn:active, .end-btn:active, .cv-btn:active, .lob-btn:active, .c
     left: 0 !important;
     right: 0 !important;
     z-index: 100 !important;
-    background: rgba(10, 13, 20, 0.95) !important;
-    backdrop-filter: blur(20px) !important;
-    border-top: 1px solid var(--border) !important;
+    background: rgba(10, 13, 20, 0.65) !important;
+    backdrop-filter: blur(30px) saturate(180%) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
     padding: 8px 16px calc(8px + env(safe-area-inset-bottom)) !important;
     height: auto !important;
   }
@@ -639,8 +644,12 @@ button:active, .btn:active, .end-btn:active, .cv-btn:active, .lob-btn:active, .c
     display: flex !important;
     flex-direction: column !important;
     gap: 12px !important;
-    background: var(--bg) !important;
-    border-top: 1px solid var(--border) !important;
-    padding: 12px 0 24px 0 !important;
+    background: rgba(17, 21, 32, 0.75) !important;
+    backdrop-filter: blur(24px) saturate(150%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 20px !important;
+    margin: 12px 16px 24px 16px !important;
+    padding: 16px !important;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5) !important;
   }
 }

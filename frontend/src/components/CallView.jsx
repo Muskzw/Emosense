@@ -91,17 +91,16 @@ const S = {
     letterSpacing: '0.06em',
     pointerEvents: 'all',
   },
-  // ── LOCAL PIP — bottom-right glassy pill (overridden on mobile via .cv-pip class)
   localPip: {
-    position: 'absolute', bottom: '110px', right: '18px',
-    width: '110px', height: '150px', borderRadius: '28px',
+    position: 'absolute', bottom: '110px', left: '24px',
+    width: '116px', height: '80px', borderRadius: '8px',
     overflow: 'hidden', zIndex: 20,
-    border: '1.5px solid rgba(255,255,255,0.28)',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 0 4px rgba(120,200,255,0.1), inset 0 1px 0 rgba(255,255,255,0.2)',
+    border: '1.5px solid rgba(79,142,247,0.5)',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
     background: '#0a0a0f',
   },
   localVid: {
-    width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)',
+    width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)',
   },
   localLabel: {
     position: 'absolute', bottom: '8px', left: 0, right: 0, textAlign: 'center',
@@ -138,12 +137,13 @@ const S = {
   statsRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   statVal: { fontSize: '20px', fontWeight: '700', color: 'white', lineHeight: 1 },
   statLbl: { fontSize: '9px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: '3px' },
-  // ── BOTTOM BAR
   botBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 30,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     padding: '16px 20px calc(24px + env(safe-area-inset-bottom))',
-    background: 'linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%)',
+    background: 'rgba(10, 13, 20, 0.65)',
+    backdropFilter: 'blur(30px) saturate(180%)',
+    borderTop: '1px solid rgba(255, 255, 255, 0.08)',
   },
   centerControls: {
     display: 'flex', alignItems: 'center', gap: '16px',
@@ -294,6 +294,8 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
   const compositorRef = useRef(null);
   const recordLoopRef = useRef(null);
   const isRecordingRef = useRef(false);
+  const remoteVideoBgRef = useRef(null);
+  const localVideoBgRef = useRef(null);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   useEffect(() => {
@@ -556,18 +558,28 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
   // Attach local camera stream
   useEffect(() => {
     const video = localVideoRef.current;
+    const videoBg = localVideoBgRef.current;
     if (video && webRTC.faceStream) {
       video.srcObject = webRTC.faceStream;
       video.play().catch(e => console.warn('[CallView] Local PiP play was prevented:', e));
+      if (videoBg) {
+        videoBg.srcObject = webRTC.faceStream;
+        videoBg.play().catch(e => console.warn('[CallView] Local PiP Bg play was prevented:', e));
+      }
     }
   }, [webRTC.faceStream]);
 
   // Attach remote peer stream — runs AFTER React paints the video element
   useEffect(() => {
     const video = remoteVideoRef.current;
+    const videoBg = remoteVideoBgRef.current;
     if (video && remoteStream && isConnected) {
       console.log('[CallView] Attaching remote stream:', remoteStream.id);
       video.srcObject = remoteStream;
+      if (videoBg) {
+        videoBg.srcObject = remoteStream;
+        videoBg.muted = true;
+      }
       
       let interactionListenersAdded = false;
 
@@ -580,6 +592,9 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           }).catch(err => {
             console.error('[CallView] Failed to play unmuted video on interaction:', err);
           });
+        }
+        if (videoBg) {
+          videoBg.play().catch(err => console.warn('[CallView] Background video play on interaction failed:', err));
         }
         cleanupInteractionListeners();
       };
@@ -610,6 +625,9 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             interactionListenersAdded = true;
           }
         }
+        if (videoBg) {
+          videoBg.play().catch(p2 => console.warn('[CallView] Background video play failed:', p2));
+        }
       };
       playVideo();
 
@@ -617,6 +635,9 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
       const handleTrackEvent = () => {
         console.log('[CallView] Track active/updated event fired');
         video.srcObject = remoteStream;
+        if (videoBg) {
+          videoBg.srcObject = remoteStream;
+        }
         playVideo();
       };
 
@@ -1067,10 +1088,10 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           {/* Dynamic emotional ambient backlight glow */}
           <div style={{
             position: 'absolute',
-            width: '80%',
-            height: '80%',
-            background: `radial-gradient(circle, ${curE.c}2c 0%, transparent 70%)`,
-            filter: 'blur(100px)',
+            width: '90%',
+            height: '90%',
+            background: `radial-gradient(circle, ${curE.c}3b 0%, transparent 70%)`,
+            filter: 'blur(130px)',
             pointerEvents: 'none',
             zIndex: 1,
             transition: 'background 0.8s ease-in-out',
@@ -1084,8 +1105,34 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             {/* Remote Video Container */}
             <div style={S.remoteFill}>
               <video
+                ref={remoteVideoBgRef}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  filter: 'blur(40px) brightness(0.35) saturate(1.4)',
+                  opacity: 0.85,
+                  pointerEvents: 'none',
+                  zIndex: 1,
+                  display: isConnected ? 'block' : 'none'
+                }}
+                autoPlay
+                muted
+                playsInline
+              />
+              <video
                 ref={remoteVideoRef}
-                style={{ ...S.remoteVid, display: isConnected ? 'block' : 'none' }}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  zIndex: 2,
+                  display: isConnected ? 'block' : 'none'
+                }}
                 autoPlay
                 playsInline
               />
@@ -1132,7 +1179,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
               )}
               <svg
                 ref={svgRef}
-                preserveAspectRatio={isMobile ? "xMidYMid slice" : "xMidYMid meet"}
+                preserveAspectRatio="xMidYMid meet"
                 style={{
                   position: 'absolute', inset: 0, width: '100%', height: '100%',
                   pointerEvents: 'none', zIndex: 4,
@@ -1192,7 +1239,41 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
 
             {/* Local PiP (moved inside card for desktop) */}
             <div className="cv-pip" style={S.localPip}>
-              <video ref={localVideoRef} style={S.localVid} autoPlay muted playsInline />
+              <video
+                ref={localVideoBgRef}
+                className="local-bg-vid"
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  filter: 'blur(20px) brightness(0.4) saturate(1.2)',
+                  opacity: 0.85,
+                  pointerEvents: 'none',
+                  zIndex: 1,
+                  transform: 'scaleX(-1)',
+                }}
+                autoPlay
+                muted
+                playsInline
+              />
+              <video
+                ref={localVideoRef}
+                className="local-fg-vid"
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                  zIndex: 2,
+                  transform: 'scaleX(-1)',
+                }}
+                autoPlay
+                muted
+                playsInline
+              />
               <div style={S.localLabel}>You</div>
             </div>
 
