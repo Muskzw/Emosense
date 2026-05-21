@@ -404,30 +404,87 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
           // Render face landmark dots
           if (svg) {
             const NS = 'http://www.w3.org/2000/svg';
-            if (svg.children.length === 0) {
+            
+            // Check for landmark dots
+            let dots = svg.querySelectorAll('.landmark-dot');
+            if (dots.length === 0) {
               for (let i = 0; i < 68; i++) {
                 const c = document.createElementNS(NS, 'circle');
+                c.setAttribute('class', 'landmark-dot');
                 c.setAttribute('r', '2.5');
                 c.setAttribute('fill', 'transparent');
                 svg.appendChild(c);
               }
+              dots = svg.querySelectorAll('.landmark-dot');
             }
+
+            // Create face mesh connection path
+            let meshPath = svg.querySelector('.face-mesh-path');
+            if (!meshPath) {
+              meshPath = document.createElementNS(NS, 'path');
+              meshPath.setAttribute('class', 'face-mesh-path');
+              meshPath.setAttribute('fill', 'none');
+              meshPath.setAttribute('stroke-width', '1');
+              meshPath.setAttribute('stroke-dasharray', '2,2');
+              // Append it first so dots draw on top
+              svg.insertBefore(meshPath, svg.firstChild);
+            }
+
             const currentViewBox = svg.getAttribute('viewBox');
             const targetViewBox = `0 0 ${video.videoWidth} ${video.videoHeight}`;
             if (currentViewBox !== targetViewBox) {
               svg.setAttribute('viewBox', targetViewBox);
             }
-            const pts   = det.landmarks.positions;
-            const nodes = svg.children;
-            const color = { happy:'#3dffa0', neutral:'#8899bb',
-                             sad:'#5b9cf6', angry:'#ff6b6b' };
+
+            const pts = det.landmarks.positions;
+            const color = { happy: '#3dffa0', neutral: '#8899bb', sad: '#5b9cf6', angry: '#ff6b6b' };
             const col = color[dEmo] || color.neutral;
-            if (nodes.length === pts.length) {
+
+            // Draw Wireframe Face Mesh
+            let dStr = '';
+            const connect = (indices, close = false) => {
+              let sub = '';
+              indices.forEach((idx, i) => {
+                const pt = pts[idx];
+                if (pt) {
+                  sub += `${i === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)} `;
+                }
+              });
+              if (close && indices.length > 0) {
+                const pt0 = pts[indices[0]];
+                if (pt0) sub += `Z `;
+              }
+              return sub;
+            };
+
+            // Outer Face boundary (jawline)
+            dStr += connect([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+            // Eyebrows
+            dStr += connect([17, 18, 19, 20, 21]);
+            dStr += connect([22, 23, 24, 25, 26]);
+            // Nose bridge and bottom
+            dStr += connect([27, 28, 29, 30]);
+            dStr += connect([30, 31, 32, 33, 34, 35], true);
+            // Left Eye & Right Eye
+            dStr += connect([36, 37, 38, 39, 40, 41], true);
+            dStr += connect([42, 43, 44, 45, 46, 47], true);
+            // Outer Lips & Inner Lips
+            dStr += connect([48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59], true);
+            dStr += connect([60, 61, 62, 63, 64, 65, 66, 67], true);
+
+            meshPath.setAttribute('d', dStr);
+            meshPath.setAttribute('stroke', col);
+            meshPath.setAttribute('stroke-opacity', '0.45');
+            meshPath.setAttribute('style', `filter: drop-shadow(0 0 1px ${col}); transition: stroke 0.3s ease;`);
+
+            // Position dots
+            if (dots.length === pts.length) {
               pts.forEach((pt, i) => {
-                nodes[i].setAttribute('cx', pt.x);
-                nodes[i].setAttribute('cy', pt.y);
-                nodes[i].setAttribute('fill', col);
-                nodes[i].setAttribute('fill-opacity', '0.85');
+                dots[i].setAttribute('cx', pt.x);
+                dots[i].setAttribute('cy', pt.y);
+                dots[i].setAttribute('fill', col);
+                dots[i].setAttribute('fill-opacity', '0.85');
+                dots[i].setAttribute('style', `filter: drop-shadow(0 0 2px ${col}); transition: fill 0.3s ease;`);
               });
             }
           }
@@ -435,20 +492,20 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
           // Face lost: reset current emotion to neutral and hide landmarks
           setCurEmo('neutral');
           if (svg) {
-            const nodes = svg.children;
-            for (let i = 0; i < nodes.length; i++) {
-              nodes[i].setAttribute('fill', 'transparent');
-            }
+            const dots = svg.querySelectorAll('.landmark-dot');
+            dots.forEach(node => node.setAttribute('fill', 'transparent'));
+            const meshPath = svg.querySelector('.face-mesh-path');
+            if (meshPath) meshPath.setAttribute('d', '');
           }
         }
       } catch (err) {
         console.warn('[FaceAPI] Detection error:', err.message);
         setDebug(d => ({ ...d, lastError: err.message }));
         if (svg) {
-          const nodes = svg.children;
-          for (let i = 0; i < nodes.length; i++) {
-            nodes[i].setAttribute('fill', 'transparent');
-          }
+          const dots = svg.querySelectorAll('.landmark-dot');
+          dots.forEach(node => node.setAttribute('fill', 'transparent'));
+          const meshPath = svg.querySelector('.face-mesh-path');
+          if (meshPath) meshPath.setAttribute('d', '');
         }
       }
 

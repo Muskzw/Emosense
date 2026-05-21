@@ -196,7 +196,7 @@ const EMO_COLORS = {
 
 function LiveTurnGraph({ timeline }) {
   if (!timeline || timeline.length < 2) {
-    return <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '16px 0' }}>Detecting initial turns...</div>;
+    return <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '16px 0', fontFamily: 'var(--mono)' }}>Gathering emotional response data...</div>;
   }
 
   const W = 188, H = 80, pad = 6;
@@ -211,38 +211,54 @@ function LiveTurnGraph({ timeline }) {
   });
 
   const pathStr = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const areaPathStr = `${pathStr} ${pts[pts.length - 1].x.toFixed(1)},${H} ${pts[0].x.toFixed(1)},${H}`;
 
   return (
-    <div style={{ background: 'rgba(0,0,0,0.2)', borderRadius: '12px', padding: '10px 6px', position: 'relative' }}>
+    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '14px 12px 10px', position: 'relative', overflow: 'hidden' }}>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: '80px', overflow: 'visible' }}>
         <defs>
-          <linearGradient id="liveLine" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#34c759" />
+          <linearGradient id="liveLine" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#3dffa0" />
             <stop offset="50%" stopColor="#8899bb" />
-            <stop offset="100%" stopColor="#ff3b30" />
+            <stop offset="100%" stopColor="#5b9cf6" />
+          </linearGradient>
+          <linearGradient id="liveArea" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="rgba(61,255,160,0.18)" />
+            <stop offset="50%" stopColor="rgba(136,153,187,0.08)" />
+            <stop offset="100%" stopColor="transparent" />
           </linearGradient>
         </defs>
         
         {/* Y-axis guidelines */}
         {[
-          { v: 100, l: 'Pos' },
-          { v: 50, l: 'Neu' },
-          { v: 0, l: 'Neg' }
+          { v: 100, l: 'POS' },
+          { v: 50, l: 'NEU' },
+          { v: 0, l: 'NEG' }
         ].map(({ v, l }) => {
           const y = pad + (1 - v / 100) * (H - pad * 2);
           return (
             <g key={l}>
-              <line x1={0} y1={y} x2={W} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-              <text x={0} y={y - 4} fill="rgba(255,255,255,0.3)" fontSize="8" fontFamily="system-ui">{l}</text>
+              <line x1={0} y1={y} x2={W} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth="1" strokeDasharray="3,3" />
+              <text x={0} y={y - 4} fill="rgba(255,255,255,0.25)" fontSize="7" fontWeight="700" fontFamily="var(--mono)" letterSpacing="0.05em">{l}</text>
             </g>
           );
         })}
 
+        {/* Shaded Area under the curve */}
+        <polygon points={areaPathStr} fill="url(#liveArea)" />
+
+        {/* Emotion line glow */}
+        <polyline points={pathStr} fill="none" stroke="url(#liveLine)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.35" style={{ filter: 'blur(2px)' }} />
+
         {/* Emotion line */}
         <polyline points={pathStr} fill="none" stroke="url(#liveLine)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         
-        {/* Current dot */}
-        <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="3.5" fill="#fff" boxShadow="0 0 4px #fff" />
+        {/* Current pulsing dot */}
+        <g>
+          <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="6" fill="#fff" opacity="0.15" />
+          <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="3.5" fill="#fff" />
+          <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="1.2" fill="#fff" />
+        </g>
       </svg>
     </div>
   );
@@ -683,16 +699,19 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             justify-content: center;
             position: relative;
           }
+
           .cv-video-card {
             width: 100% !important;
             aspect-ratio: 16/9 !important;
-            background: #000 !important;
+            background: rgba(10,10,15,0.75) !important;
+            backdrop-filter: blur(20px) !important;
             border-radius: 32px !important;
             overflow: hidden !important;
             position: relative !important;
-            border: 1px solid rgba(255,255,255,0.12) !important;
-            box-shadow: 0 40px 120px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05) !important;
+            border: 1px solid rgba(255,255,255,0.12);
+            box-shadow: 0 40px 120px rgba(0,0,0,0.8);
           }
+
           .cv-sidebar {
             width: 360px !important;
             display: flex !important;
@@ -934,6 +953,10 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
         .unmute-banner:hover {
           background: rgba(255, 75, 64, 0.95) !important;
         }
+        .toast-close-btn:hover {
+          color: #ffffff !important;
+          background-color: rgba(255, 255, 255, 0.15) !important;
+        }
       `}</style>
 
       {/* ── DESKTOP CONTENT WRAPPER ── */}
@@ -941,7 +964,23 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
         
         {/* LEFT: MAIN STAGE */}
         <main className="cv-stage">
-          <div className="cv-video-card">
+          {/* Dynamic emotional ambient backlight glow */}
+          <div style={{
+            position: 'absolute',
+            width: '80%',
+            height: '80%',
+            background: `radial-gradient(circle, ${curE.c}2c 0%, transparent 70%)`,
+            filter: 'blur(100px)',
+            pointerEvents: 'none',
+            zIndex: 1,
+            transition: 'background 0.8s ease-in-out',
+          }} />
+          <div className="cv-video-card" style={{
+            borderColor: `${curE.c}88`,
+            boxShadow: `0 40px 120px rgba(0,0,0,0.85), 0 0 40px ${curE.c}1c, 0 0 0 1px ${curE.c}12`,
+            transition: 'border-color 0.5s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+            zIndex: 2,
+          }}>
             {/* Remote Video Container */}
             <div style={S.remoteFill}>
               <video
@@ -991,7 +1030,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                   <span>Click to Unmute Peer</span>
                 </div>
               )}
-              <div
+              <svg
                 ref={svgRef}
                 style={{
                   position: 'absolute', inset: 0, width: '100%', height: '100%',
@@ -1241,13 +1280,27 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           display: 'flex', gap: '14px', alignItems: 'flex-start',
           animation: 'fadeInDown 0.5s cubic-bezier(0.34,1.56,0.64,1)',
         }}>
+          <button 
+            onClick={() => setCoachingToast(null)}
+            style={{
+              position: 'absolute', top: '10px', right: '10px',
+              background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)',
+              cursor: 'pointer', fontSize: '18px', fontWeight: 'bold',
+              padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              lineHeight: 1, borderRadius: '50%', width: '20px', height: '20px',
+              transition: 'color 0.2s, background-color 0.2s'
+            }}
+            className="toast-close-btn"
+          >
+            &times;
+          </button>
           <div style={{ fontSize: '24px' }}>{coachingToast.icon}</div>
           <div>
             <div style={{ fontSize: '13px', fontWeight: '700', color: coachingToast.color, marginBottom: '4px', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: '6px' }}>
               {coachingToast.title}
               <span style={{ fontSize: '8px', background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', color: '#1a1a2e', padding: '2px 5px', borderRadius: '4px', letterSpacing: '0' }}>AI COACH</span>
             </div>
-            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.5' }}>
+            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.5', paddingRight: '12px' }}>
               {coachingToast.msg}
             </div>
           </div>
