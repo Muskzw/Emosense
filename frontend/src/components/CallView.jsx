@@ -295,6 +295,15 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
   const recordLoopRef = useRef(null);
   const isRecordingRef = useRef(false);
 
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const { modelsLoaded, curEmo, emoCounts, detCount, getTimeline, debug } = useFaceAPI(
     remoteVideoRef, svgRef, canvasRef, isConnected, sessionInfo.ctx, sessionInfo.optIn
   );
@@ -398,6 +407,21 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
   const [isRecording, setIsRecording] = useState(false);
   const [waitingConsent, setWaitingConsent] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+
+  const recordBtnLabel = isMobile ? (
+    isRecording ? 'Stop' : isResetting ? 'Reset' : waitingConsent ? 'Wait' : 'Rec'
+  ) : (
+    isRecording ? 'Stop Recording' : isResetting ? 'Resetting...' : waitingConsent ? 'Waiting...' : 'Record Session'
+  );
+
+  const coachBtnLabel = isMobile ? (
+    `Coach: ${speechEnabled ? 'ON' : 'OFF'}`
+  ) : (
+    `AI Coach: ${speechEnabled ? 'ON' : 'OFF'}`
+  );
+
+  const endBtnLabel = isMobile ? 'End' : 'End Session';
+
   const mediaRecorderRef = useRef(null);
   const recordedChunks = useRef([]);
   const recordingStartTimeRef = useRef(0);
@@ -694,8 +718,8 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
         }
         .end-btn:active { transform: scale(0.96) !important; }
 
-        /* ── DESKTOP RETHINK (1024px+) ── */
-        @media (min-width: 1024px) {
+        /* ── DESKTOP RETHINK (768px+) ── */
+        @media (min-width: 768px) {
           .cv-root {
             background: radial-gradient(circle at center, #1e1e35 0%, #08080c 100%) !important;
             display: flex !important;
@@ -743,13 +767,16 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             border: 1px solid rgba(255,255,255,0.12) !important;
             box-shadow: 0 40px 120px rgba(0,0,0,0.8) !important;
           }
+          .cv-video-card video {
+            object-fit: contain !important;
+          }
 
           .cv-sidebar {
-            width: 360px !important;
+            width: 210px !important;
             flex-shrink: 0 !important;
             display: flex !important;
             flex-direction: column !important;
-            gap: 20px !important;
+            gap: 16px !important;
             overflow-y: auto !important;
             height: 100% !important;
             max-height: 100% !important;
@@ -758,25 +785,31 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           .cv-sidebar::-webkit-scrollbar {
             display: none !important;
           }
-          .cv-side-card {
+          .cv-side-card, .alignment-gauge-container {
             background: rgba(255,255,255,0.04) !important;
             backdrop-filter: blur(40px) saturate(180%) !important;
             border: 1px solid rgba(255,255,255,0.1) !important;
-            border-radius: 24px !important;
-            padding: 20px !important; /* Made compact from 24px */
+            border-radius: 16px !important;
+            padding: 12px !important; /* Made compact to fit exactly 210px sidebars */
             box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
           }
           .cv-pip {
             position: absolute !important;
-            bottom: 24px !important;
+            bottom: 110px !important; /* Pos bottom-left above control bar */
             left: 24px !important;
             right: auto !important;
             top: auto !important;
-            width: 240px !important;
-            height: 160px !important;
-            border-radius: 20px !important;
-            border: 2px solid rgba(255,255,255,0.2) !important;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.6) !important;
+            width: 116px !important;
+            height: 80px !important;
+            border-radius: 8px !important;
+            border: 1.5px solid rgba(79, 142, 247, 0.5) !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+            z-index: 30 !important;
+          }
+          .cv-pip video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
           }
           .cv-botbar {
             position: fixed !important;
@@ -794,23 +827,38 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             z-index: 100 !important;
           }
           .cv-controls {
-            display: flex !important;
-            flex-direction: row !important;
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
             gap: 16px !important;
-            width: auto !important;
-            max-width: none !important;
+            width: 100% !important;
+            max-width: 580px !important;
+            margin: 0 auto !important;
+          }
+          .cv-record-btn, .cv-ai-speech-btn, .cv-end-btn {
+            width: 100% !important;
+            height: 48px !important;
+            border-radius: 12px !important;
+            font-family: var(--sans) !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            white-space: nowrap !important;
           }
           .cv-timer-wrap {
             text-align: center;
             margin-bottom: 10px;
           }
           .cv-timer-val {
-            font-size: 32px !important; /* Scaled down slightly from 38px for a cleaner balance */
+            font-size: 28px !important;
             font-weight: 800 !important;
             background: linear-gradient(to bottom, #fff 0%, #aaa 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-variant-numeric: tabular-nums;
+            font-family: var(--mono) !important;
           }
           .cv-hud {
             position: static !important;
@@ -1084,7 +1132,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
               )}
               <svg
                 ref={svgRef}
-                preserveAspectRatio="xMidYMid slice"
+                preserveAspectRatio={isMobile ? "xMidYMid slice" : "xMidYMid meet"}
                 style={{
                   position: 'absolute', inset: 0, width: '100%', height: '100%',
                   pointerEvents: 'none', zIndex: 4,
@@ -1168,6 +1216,102 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           </div>
         </main>
 
+        {/* MOBILE BOTTOM STATS SHEET */}
+        <div className="cv-mobile-stats-sheet">
+          {/* Flex Row Metric Cards */}
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', width: '100%' }}>
+            {/* Duration Card */}
+            <div style={{
+              flex: 1,
+              background: 'var(--surf)',
+              border: '1px solid var(--border)',
+              borderRadius: '12px',
+              padding: '10px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px'
+            }}>
+              <span style={{ fontSize: '9px', fontFamily: 'var(--sans)', fontWeight: '600', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Duration</span>
+              <span style={{ fontSize: '14px', fontFamily: 'var(--mono)', fontWeight: '700', color: 'var(--primary-text)' }}>{timerStr}</span>
+            </div>
+
+            {/* Context Card */}
+            <div style={{
+              flex: 1,
+              background: 'var(--surf)',
+              border: '1px solid var(--border)',
+              borderRadius: '12px',
+              padding: '10px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px'
+            }}>
+              <span style={{ fontSize: '9px', fontFamily: 'var(--sans)', fontWeight: '600', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Context</span>
+              <span style={{ fontSize: '11px', fontFamily: 'var(--mono)', fontWeight: '700', color: 'var(--primary-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '85px', textAlign: 'center' }}>{sessionInfo.ctx}</span>
+            </div>
+
+            {/* Scans Card */}
+            <div style={{
+              flex: 1,
+              background: 'var(--surf)',
+              border: '1px solid var(--border)',
+              borderRadius: '12px',
+              padding: '10px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px'
+            }}>
+              <span style={{ fontSize: '9px', fontFamily: 'var(--sans)', fontWeight: '600', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Scans</span>
+              <span style={{ fontSize: '14px', fontFamily: 'var(--mono)', fontWeight: '700', color: 'var(--primary-text)' }}>{detCount}</span>
+            </div>
+          </div>
+
+          {/* Slim Emotion Progress Rows */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', background: 'var(--surf)', border: '1px solid var(--border)', borderRadius: '16px', padding: '14px' }}>
+            <span style={{ fontSize: '9px', fontFamily: 'var(--mono)', fontWeight: '600', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>
+              Emotion Distribution
+            </span>
+            {(() => {
+              const total = getEmoTotal();
+              let sumPct = 0;
+              let maxKey = null;
+              let maxVal = -1;
+              const pcts = {};
+              Object.keys(EMO).forEach(k => {
+                const cnt = emoCounts[k] || 0;
+                const pct = total > 0 ? Math.round((cnt / total) * 100) : 0;
+                pcts[k] = pct;
+                sumPct += pct;
+                if (pct > maxVal) { maxVal = pct; maxKey = k; }
+              });
+              if (sumPct !== 100 && sumPct > 0 && maxKey) {
+                pcts[maxKey] += (100 - sumPct);
+              }
+              
+              return Object.entries(EMO).map(([k, v]) => {
+                const pct = pcts[k] || 0;
+                return (
+                  <div key={k} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '10px', fontFamily: 'var(--sans)', fontWeight: '600', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{v.n}</span>
+                      <span style={{ fontSize: '10px', fontFamily: 'var(--mono)', fontWeight: '700', color: 'var(--primary-text)' }}>{pct}%</span>
+                    </div>
+                    <div style={{ height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: v.c, transition: 'width 0.3s ease, background 0.3s ease', borderRadius: '2px' }} />
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        </div>
+
         {/* RIGHT: SIDEBAR */}
         <aside className="cv-sidebar">
           
@@ -1180,17 +1324,23 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
 
           {/* Cultural Alignment Card */}
           <div className="alignment-gauge-container">
-            <div className="alignment-gauge-header">
-              <span className="alignment-gauge-title">{alignmentTitle}</span>
+            <div className="alignment-gauge-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+              <span className="alignment-gauge-title" style={{ fontSize: '9px', fontWeight: '800', color: 'rgba(255, 255, 255, 0.5)', letterSpacing: '0.05em', textTransform: 'uppercase', fontFamily: 'var(--sans)' }}>{alignmentTitle}</span>
               <span className="alignment-gauge-value" style={{
                 background: `linear-gradient(135deg, ${alignmentThemeColor} 0%, #007aff 100%)`,
-                webkitBackgroundClip: 'text',
-                webkitTextFillColor: 'transparent',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                fontSize: '20px',
+                fontWeight: '800',
+                fontFamily: 'var(--mono)',
               }}>{alignmentScore}%</span>
             </div>
             
-            <div className="alignment-bar-outer">
+            <div className="alignment-bar-outer" style={{ height: '8px', background: 'rgba(255, 255, 255, 0.06)', borderRadius: '999px', overflow: 'hidden', position: 'relative', border: '0.5px solid rgba(255, 255, 255, 0.1)', marginTop: '8px', marginBottom: '8px' }}>
               <div className="alignment-bar-inner" style={{
+                height: '100%',
+                borderRadius: '999px',
+                transition: 'width 1s cubic-bezier(0.23, 1, 0.32, 1)',
                 width: `${alignmentScore}%`,
                 background: `linear-gradient(90deg, ${alignmentThemeColor} 0%, #007aff 100%)`,
                 boxShadow: `0 0 12px ${alignmentThemeColor}66`
@@ -1198,8 +1348,8 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             </div>
 
             <div className="alignment-desc">
-              <div style={{ fontWeight: '700', color: '#ffffff', marginBottom: '4px', fontSize: '12px' }}>{alignmentStatus}</div>
-              {alignmentAdvice}
+              <div style={{ fontWeight: '700', color: '#ffffff', marginBottom: '4px', fontSize: '11px', fontFamily: 'var(--sans)' }}>{alignmentStatus}</div>
+              <div style={{ fontSize: '10.5px', lineHeight: '1.45', color: 'rgba(255, 255, 255, 0.6)', fontFamily: 'var(--sans)' }}>{alignmentAdvice}</div>
             </div>
           </div>
 
@@ -1210,13 +1360,13 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
               <LiveTurnGraph timeline={getTimeline()} />
               <div style={S.hudDivider} />
               <div style={S.statsRow}>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={S.statVal}>{detCount}</div>
-                  <div style={S.statLbl}>Scans</div>
+                <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--sans)' }}>Scans</div>
+                  <div style={{ fontSize: '20px', fontWeight: '800', color: 'white', fontFamily: 'var(--mono)', lineHeight: 1 }}>{detCount}</div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ ...S.statVal, color: curE.c }}>{curE.n}</div>
-                  <div style={S.statLbl}>Current</div>
+                <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--sans)' }}>Current</div>
+                  <div style={{ fontSize: '20px', fontWeight: '800', color: curE.c, fontFamily: 'var(--mono)', lineHeight: 1 }}>{curE.n.toUpperCase()}</div>
                 </div>
               </div>
               <div style={S.hudDivider} />
@@ -1241,10 +1391,10 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                   return Object.entries(EMO).map(([k, v]) => {
                     const pct = pcts[k] || 0;
                     return (
-                      <div key={k} style={S.emoItem}>
+                      <div key={k} className="emo-item">
                         <div style={S.emoHead}>
-                          <span style={S.emoName}>{v.n}</span>
-                          <span style={S.emoPct}>{pct}%</span>
+                          <span className="emo-name" style={{ fontSize: '10px', fontFamily: 'var(--sans)', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{v.n}</span>
+                          <span className="emo-pct" style={{ fontSize: '11px', fontFamily: 'var(--mono)', fontWeight: '700', color: '#ffffff' }}>{pct}%</span>
                         </div>
                         <div style={S.emoTrack}>
                           <div style={{ height: '100%', width: `${pct}%`, background: v.c, transition: 'width 0.3s ease, background 0.3s ease', borderRadius: '999px' }} />
@@ -1288,39 +1438,89 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
         </aside>
       </div>
 
-      {/* ── TOP BAR (Mobile only timer shown here) ── */}
-      <div className="cv-topbar" style={S.topBar}>
-        <div style={S.topLeft}>
-          <div style={S.logoMark}>
-            <svg viewBox="0 0 16 16" fill="none" width="16" height="16">
-              <circle cx="8" cy="5.5" r="2.8" stroke="rgba(255,255,255,0.8)" strokeWidth="1.2"/>
-              <path d="M2.5 14c0-3.04 2.46-5.5 5.5-5.5s5.5 2.46 5.5 5.5" stroke="rgba(255,255,255,0.8)" strokeWidth="1.2" strokeLinecap="round"/>
-            </svg>
+      {/* ── TOP BAR ── */}
+      {isMobile ? (
+        <div className="cv-topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '38px', height: 'auto', padding: '4px 12px', background: 'rgba(10, 13, 20, 0.88)', borderBottom: '1px solid var(--border)', backdropFilter: 'blur(12px)', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 50 }}>
+          {/* Left Column */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center' }}>
+            <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--primary-text)', fontFamily: 'var(--sans)', lineHeight: '1.2' }}>
+              {remoteName} {isZw ? '🇿🇼' : isCn ? '🇨🇳' : '🌐'}
+            </span>
+            <span style={{ fontSize: '8px', fontFamily: 'var(--mono)', color: 'var(--muted-text)', marginTop: '2px' }}>
+              {sessionInfo.ctx}
+            </span>
           </div>
-          {isConnected && (
-            <div style={S.livePill}>
-              <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#ff3b30', animation: 'ping 1.4s cubic-bezier(0,0,0.2,1) infinite' }} />
-              LIVE
-            </div>
-          )}
-        </div>
-        <div className="cv-desktop-timer-hide" style={S.timer}>{timerStr}</div>
-        <div className="cv-desktop-timer-hide" style={S.ctxBadge}>{sessionInfo.ctx}</div>
-      </div>
 
-      {/* ── MOBILE EMOTION STRIP ── */}
-      <div className="cv-emo-strip" style={S.mobileEmoStrip}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
-          background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(16px)',
-          border: `1px solid ${curE.c}44`, borderRadius: '999px',
-          padding: '6px 14px',
-        }}>
-          <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: curE.c, boxShadow: `0 0 6px ${curE.c}` }} />
-          <span style={{ fontSize: '12px', fontWeight: '700', color: curE.c, letterSpacing: '0.04em' }}>{curE.n.toUpperCase()}</span>
-          <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginLeft: '4px' }}>{detCount} scans</span>
+          {/* Right Column */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: '2px' }}>
+            {isConnected && (
+              <div style={{
+                background: '#e85b5b',
+                color: '#ffffff',
+                fontFamily: 'var(--mono)',
+                fontSize: '8px',
+                fontWeight: '700',
+                padding: '1px 5px',
+                borderRadius: '3px',
+                letterSpacing: '0.05em',
+                lineHeight: '1.2',
+              }}>
+                LIVE
+              </div>
+            )}
+            {/* Emotion Pills */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-end', maxWidth: '100px' }}>
+              {(() => {
+                const activeEmotion = curEmoRef.current || 'neutral';
+                const label = EMO[activeEmotion]?.n || 'Neutral';
+                let colors = { bg: 'rgba(100,116,150,0.2)', text: '#8892aa', border: 'rgba(100,116,150,0.2)' };
+                if (activeEmotion === 'happy') {
+                  colors = { bg: 'rgba(245,166,35,0.15)', text: '#f5a623', border: 'rgba(245,166,35,0.2)' };
+                } else if (activeEmotion === 'sad') {
+                  colors = { bg: 'rgba(79,142,247,0.12)', text: '#4f8ef7', border: 'rgba(79,142,247,0.2)' };
+                } else if (activeEmotion === 'angry') {
+                  colors = { bg: 'rgba(232,91,91,0.12)', text: '#e85b5b', border: 'rgba(232,91,91,0.2)' };
+                } else if (activeEmotion === 'surprised') {
+                  colors = { bg: 'rgba(0,212,160,0.1)', text: '#00d4a0', border: 'rgba(0,212,160,0.2)' };
+                }
+                return (
+                  <span style={{
+                    fontFamily: 'var(--mono)',
+                    fontSize: '8px',
+                    padding: '2px 5px',
+                    borderRadius: '3px',
+                    background: colors.bg,
+                    color: colors.text,
+                    border: `1px solid ${colors.border}`,
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {label.toUpperCase()}
+                  </span>
+                );
+              })()}
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="cv-topbar" style={S.topBar}>
+          <div style={S.topLeft}>
+            <div style={S.logoMark}>
+              <svg viewBox="0 0 16 16" fill="none" width="16" height="16">
+                <circle cx="8" cy="5.5" r="2.8" stroke="rgba(255,255,255,0.8)" strokeWidth="1.2"/>
+                <path d="M2.5 14c0-3.04 2.46-5.5 5.5-5.5s5.5 2.46 5.5 5.5" stroke="rgba(255,255,255,0.8)" strokeWidth="1.2" strokeLinecap="round"/>
+              </svg>
+            </div>
+            {isConnected && (
+              <div style={S.livePill}>
+                <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#ff3b30', animation: 'ping 1.4s cubic-bezier(0,0,0.2,1) infinite' }} />
+                LIVE
+              </div>
+            )}
+          </div>
+          <div className="cv-desktop-timer-hide" style={S.timer}>{timerStr}</div>
+          <div className="cv-desktop-timer-hide" style={S.ctxBadge}>{sessionInfo.ctx}</div>
+        </div>
+      )}
 
       {/* ── COACHING TOAST ── */}
       {coachingToast && (
@@ -1374,8 +1574,20 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             ) : (
                <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ff3b30' }} />
             )}
-            {isRecording ? 'Stop Recording' : (isResetting ? 'Resetting...' : (waitingConsent ? 'Waiting...' : 'Record Session'))}
-            {!isRecording && !waitingConsent && !isResetting && <span style={{ fontSize: '9px', fontWeight: '800', background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', color: '#1a1a2e', padding: '2px 6px', borderRadius: '4px', marginLeft: '4px' }}>PRO</span>}
+            <span>{recordBtnLabel}</span>
+            {!isRecording && !waitingConsent && !isResetting && (
+              <span style={{
+                fontSize: isMobile ? '8px' : '9px',
+                fontWeight: '800',
+                background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                color: '#1a1a2e',
+                padding: isMobile ? '1px 4px' : '2px 6px',
+                borderRadius: isMobile ? '3px' : '4px',
+                marginLeft: '4px',
+                display: 'inline-block',
+                lineHeight: '1.2'
+              }}>PRO</span>
+            )}
           </button>
           
           <button
@@ -1391,7 +1603,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
               boxShadow: speechEnabled ? '0 0 8px #3dffa0' : 'none',
               transition: 'all 0.3s ease'
             }} />
-            AI Coach: {speechEnabled ? 'ON' : 'OFF'}
+            <span>{coachBtnLabel}</span>
           </button>
 
           <button
@@ -1400,7 +1612,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             onClick={handleEnd}
             style={S.endBtn}
           >
-            End Session
+            {endBtnLabel}
           </button>
         </div>
       </div>

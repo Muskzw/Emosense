@@ -1,63 +1,41 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 
-:root, :root[data-theme="light"] {
-  color-scheme: light;
+:root {
+  color-scheme: dark;
 
-  /* ── Bright Light Theme (Default) ── */
-  --bg:    #f5f5f7;
-  --surf:  #ffffff;
-  --surf2: #e8e8f0;
-  --card-bg: rgba(255,255,255,0.88);
-  --bd:    rgba(0,0,0,0.08);
-  --bd2:   rgba(0,0,0,0.16);
-  --bd3:   rgba(0,0,0,0.3);
-  --txt:   #121214;
-  --muted: rgba(18,18,20,0.72);
-  --dim:   rgba(18,18,20,0.54);
-  --green: #27ae60;
-  --gd:    rgba(39,174,96,0.15);
-  --gb:    rgba(39,174,96,0.4);
-  --blue:  #007aff;
-  --red:   #ff3b30;
-  --amber: #ff9500;
-  --amber-text: #b25900;
-  --slate: #8e8e93;
-  --input-bg: rgba(0,0,0,0.04);
-  --shadow: rgba(0,0,0,0.08);
-  --mono: 'Outfit', ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, monospace;
-  --sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* ── EmoSense Premium Dark Palette ── */
+  --bg:    #0a0d14;
+  --surf:  #111520;
+  --surf2: #181e2e;
+  --card-bg: rgba(17, 21, 32, 0.88);
+  --bd:    #2a3347;
+  --bd2:   rgba(42, 51, 71, 0.6);
+  --bd3:   rgba(42, 51, 71, 0.9);
+  --border: #2a3347;
+  --accent-blue: #4f8ef7;
+  --accent-green: #00d4a0;
+  --danger-live-red: #e85b5b;
+  --primary-text: #e8ecf4;
+  --muted-text: #8892aa;
+  --hint-text: #555f75;
+
+  --txt:   #e8ecf4;
+  --muted: #8892aa;
+  --dim:   #555f75;
+  --green: #00d4a0;
+  --blue:  #4f8ef7;
+  --red:   #e85b5b;
+  --amber: #f5a623;
+  --slate: #8892aa;
+  --input-bg: rgba(24, 30, 46, 0.5);
+  --shadow: rgba(0, 0, 0, 0.6);
+
+  --mono: 'Space Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
   --st: env(safe-area-inset-top, 0px);
   --sb: env(safe-area-inset-bottom, 0px);
   --sl: env(safe-area-inset-left, 0px);
   --sr: env(safe-area-inset-right, 0px);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]), :root[data-theme="dark"] {
-    color-scheme: dark;
-
-    /* ── Premium Dark Theme ── */
-    --bg:    #0a0a0c;
-    --surf:  #16161e;
-    --surf2: #1c1c26;
-    --card-bg: rgba(20,20,30,0.85);
-    --bd:    rgba(255,255,255,0.08);
-    --bd2:   rgba(255,255,255,0.14);
-    --bd3:   rgba(255,255,255,0.25);
-    --txt:   #f5f5f7;
-    --muted: rgba(255,255,255,0.5);
-    --dim:   rgba(255,255,255,0.22);
-    --green: #2ecc71;
-    --gd:    rgba(46,204,113,0.1);
-    --gb:    rgba(46,204,113,0.3);
-    --blue:  #007aff;
-    --red:   #ff3b30;
-    --amber: #ff9500;
-    --amber-text: #ffb747;
-    --slate: #8e8e93;
-    --input-bg: rgba(255,255,255,0.05);
-    --shadow: rgba(0,0,0,0.5);
-  }
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -383,8 +361,8 @@ button:active, .btn:active, .end-btn:active, .cv-btn:active, .lob-btn:active, .c
 .hcl-green::before{background:#3dffa0}.hcl-blue::before{background:#5b9cf6}.hcl-amber::before{background:#ffb347}.hcl-red::before{background:#ff6b6b}
 .hcl-acc{font-size:10px;font-family:var(--mono);color:rgba(61,255,160,.5);margin-left:auto}
 
-/* ── DESKTOP ≥ 1024px ─────────────────────────────── */
-@media (min-width: 1024px) {
+/* ── DESKTOP ≥ 768px ─────────────────────────────── */
+@media (min-width: 768px) {
 
   /* Blurred bg video + vignette overlay */
   .lob-bg video {
@@ -503,262 +481,166 @@ button:active, .btn:active, .end-btn:active, .cv-btn:active, .lob-btn:active, .c
   .btn-dash { flex: 1; }
 }
 
-/* ── CALL VIEW MOBILE & TABLET RESPONSIVE OVERRIDES (≤ 1023px) ─────────────────────────── */
-@media (max-width: 1023px) {
+/* ── CALL VIEW MOBILE & TABLET RESPONSIVE OVERRIDES (< 768px) ─────────────────────────── */
+@media (max-width: 767px) {
   .cv-root {
     overflow: hidden !important;
-    overflow-x: hidden !important;
-    overflow-y: hidden !important;
     width: 100vw !important;
     height: 100vh !important;
     height: 100dvh !important;
     position: fixed !important;
     inset: 0 !important;
-    background: radial-gradient(ellipse at top, #1a1a2e 0%, #0a0a0f 100%) !important;
+    background: var(--bg) !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
   .cv-desktop-main {
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 !important;
     padding: 0 !important;
     width: 100% !important;
-    height: 100% !important;
-    box-sizing: border-box !important;
+    height: auto !important;
     position: relative !important;
+    overflow-y: auto !important;
+    margin-bottom: calc(64px + env(safe-area-inset-bottom)) !important; /* space for botbar */
   }
   .cv-stage {
-    display: block !important;
+    position: relative !important;
     width: 100vw !important;
-    max-width: none !important;
-    height: 100vh !important;
-    height: 100dvh !important;
-    position: absolute !important;
-    inset: 0 !important;
-    top: 0 !important;
-    left: 0 !important;
-    transform: none !important;
-    z-index: 10 !important;
-    box-sizing: border-box !important;
+    aspect-ratio: 4/3 !important; /* Force nice 4:3 video ratio on mobile */
+    background: #000 !important;
+    flex-shrink: 0 !important;
+    overflow: hidden !important;
   }
   .cv-video-card {
     width: 100% !important;
     height: 100% !important;
-    border-radius: 0px !important; /* Full screen card */
+    border-radius: 0px !important;
     border: none !important;
     box-shadow: none !important;
     background: #000 !important;
     position: absolute !important;
     inset: 0 !important;
-    overflow: hidden !important;
+  }
+  
+  /* Face Mesh and Video offset on mobile to avoid top bar cover */
+  .cv-video-card video,
+  .cv-video-card svg {
+    margin-top: 38px !important;
+    height: calc(100% - 38px) !important;
+    width: 100% !important;
+    position: absolute !important;
+    left: 0 !important;
   }
   .cv-video-card video {
-    object-fit: cover !important; /* Zero black bars! Fills the whole screen */
-    width: 100% !important;
-    height: 100% !important;
-    position: absolute !important;
-    inset: 0 !important;
+    object-fit: cover !important;
   }
+
   .cv-sidebar {
-    display: none !important; /* Hide desktop sidebar completely on mobile */
+    display: none !important;
   }
   .cv-hud {
     display: none !important;
   }
 
-  /* TOP BAR & COMPACT OVERLAY */
+  /* UNIFIED TOP BAR */
   .cv-topbar {
-    position: fixed !important;
+    position: absolute !important;
     top: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    z-index: 50 !important;
-    padding: max(16px, calc(12px + env(safe-area-inset-top))) 20px 0 !important;
-    pointer-events: none !important;
-  }
-  .remote-stats-overlay {
-    position: absolute !important;
-    top: calc(12px + env(safe-area-inset-top)) !important;
-    left: 12px !important;
-    right: 12px !important;
-    width: auto !important;
-    max-width: none !important;
+    height: 38px !important;
+    background: rgba(10, 13, 20, 0.88) !important;
+    backdrop-filter: blur(12px) !important;
+    border-bottom: 1px solid var(--border) !important;
     display: flex !important;
-    flex-direction: column !important;
-    gap: 0 !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0 12px !important;
     pointer-events: auto !important;
-    z-index: 20 !important;
-  }
-  .remote-info-card {
-    width: 100% !important;
-    box-sizing: border-box !important;
-    background: rgba(10, 10, 15, 0.65) !important;
-    backdrop-filter: blur(20px) saturate(180%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    border-radius: 12px !important;
-    padding: 10px 12px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 6px !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
-    min-width: 0 !important;
-  }
-  .remote-info-row-primary {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 12px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-  }
-  .remote-name-text {
-    font-size: 13px !important;
-    font-weight: 700 !important;
-    color: #ffffff !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    flex: 1 !important;
-    min-width: 0 !important;
-  }
-  .emotion-badge {
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: 5px !important;
-    padding: 3px 8px !important;
-    border-radius: 999px !important;
-    font-size: 9px !important;
-    font-weight: 800 !important;
-    letter-spacing: 0.05em !important;
-    text-transform: uppercase !important;
-    flex-shrink: 0 !important;
-    white-space: nowrap !important;
-  }
-  .emotion-badge .stat-indicator-dot {
-    width: 5px !important;
-    height: 5px !important;
-    border-radius: 50% !important;
-    animation: blink 1.5s infinite !important;
-  }
-  .remote-info-row-secondary {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 12px !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
-    padding-top: 6px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-  }
-  .context-engine-text {
-    font-size: 9.5px !important;
-    color: rgba(255, 255, 255, 0.6) !important;
-    font-family: var(--mono) !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 5px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    flex: 1 !important;
-    min-width: 0 !important;
-  }
-  .engine-status-dot {
-    display: inline-block !important;
-    width: 5px !important;
-    height: 5px !important;
-    border-radius: 50% !important;
-    flex-shrink: 0 !important;
-  }
-  .scans-count-text {
-    font-size: 9px !important;
-    font-weight: 700 !important;
-    color: rgba(255, 255, 255, 0.5) !important;
-    background: rgba(255, 255, 255, 0.08) !important;
-    padding: 1px 6px !important;
-    border-radius: 4px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
-    font-family: var(--mono) !important;
-    flex-shrink: 0 !important;
+    z-index: 50 !important;
   }
 
-  /* PiP SELF-VIEW */
+  /* PiP MOBILE VIEWPORT */
   .cv-pip {
     position: absolute !important;
-    right: 16px !important;
-    bottom: calc(180px + env(safe-area-inset-bottom)) !important;
-    left: auto !important;
-    top: auto !important;
-    width: 90px !important;
-    height: 120px !important;
-    border-radius: 16px !important; /* FaceTime-like floating tile */
-    border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6) !important;
+    left: 12px !important;
+    bottom: 12px !important; /* Positioned bottom-left above the bottom control bar */
+    width: 116px !important;
+    height: 80px !important;
+    border-radius: 8px !important;
+    border: 1.5px solid rgba(79, 142, 247, 0.5) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
     overflow: hidden !important;
     z-index: 30 !important;
     background: #0a0a0f !important;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
   .cv-pip video {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
   }
+  .cv-pip div {
+    display: none !important; /* Hide You label on mobile */
+  }
 
-  /* BOTTOM CONTROL BAR & BUTTONS */
+  /* MOBILE BOTTOM CONTROL BAR */
   .cv-botbar {
     position: fixed !important;
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    z-index: 40 !important;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.4) 50%, transparent 100%) !important;
-    padding: 24px 20px calc(24px + env(safe-area-inset-bottom)) !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    pointer-events: none !important;
-    box-sizing: border-box !important;
+    z-index: 100 !important;
+    background: rgba(10, 13, 20, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border-top: 1px solid var(--border) !important;
+    padding: 8px 16px calc(8px + env(safe-area-inset-bottom)) !important;
     height: auto !important;
   }
   .cv-controls {
-    width: 100% !important;
-    max-width: 440px !important;
     display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 12px !important;
-    pointer-events: auto !important;
-    justify-content: center !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: none !important;
   }
   .cv-record-btn, .cv-ai-speech-btn, .cv-end-btn {
     width: 100% !important;
-    height: 48px !important;
-    min-height: 48px !important;
-    border-radius: 24px !important; /* Premium pill shape */
-    font-size: 13px !important;
-    font-weight: 700 !important;
+    height: auto !important;
+    min-height: unset !important;
+    border-radius: 7px !important;
+    padding: 8px 4px !important;
+    font-size: 11px !important;
+    font-family: var(--sans) !important;
+    font-weight: 600 !important;
+    grid-column: span 1 !important;
     display: flex !important;
+    flex-direction: row !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 8px !important;
-    box-sizing: border-box !important;
-    padding: 0 16px !important;
-    margin: 0 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
+    gap: 4px !important;
   }
   .cv-end-btn {
-    grid-column: span 2 !important;
-    background: rgba(255, 59, 48, 0.85) !important;
+    background: var(--danger-live-red) !important;
   }
 
-  /* Compact mobile emotion strip */
-  .cv-emo-strip {
-    display: none !important; /* Hidden because remote-info-card is integrated perfectly inside the video tile! */
-  }
-
-  /* Subtitles — smaller text on mobile */
   .cv-subtitle span {
-    font-size: 16px !important;
-    padding: 8px 14px !important;
+    font-size: 14px !important;
+    padding: 6px 12px !important;
+  }
+}
+
+.cv-mobile-stats-sheet {
+  display: none;
+}
+@media (max-width: 767px) {
+  .cv-mobile-stats-sheet {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    background: var(--bg) !important;
+    border-top: 1px solid var(--border) !important;
+    padding: 12px 0 24px 0 !important;
   }
 }

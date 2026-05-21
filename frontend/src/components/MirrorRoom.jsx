@@ -140,8 +140,8 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
   return (
     <div className="screen active" style={{
       display: 'flex', flexDirection: 'column',
-      background: 'radial-gradient(ellipse at top, #1a1a2e 0%, #0a0a0f 100%)',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
+      background: 'radial-gradient(ellipse at top, var(--surf2) 0%, var(--bg) 100%)',
+      fontFamily: 'var(--sans)',
       color: 'white',
       overflow: 'hidden',
       position: 'fixed',
@@ -251,9 +251,9 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           position: absolute;
           top: 24px;
           right: 24px;
-          background: rgba(10, 10, 15, 0.7);
+          background: var(--card-bg);
           backdrop-filter: blur(24px) saturate(150%);
-          border: 1px solid rgba(255,255,255,0.1);
+          border: 1px solid var(--border);
           padding: 12px 24px;
           border-radius: 999px;
           display: flex;
@@ -271,6 +271,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
         }
 
         .mr-emo-text {
+          font-family: var(--mono);
           font-weight: 800;
           font-size: 15px;
           letter-spacing: 0.08em;
@@ -299,9 +300,9 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
         .mr-controls {
           width: 100%;
           max-width: 900px;
-          background: rgba(255,255,255,0.03);
+          background: var(--card-bg);
           backdrop-filter: blur(30px) saturate(180%);
-          border: 1px solid rgba(255,255,255,0.08);
+          border: 1px solid var(--border);
           border-radius: 24px;
           padding: 20px 28px;
           display: flex;
@@ -326,6 +327,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           letter-spacing: 0.1em;
           color: rgba(255,255,255,0.5);
           text-transform: uppercase;
+          font-family: var(--mono);
         }
 
         .mr-mic-bar {
