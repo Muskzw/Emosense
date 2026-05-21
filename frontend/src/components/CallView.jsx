@@ -696,44 +696,59 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             background: radial-gradient(circle at center, #1e1e35 0%, #08080c 100%) !important;
             display: flex !important;
             flex-direction: column !important;
+            height: 100vh !important;
+            height: 100dvh !important;
+            overflow: hidden !important;
           }
           .cv-desktop-main {
             display: flex !important;
             flex: 1 !important;
-            padding: 40px 40px 110px !important; /* bottom padding for botbar */
+            padding: 30px 40px 110px !important; /* bottom padding for botbar */
             gap: 30px !important;
             max-width: 1600px;
             margin: 0 auto;
             width: 100%;
             box-sizing: border-box;
+            height: calc(100vh - 90px) !important;
+            height: calc(100dvh - 90px) !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
           }
           .cv-stage {
             flex: 1 !important;
             display: flex !important;
-            align-items: center;
-            justify-content: center;
-            position: relative;
+            align-items: center !important;
+            justify-content: center !important;
+            position: relative !important;
+            height: 100% !important;
+            min-height: 0 !important;
+            min-width: 0 !important;
           }
 
           .cv-video-card {
             width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
+            max-height: 100% !important;
             aspect-ratio: 16/9 !important;
             background: rgba(10,10,15,0.75) !important;
             backdrop-filter: blur(20px) !important;
             border-radius: 32px !important;
             overflow: hidden !important;
             position: relative !important;
-            border: 1px solid rgba(255,255,255,0.12);
-            box-shadow: 0 40px 120px rgba(0,0,0,0.8);
+            border: 1px solid rgba(255,255,255,0.12) !important;
+            box-shadow: 0 40px 120px rgba(0,0,0,0.8) !important;
           }
 
           .cv-sidebar {
             width: 360px !important;
+            flex-shrink: 0 !important;
             display: flex !important;
             flex-direction: column !important;
             gap: 20px !important;
             overflow-y: auto !important;
-            max-height: calc(100vh - 130px) !important;
+            height: 100% !important;
+            max-height: 100% !important;
             scrollbar-width: none !important;
           }
           .cv-sidebar::-webkit-scrollbar {
@@ -744,7 +759,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             backdrop-filter: blur(40px) saturate(180%) !important;
             border: 1px solid rgba(255,255,255,0.1) !important;
             border-radius: 24px !important;
-            padding: 24px !important;
+            padding: 20px !important; /* Made compact from 24px */
             box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
           }
           .cv-pip {
@@ -774,12 +789,19 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             justify-content: center !important;
             z-index: 100 !important;
           }
+          .cv-controls {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 16px !important;
+            width: auto !important;
+            max-width: none !important;
+          }
           .cv-timer-wrap {
             text-align: center;
             margin-bottom: 10px;
           }
           .cv-timer-val {
-            font-size: 38px !important;
+            font-size: 32px !important; /* Scaled down slightly from 38px for a cleaner balance */
             font-weight: 800 !important;
             background: linear-gradient(to bottom, #fff 0%, #aaa 100%);
             -webkit-background-clip: text;
@@ -811,7 +833,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           backdrop-filter: blur(40px) saturate(180%) !important;
           border: 1px solid rgba(255, 255, 255, 0.1) !important;
           border-radius: 24px !important;
-          padding: 24px !important;
+          padding: 20px !important; /* Made compact from 24px */
           box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
           display: flex;
           flex-direction: column;
@@ -1353,7 +1375,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
               boxShadow: speechEnabled ? '0 0 8px #3dffa0' : 'none',
               transition: 'all 0.3s ease'
             }} />
-            AI Speech Coach: {speechEnabled ? 'ON' : 'OFF'}
+            AI Coach: {speechEnabled ? 'ON' : 'OFF'}
           </button>
 
           <button

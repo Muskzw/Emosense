@@ -719,26 +719,33 @@ button:active, .btn:active, .end-btn:active, .cv-btn:active, .lob-btn:active, .c
   .cv-controls {
     width: 100% !important;
     max-width: 440px !important;
-    display: flex !important;
-    flex-direction: row !important;
-    gap: 16px !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
     pointer-events: auto !important;
     justify-content: center !important;
   }
-  .cv-record-btn, .cv-end-btn {
-    flex: 1 !important;
+  .cv-record-btn, .cv-ai-speech-btn, .cv-end-btn {
+    width: 100% !important;
     height: 48px !important;
     min-height: 48px !important;
     border-radius: 24px !important; /* Premium pill shape */
-    font-size: 14px !important;
+    font-size: 13px !important;
     font-weight: 700 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 8px !important;
     box-sizing: border-box !important;
-    padding: 0 12px !important;
+    padding: 0 16px !important;
     margin: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .cv-end-btn {
+    grid-column: span 2 !important;
+    background: rgba(255, 59, 48, 0.85) !important;
   }
 
   /* Compact mobile emotion strip */
