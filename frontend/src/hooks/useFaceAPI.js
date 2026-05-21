@@ -192,10 +192,20 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
 
   // ── Data collection ───────────────────────────────────────────
   const submitSample = (video, emo, conf) => {
-    if (!optIn || conf < 0.65) return;
+    const isOptedIn = optIn === true || optIn === 'true';
+    if (!isOptedIn) return;
+
+    if (conf < 0.65) return;
+
+    // We throttle uploading to a 10% sample rate to optimize client/server bandwidth.
     if (Math.random() > 0.1) return;
 
-    if (!canvasRef.current) return;
+    console.log('[Dataset Opt-In] Evaluated frame matches criteria. Capturing anonymized face sample for emotion:', emo, 'with confidence:', conf);
+
+    if (!canvasRef.current) {
+      console.warn('[Dataset Opt-In] Canvas reference is missing, cannot capture frame.');
+      return;
+    }
     const canvas = canvasRef.current;
     const ctx2d  = canvas.getContext('2d', { willReadFrequently: true });
     
@@ -223,7 +233,18 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
         session_hash: 'anon_' + Math.random().toString(36).slice(2, 8),
         consent: true 
       }),
-    }).catch(() => {});
+    })
+    .then(async (res) => {
+      if (res.ok) {
+        console.log('[Dataset Opt-In] Anonymized face sample uploaded successfully.');
+      } else {
+        const errText = await res.text();
+        console.warn(`[Dataset Opt-In] Upload failed with status ${res.status}:`, errText);
+      }
+    })
+    .catch((err) => {
+      console.error('[Dataset Opt-In] Network/Connection error uploading sample to backend:', err.message);
+    });
   };
 
   // ── Detection loop ────────────────────────────────────────────

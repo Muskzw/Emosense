@@ -526,30 +526,31 @@ button:active, .btn:active, .end-btn:active, .cv-btn:active, .lob-btn:active, .c
   }
   .cv-stage {
     display: block !important;
-    width: 90vw !important;
-    max-width: 440px !important;
-    aspect-ratio: 4 / 3 !important;
-    height: auto !important;
+    width: 100vw !important;
+    max-width: none !important;
+    height: 100vh !important;
+    height: 100dvh !important;
     position: absolute !important;
-    top: 48% !important; /* Balanced position above bottom bar */
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
+    inset: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
     z-index: 10 !important;
     box-sizing: border-box !important;
   }
   .cv-video-card {
     width: 100% !important;
     height: 100% !important;
-    border-radius: 20px !important; /* Gorgeous floating rounded tile */
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6) !important;
+    border-radius: 0px !important; /* Full screen card */
+    border: none !important;
+    box-shadow: none !important;
     background: #000 !important;
     position: absolute !important;
     inset: 0 !important;
     overflow: hidden !important;
   }
   .cv-video-card video {
-    object-fit: cover !important; /* Zero black bars! Fills the beautiful 4:3 card completely */
+    object-fit: cover !important; /* Zero black bars! Fills the whole screen */
     width: 100% !important;
     height: 100% !important;
     position: absolute !important;
@@ -574,7 +575,7 @@ button:active, .btn:active, .end-btn:active, .cv-btn:active, .lob-btn:active, .c
   }
   .remote-stats-overlay {
     position: absolute !important;
-    top: 12px !important;
+    top: calc(12px + env(safe-area-inset-top)) !important;
     left: 12px !important;
     right: 12px !important;
     width: auto !important;
@@ -628,6 +629,7 @@ button:active, .btn:active, .end-btn:active, .cv-btn:active, .lob-btn:active, .c
     letter-spacing: 0.05em !important;
     text-transform: uppercase !important;
     flex-shrink: 0 !important;
+    white-space: nowrap !important;
   }
   .emotion-badge .stat-indicator-dot {
     width: 5px !important;
@@ -681,18 +683,19 @@ button:active, .btn:active, .end-btn:active, .cv-btn:active, .lob-btn:active, .c
   /* PiP SELF-VIEW */
   .cv-pip {
     position: absolute !important;
-    left: 12px !important;
-    bottom: 12px !important;
-    right: auto !important;
+    right: 16px !important;
+    bottom: calc(180px + env(safe-area-inset-bottom)) !important;
+    left: auto !important;
     top: auto !important;
-    width: 80px !important;
-    height: 100px !important;
-    border-radius: 12px !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    width: 90px !important;
+    height: 120px !important;
+    border-radius: 16px !important; /* FaceTime-like floating tile */
+    border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6) !important;
     overflow: hidden !important;
     z-index: 30 !important;
     background: #0a0a0f !important;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
   .cv-pip video {
     width: 100% !important;

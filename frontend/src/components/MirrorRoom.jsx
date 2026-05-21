@@ -457,6 +457,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           <video ref={localVideoRef} autoPlay muted playsInline />
           <svg
             ref={svgRef}
+            preserveAspectRatio="xMidYMid slice"
             style={{
               position: 'absolute',
               inset: 0,

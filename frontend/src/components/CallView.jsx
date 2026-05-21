@@ -76,6 +76,10 @@ const S = {
     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.15)',
     fontSize: '10px', fontWeight: '500', color: 'rgba(255,255,255,0.7)',
     pointerEvents: 'all',
+    whiteSpace: 'nowrap',
+    flexShrink: 0,
+    display: 'inline-flex',
+    alignItems: 'center',
   },
   livePill: {
     display: 'flex', alignItems: 'center', gap: '5px',
@@ -842,21 +846,30 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           overflow: hidden;
         }
         .alignment-gauge-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: space-between !important;
+          gap: 12px !important;
+          width: 100% !important;
+          min-width: 0 !important;
         }
         .alignment-gauge-title {
-          font-size: 10px;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.4);
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
+          font-size: 11px !important;
+          font-weight: 800 !important;
+          color: rgba(255, 255, 255, 0.5) !important;
+          letter-spacing: 0.05em !important;
+          text-transform: uppercase !important;
+          white-space: nowrap !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+          flex: 1 !important;
+          min-width: 0 !important;
         }
         .alignment-gauge-value {
-          font-size: 24px;
-          font-weight: 800;
-          font-family: var(--mono);
+          font-size: 20px !important;
+          font-weight: 800 !important;
+          font-family: var(--mono) !important;
+          flex-shrink: 0 !important;
         }
         .alignment-bar-outer {
           height: 10px;
@@ -929,15 +942,17 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           min-width: 0;
         }
         .emotion-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 4px 10px;
-          border-radius: 999px;
-          font-size: 9.5px;
-          font-weight: 800;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
+          display: inline-flex !important;
+          align-items: center !important;
+          gap: 6px !important;
+          padding: 4px 10px !important;
+          border-radius: 999px !important;
+          font-size: 9.5px !important;
+          font-weight: 800 !important;
+          letter-spacing: 0.05em !important;
+          text-transform: uppercase !important;
+          flex-shrink: 0 !important;
+          white-space: nowrap !important;
         }
         .remote-info-row-secondary {
           display: flex;
@@ -1069,6 +1084,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
               )}
               <svg
                 ref={svgRef}
+                preserveAspectRatio="xMidYMid slice"
                 style={{
                   position: 'absolute', inset: 0, width: '100%', height: '100%',
                   pointerEvents: 'none', zIndex: 4,
