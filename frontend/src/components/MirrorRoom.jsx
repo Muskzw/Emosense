@@ -158,13 +158,19 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
 
   const isHost = !sessionInfo.targetPeerId;
   const eConf = EMO[curEmo] || EMO.neutral;
+  const emoColorVar = {
+    happy: 'var(--green)',
+    neutral: 'var(--slate)',
+    sad: 'var(--blue)',
+    angry: 'var(--red)'
+  }[curEmo] || 'var(--slate)';
 
   return (
     <div className="screen active" style={{
       display: 'flex', flexDirection: 'column',
       background: 'radial-gradient(ellipse at top, var(--surf2) 0%, var(--bg) 100%)',
       fontFamily: 'var(--sans)',
-      color: 'white',
+      color: 'var(--txt)',
       overflow: 'hidden',
       position: 'fixed',
       inset: 0
@@ -195,10 +201,10 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
         }
         
         .mr-back {
-          background: rgba(255,255,255,0.05);
+          background: var(--surf);
           backdrop-filter: blur(20px);
-          border: 1px solid rgba(255,255,255,0.1);
-          color: white;
+          border: 1px solid var(--bd2);
+          color: var(--txt);
           padding: 10px 18px;
           border-radius: 12px;
           font-weight: 600;
@@ -209,13 +215,14 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           align-items: center;
           gap: 8px;
         }
-        .mr-back:hover { background: rgba(255,255,255,0.1); transform: translateX(-2px); }
+        .mr-back:hover { background: var(--surf2); transform: translateX(-2px); }
 
         .mr-title {
           font-size: 18px;
           font-weight: 700;
           letter-spacing: -0.02em;
-          text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+          text-shadow: 0 2px 8px var(--shadow);
+          color: var(--txt);
         }
 
         .mr-main {
@@ -325,13 +332,13 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           max-width: 900px;
           background: var(--card-bg);
           backdrop-filter: blur(30px) saturate(180%);
-          border: 1px solid var(--border);
+          border: 1px solid var(--bd2);
           border-radius: 24px;
           padding: 20px 28px;
           display: flex;
           align-items: center;
           gap: 28px;
-          box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+          box-shadow: 0 20px 40px var(--shadow);
           flex-shrink: 0;
         }
 
@@ -348,14 +355,14 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           font-size: 12px;
           font-weight: 700;
           letter-spacing: 0.1em;
-          color: rgba(255,255,255,0.5);
+          color: var(--muted);
           text-transform: uppercase;
           font-family: var(--mono);
         }
 
         .mr-mic-bar {
           height: 8px;
-          background: rgba(255,255,255,0.06);
+          background: var(--bd2);
           border-radius: 999px;
           overflow: hidden;
           position: relative;
@@ -402,16 +409,16 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
         }
 
         .mr-btn-primary:disabled {
-          background: rgba(255,255,255,0.05);
-          color: rgba(255,255,255,0.3);
+          background: var(--bd2);
+          color: var(--dim);
           box-shadow: none;
           cursor: not-allowed;
         }
 
         .mr-btn-cancel {
-          background: rgba(255,59,48,0.1);
-          color: #ff3b30;
-          border: 1px solid rgba(255,59,48,0.3);
+          background: rgba(219, 68, 85, 0.1);
+          color: var(--red);
+          border: 1px solid rgba(219, 68, 85, 0.3);
           padding: 16px 32px;
           border-radius: 16px;
           font-size: 16px;
@@ -419,7 +426,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           cursor: pointer;
           transition: all 0.2s;
         }
-        .mr-btn-cancel:hover { background: rgba(255,59,48,0.2); }
+        .mr-btn-cancel:hover { background: rgba(219, 68, 85, 0.2); }
 
         /* Laptop / medium screens — tighten vertical spacing */
         @media (max-width: 1200px) and (min-width: 769px) {
@@ -504,7 +511,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
               inset: 0,
               width: '100%',
               height: '100%',
-              objectFit: 'contain',
+              objectFit: 'cover',
               zIndex: 2,
               transform: 'scaleX(-1)',
             }}
@@ -514,7 +521,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           />
           <svg
             ref={svgRef}
-            preserveAspectRatio="xMidYMid meet"
+            preserveAspectRatio="xMidYMid slice"
             style={{
               position: 'absolute',
               inset: 0,
@@ -528,9 +535,9 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           <canvas ref={canvasRef} style={{ display: 'none' }} />
 
           {/* AI Emotion Badge */}
-          <div className="mr-emo-glass" style={{ border: `1px solid ${eConf.c}44` }}>
-            <div className="mr-emo-dot" style={{ background: eConf.c, color: eConf.c }} />
-            <div className="mr-emo-text" style={{ color: eConf.c }}>
+          <div className="mr-emo-glass" style={{ border: `1px solid ${emoColorVar}44` }}>
+            <div className="mr-emo-dot" style={{ background: emoColorVar, color: emoColorVar }} />
+            <div className="mr-emo-text" style={{ color: emoColorVar }}>
               {t('aiSensor')}: {t(eConf.n.toLowerCase()) || eConf.n}
             </div>
           </div>
@@ -562,7 +569,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           <div className="mr-mic-wrap">
             <div className="mr-mic-header">
               <span>{t('mic')}</span>
-              <span style={{ color: micLevel > 10 ? '#3dffa0' : 'rgba(255,255,255,0.4)' }}>
+              <span style={{ color: micLevel > 10 ? 'var(--green)' : 'var(--muted)' }}>
                 {micLevel > 10 ? t('micDetecting') : t('micSilent')}
               </span>
             </div>
@@ -571,19 +578,19 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
                 className="mr-mic-fill" 
                 style={{ 
                   width: `${micLevel}%`, 
-                  background: micLevel > 80 ? '#ff6b6b' : '#3dffa0',
-                  color: micLevel > 80 ? '#ff6b6b' : '#3dffa0'
+                  background: micLevel > 80 ? 'var(--red)' : 'var(--green)',
+                  color: micLevel > 80 ? 'var(--red)' : 'var(--green)'
                 }} 
               />
             </div>
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>
+            <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>
               {t('micHint')}
             </div>
           </div>
 
           <div className="mr-action-wrap">
             {modelError && (
-              <div style={{ color: '#ff6b6b', fontSize: '13px', fontWeight: '600', marginBottom: '8px', textAlign: 'center' }}>
+              <div style={{ color: 'var(--red)', fontSize: '13px', fontWeight: '600', marginBottom: '8px', textAlign: 'center' }}>
                 {t('modelLoadError')}
               </div>
             )}
@@ -611,7 +618,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
             )}
             
             {joinError && (
-              <div style={{ color: '#ff6b6b', fontSize: '13px', fontWeight: '600', marginTop: '4px' }}>
+              <div style={{ color: 'var(--red)', fontSize: '13px', fontWeight: '600', marginTop: '4px' }}>
                 {joinError}
               </div>
             )}
