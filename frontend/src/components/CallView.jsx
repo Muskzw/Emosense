@@ -1675,7 +1675,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
               {/* Emotion Pills */}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-end', maxWidth: '100px' }}>
                 {(() => {
-                  const activeEmotion = curEmoRef.current || 'neutral';
+                  const activeEmotion = curEmo || 'neutral';
                   const label = t(activeEmotion) || 'Neutral';
                   let colors = { bg: 'rgba(100,116,150,0.2)', text: '#8892aa', border: 'rgba(100,116,150,0.2)' };
                   if (activeEmotion === 'happy') {

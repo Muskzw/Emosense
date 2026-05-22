@@ -89,6 +89,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
   const lastFrameRef  = useRef(0);
   
   const customModelsRef = useRef(null);
+  const localCanvasRef  = useRef(null);
 
   // ── Load face-api.js base models (once) ────────────────────────
   useEffect(() => {
@@ -276,11 +277,25 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
 
       setDebug(d => ({ ...d, videoSize: `${video.videoWidth}x${video.videoHeight}` }));
 
+      // Draw to offscreen canvas for mobile and iOS Safari compatibility
+      if (!localCanvasRef.current) {
+        localCanvasRef.current = document.createElement('canvas');
+      }
+      const offscreenCanvas = localCanvasRef.current;
+      if (offscreenCanvas.width !== video.videoWidth || offscreenCanvas.height !== video.videoHeight) {
+        offscreenCanvas.width = video.videoWidth;
+        offscreenCanvas.height = video.videoHeight;
+      }
+      const offCtx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
+      if (offCtx) {
+        offCtx.drawImage(video, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
+      }
+
       const startTime = Date.now();
 
       try {
         const det = await faceapi
-          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.25 }))
+          .detectSingleFace(offscreenCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.25 }))
           .withFaceLandmarks(true)
           .withFaceExpressions();
 
@@ -298,12 +313,12 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
               const { m1, m2, m3, culture } = customModelsRef.current;
 
               const processed = tf.tidy(() => {
-                const fullTensor = tf.browser.fromPixels(video);
+                const fullTensor = tf.browser.fromPixels(offscreenCanvas);
                 const { x, y, width, height } = det.detection.box;
                 const startY = Math.max(0, Math.floor(y));
                 const startX = Math.max(0, Math.floor(x));
-                const sizeY = Math.min(video.videoHeight - startY, Math.floor(height));
-                const sizeX = Math.min(video.videoWidth - startX, Math.floor(width));
+                const sizeY = Math.min(offscreenCanvas.height - startY, Math.floor(height));
+                const sizeX = Math.min(offscreenCanvas.width - startX, Math.floor(width));
 
                 if (sizeY <= 0 || sizeX <= 0) return null;
 
@@ -420,7 +435,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
           }
 
           // Data collection
-          submitSample(video, dEmo, maxConf);
+          submitSample(offscreenCanvas, dEmo, maxConf);
 
           // Render face landmark dots
           if (svg) {
