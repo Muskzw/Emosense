@@ -791,7 +791,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             box-shadow: 0 40px 120px rgba(0,0,0,0.8) !important;
           }
           .cv-video-card video {
-            object-fit: contain !important;
+            object-fit: cover !important;
           }
 
           .cv-sidebar {
@@ -1141,7 +1141,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                   inset: 0,
                   width: '100%',
                   height: '100%',
-                  objectFit: 'contain',
+                  objectFit: 'cover',
                   zIndex: 2,
                   display: isConnected ? 'block' : 'none'
                 }}
@@ -1191,7 +1191,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
               )}
               <svg
                 ref={svgRef}
-                preserveAspectRatio="xMidYMid meet"
+                preserveAspectRatio="xMidYMid slice"
                 style={{
                   position: 'absolute', inset: 0, width: '100%', height: '100%',
                   pointerEvents: 'none', zIndex: 4,
