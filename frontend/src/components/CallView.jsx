@@ -98,6 +98,8 @@ const S = {
     border: '1.5px solid rgba(79,142,247,0.5)',
     boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
     background: '#0a0a0f',
+    WebkitMaskImage: '-webkit-radial-gradient(white, black)',
+    isolation: 'isolate',
   },
   localVid: {
     width: '100%', height: '100%', objectFit: 'contain', transform: 'scaleX(-1)',
@@ -826,11 +828,14 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             border: 1.5px solid rgba(79, 142, 247, 0.5) !important;
             box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
             z-index: 30 !important;
+            -webkit-mask-image: -webkit-radial-gradient(white, black) !important;
+            isolation: isolate !important;
           }
           .cv-pip video {
             width: 100% !important;
             height: 100% !important;
             object-fit: cover !important;
+            border-radius: 6.5px !important;
           }
           .cv-botbar {
             position: fixed !important;
@@ -1125,6 +1130,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
               />
               <video
                 ref={remoteVideoRef}
+                className="remote-fg-vid"
                 style={{
                   position: 'absolute',
                   inset: 0,

@@ -528,7 +528,7 @@ button:active, .btn:active, .end-btn:active, .cv-btn:active, .lob-btn:active, .c
      Only the foreground layers need the 38px push-down — the blurred
      background video (local-bg-vid / remoteVideoBgRef) sits behind and
      should fill the full card including behind the top bar. */
-  .cv-video-card .local-fg-vid,
+  .cv-video-card .remote-fg-vid,
   .cv-video-card svg {
     margin-top: 38px !important;
     height: calc(100% - 38px) !important;
@@ -536,13 +536,8 @@ button:active, .btn:active, .end-btn:active, .cv-btn:active, .lob-btn:active, .c
     position: absolute !important;
     left: 0 !important;
   }
-  /* Remote foreground video — not tagged with a class, but we can identify
-     it as the non-blurred video. Use the bg muted blur approach via :not. */
-  .cv-video-card video:not(.local-bg-vid):not(.remote-bg-vid) {
-    margin-top: 38px !important;
-    height: calc(100% - 38px) !important;
-    position: absolute !important;
-    left: 0 !important;
+  /* Remote foreground video offset and sizing on mobile */
+  .cv-video-card .remote-fg-vid {
     object-fit: cover !important;
   }
   /* Background blur videos should fill the whole card, no offset */
@@ -591,16 +586,20 @@ button:active, .btn:active, .end-btn:active, .cv-btn:active, .lob-btn:active, .c
     overflow: hidden !important;
     z-index: 30 !important;
     background: #0a0a0f !important;
+    -webkit-mask-image: -webkit-radial-gradient(white, black) !important;
+    isolation: isolate !important;
   }
   .cv-pip .local-bg-vid {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
+    border-radius: 6.5px !important;
   }
   .cv-pip .local-fg-vid {
     width: 100% !important;
     height: 100% !important;
     object-fit: contain !important;
+    border-radius: 6.5px !important;
   }
   .cv-pip div {
     display: none !important; /* Hide You label on mobile */

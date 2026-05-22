@@ -26,9 +26,32 @@ export default function App() {
   useEffect(() => { liveDataRef.current = liveData; }, [liveData]);
 
   const [videoUrl, setVideoUrl] = useState(null);
-  const [session, setSession] = useState(null);
+  // ── Dev Auth Bypass ─────────────────────────────────────────────
+  // When VITE_DEV_BYPASS_AUTH=true in .env, skip Supabase auth and
+  // inject a fake local session so you can test the UI directly.
+  const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
+  const DEV_SESSION = DEV_BYPASS ? {
+    user: {
+      id: 'dev-local-user',
+      email: 'dev@emosense.local',
+      user_metadata: {
+        full_name: 'Dev Tester',
+        display_name: 'Dev Tester',
+        organization: 'EmoSense Lab',
+        role: 'Developer',
+        location: 'Zimbabwe',
+      }
+    },
+    access_token: 'dev-bypass-token',
+  } : null;
+  // ────────────────────────────────────────────────────────────────
+
+  const [session, setSession] = useState(DEV_BYPASS ? DEV_SESSION : null);
 
   useEffect(() => {
+    // Skip Supabase entirely in dev bypass mode
+    if (DEV_BYPASS) return;
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
