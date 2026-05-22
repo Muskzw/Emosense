@@ -1504,24 +1504,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
               {modelsLoaded ? 'AI Engine Active' : 'Loading Models…'}
             </div>
 
-            {debug && (
-              <div style={{
-                marginTop: '12px',
-                padding: '8px',
-                background: 'rgba(0, 0, 0, 0.4)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '8px',
-                fontFamily: 'monospace',
-                fontSize: '10px',
-                color: '#aaa',
-                lineHeight: '1.4'
-              }}>
-                <div>Loop Ticks: {debug.loopTicks}</div>
-                <div>Video Size: {debug.videoSize}</div>
-                <div>Last Det: {debug.lastDet}</div>
-                <div>Last Error: {debug.lastError}</div>
-              </div>
-            )}
+
           </div>
         </aside>
       </div>
