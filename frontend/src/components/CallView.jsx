@@ -904,6 +904,16 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           }
           .cv-desktop-timer-hide { display: none !important; }
           .cv-ai-status { position: static !important; margin-top: auto; }
+          .remote-stats-overlay {
+            position: absolute !important;
+            top: 24px !important;
+            left: 24px !important;
+            z-index: 10 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            pointer-events: none !important;
+          }
         }
 
         .alignment-gauge-container {
@@ -965,25 +975,19 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
         }
         
         .remote-stats-overlay {
-          position: absolute;
-          top: 24px;
-          left: 24px;
-          z-index: 10;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          pointer-events: none;
+          display: none !important; /* Hide on mobile/narrow viewports to prevent squishing */
         }
         .glass-stats-card {
-          background: rgba(10, 10, 15, 0.6) !important;
-          backdrop-filter: blur(20px) saturate(160%) !important;
-          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+          background: var(--card-bg) !important;
+          backdrop-filter: blur(24px) saturate(180%) !important;
+          border: 1px solid var(--bd2) !important;
           border-radius: 16px !important;
           padding: 12px 18px !important;
           display: flex;
           align-items: center;
           gap: 12px;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+          box-shadow: 0 12px 40px var(--shadow) !important;
+          transition: all 0.3s ease;
         }
         .stat-indicator-dot {
           width: 8px;
@@ -994,9 +998,9 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
         .remote-info-card {
           display: flex;
           flex-direction: column;
-          gap: 6px;
-          min-width: 280px;
-          max-width: 340px;
+          gap: 8px;
+          min-width: 260px;
+          max-width: 320px;
         }
         .remote-info-row-primary {
           display: flex;
@@ -1008,12 +1012,13 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
         .remote-name-text {
           font-size: 14px;
           font-weight: 700;
-          color: #ffffff;
+          color: var(--txt);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
           flex: 1;
           min-width: 0;
+          font-family: var(--sans);
         }
         .emotion-badge {
           display: inline-flex !important;
@@ -1033,13 +1038,13 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           align-items: center;
           justify-content: space-between;
           gap: 12px;
-          border-top: 1px solid rgba(255,255,255,0.06);
-          padding-top: 6px;
+          border-top: 1px solid var(--bd2);
+          padding-top: 8px;
           width: 100%;
         }
         .context-engine-text {
-          font-size: 10px;
-          color: rgba(255,255,255,0.5);
+          font-size: 10.5px;
+          color: var(--muted);
           font-family: var(--mono);
           display: flex;
           align-items: center;
@@ -1059,8 +1064,8 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
         .scans-count-text {
           font-size: 9.5px;
           font-weight: 700;
-          color: rgba(255,255,255,0.45);
-          background: rgba(255,255,255,0.05);
+          color: var(--muted);
+          background: var(--bd2);
           padding: 2px 6px;
           border-radius: 4px;
           text-transform: uppercase;
