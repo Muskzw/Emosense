@@ -427,6 +427,16 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
   const remoteVideoBgRef = useRef(null);
   const localVideoBgRef = useRef(null);
 
+  // Missing States
+  const [isRecording, setIsRecording] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [waitingConsent, setWaitingConsent] = useState(false);
+  const [coachingToast, setCoachingToast] = useState(null);
+
+  // Missing Refs
+  const lastCoachingTimeRef = useRef(0);
+  const neutralDurationRef = useRef(0);
+
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   useEffect(() => {
     const handleResize = () => {
