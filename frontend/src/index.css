@@ -38,6 +38,40 @@
   --sr: env(safe-area-inset-right, 0px);
 }
 
+/* ── EmoSense Premium Light Palette (OS theme light fallback / explicit light theme) ── */
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg:          #f5f6fa;
+  --surf:        #ffffff;
+  --surf2:       #eef1f6;
+  --card-bg:     rgba(255, 255, 255, 0.9);
+  --bd:          #d0d7de;
+  --bd2:         rgba(0, 0, 0, 0.08);
+  --bd3:         rgba(0, 0, 0, 0.15);
+  --border:      #d0d7de;
+  --accent-blue: #007aff;
+  --accent-green: #27ae60;
+  --danger-live-red: #d11a2a;
+  --primary-text: #1a1f2c;
+  --muted-text:   #5c6479;
+  --hint-text:    #8f95a5;
+
+  --txt:   #1a1f2c;
+  --muted: #5c6479;
+  --dim:   #8f95a5;
+  --green: #27ae60;
+  --blue:  #007aff;
+  --red:   #d11a2a;
+  --amber: #f39c12;
+  --slate: #5c6479;
+  --input-bg: rgba(255, 255, 255, 0.8);
+  --shadow: rgba(0, 0, 0, 0.08);
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:var(--sans);-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%}
 #root{width:100%;height:100%}
@@ -172,7 +206,7 @@ button:active, .btn:active, .end-btn:active, .cv-btn:active, .lob-btn:active, .c
 .btn-start:hover{background:#5fffc0}.btn-start:active{transform:scale(.98)}.btn-start:disabled{opacity:.4;cursor:not-allowed}
 /* CALL */
 #sCall{background:var(--bg)}
-.c-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px calc(20px + var(--sl)) 10px calc(20px + var(--sr));padding-top:calc(10px + var(--st));border-bottom:.5px solid var(--bd);background:rgba(7,7,15,.95);backdrop-filter:blur(12px);flex-shrink:0;z-index:30;position:relative}
+.c-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px calc(20px + var(--sl)) 10px calc(20px + var(--sr));padding-top:calc(10px + var(--st));border-bottom:.5px solid var(--bd);background:var(--card-bg);backdrop-filter:blur(12px);flex-shrink:0;z-index:30;position:relative}
 .chl{display:flex;align-items:center;gap:8px}
 .ch-mark{width:22px;height:22px;border-radius:6px;background:var(--gd);border:.5px solid var(--gb);display:flex;align-items:center;justify-content:center}
 .ch-mark svg{width:11px;height:11px}
