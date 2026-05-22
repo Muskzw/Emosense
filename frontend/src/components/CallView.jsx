@@ -1273,7 +1273,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                   inset: 0,
                   width: '100%',
                   height: '100%',
-                  objectFit: 'contain',
+                  objectFit: 'cover',
                   zIndex: 2,
                   transform: 'scaleX(-1)',
                 }}

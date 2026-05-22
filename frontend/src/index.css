@@ -508,7 +508,7 @@ button:active, .btn:active, .end-btn:active, .cv-btn:active, .lob-btn:active, .c
   .cv-stage {
     position: relative !important;
     width: 100vw !important;
-    aspect-ratio: 4/3 !important; /* Force nice 4:3 video ratio on mobile */
+    height: 48dvh !important; /* Set to 48% dynamic viewport height on mobile to prevent unused space */
     background: #000 !important;
     flex-shrink: 0 !important;
     overflow: hidden !important;
@@ -598,7 +598,7 @@ button:active, .btn:active, .end-btn:active, .cv-btn:active, .lob-btn:active, .c
   .cv-pip .local-fg-vid {
     width: 100% !important;
     height: 100% !important;
-    object-fit: contain !important;
+    object-fit: cover !important;
     border-radius: 6.5px !important;
   }
   .cv-pip div {
