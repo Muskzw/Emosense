@@ -1,6 +1,130 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useFaceAPI, EMO } from '../hooks/useFaceAPI';
 import { useSpeech } from '../hooks/useSpeech';
+import { useLang, LangSwitcher } from '../context/LangContext';
+
+const LOCAL_T = {
+  en: {
+    you: 'You',
+    gathering: 'Gathering emotional response data...',
+    scans: 'scans',
+    current: 'Current',
+    live: 'LIVE',
+    aiCoach: 'AI COACH',
+    sessionDuration: 'Session Duration',
+    emotionDistribution: 'Emotion Distribution',
+    emotionTurns: "'s Emotion Turns",
+    ubuntuResonance: "Ubuntu Resonance Index",
+    guanxiMianzi: "Guanxi & Mianzi Poise",
+    interculturalSynergy: "Intercultural Synergy",
+    communalHarmonyHigh: "Communal Harmony High 🇿🇼",
+    warmConnectionStable: "Warm Connection Stable",
+    relationalWarmthFading: "Relational Warmth Fading",
+    faceSavingHarmonyHigh: "Face-Saving Harmony High 🇨🇳",
+    politePoiseEstablished: "Polite Poise Established",
+    harmonyDisrupted: "Harmony Disrupted",
+    synergyAchieved: "Synergy Achieved 🌐",
+    communicationProductive: "Communication Productive",
+    frictionAlert: "Friction Alert",
+    highNeutralityTitle: "High Neutrality Detected",
+    highNeutralityMsg: "In Chinese business culture, prolonged neutrality often indicates Face-saving (Mianzi). Avoid pushing for a hard 'yes' right now. Use soft follow-ups.",
+    frictionSensitiveTitle: "Friction on Sensitive Topic",
+    frictionSensitiveMsg: "Negative emotion detected alongside a constraint keyword. Avoid direct confrontation. De-escalate and shift focus to shared goals.",
+    recordingRequest: "Recording Request",
+    recordingRequestDesc: "wants to record this session for analysis. Do you consent?",
+    allow: "Allow",
+    deny: "Deny",
+    communalHarmonyHighAdvice: "Communal connection is thriving. Focus on storytelling and collective value. Respectful presence is deeply felt.",
+    warmConnectionStableAdvice: "Relational connection is positive. Cultivate communal warmth (Ubuntu) by showing interest in family, health, and mutual respect.",
+    relationalWarmthFadingAdvice: "Connection is tense or cold. Slow down. Prioritize relationship-building over transaction. Ask respectful open questions.",
+    faceSavingHarmonyHighAdvice: "Excellent Guanxi established. Mutual face-saving (Mianzi) is maintained. Keep communication respectful, indirect, and patient.",
+    politePoiseEstablishedAdvice: "Polite reserve is active. Respect pauses. Avoid confrontational negotiation; allow indirect expressions.",
+    harmonyDisruptedAdvice: "Harmony disrupted. Pause immediately. Express utmost respect. Do not call out errors directly; offer face-saving ways out.",
+    synergyAchievedAdvice: "High positive resonance. Communication is fluid and empathetic. Continue active listening.",
+    communicationProductiveAdvice: "Rapport is stable. Balance presentation with space for their input.",
+    frictionAlertAdvice: "Potential communication gap. Check assumptions, simplify terms, and ask open clarifying questions."
+  },
+  sn: {
+    you: 'Iwe',
+    gathering: 'Kugadzira nhamba dze data dze mamiriro...',
+    scans: 'ongororo',
+    current: 'Izvozvi',
+    live: 'ZVEZVE',
+    aiCoach: 'AI COACH',
+    sessionDuration: 'Nguva yeMusangano',
+    emotionDistribution: 'Pfuppiso yeMamiriro',
+    emotionTurns: " Kuchinja kweMamiriro",
+    ubuntuResonance: "Chiyero cheUbuntu/Hunhu",
+    guanxiMianzi: "Chiyero cheGuanxi neMianzi",
+    interculturalSynergy: "Kudyidzana Kwetsika Kwakasiyana",
+    communalHarmonyHigh: "Kugarisana neKuwadzana Kuri Pamusoro 🇿🇼",
+    warmConnectionStable: "Hukama Hwakanaka Hwakagadzikana",
+    relationalWarmthFading: "Hukama Huri Kudzikira",
+    faceSavingHarmonyHigh: "Hukama Hwekuremekedzana Kuri Pamusoro 🇨🇳",
+    politePoiseEstablished: "Kuremekedzana Kwadzikama",
+    harmonyDisrupted: "Kuwadzana Kwave Kuparara",
+    synergyAchieved: "Kudyidzana Kwakazara 🌐",
+    communicationProductive: "Hurukuro Inobudirira",
+    frictionAlert: "Yambiro yeKupokana",
+    highNeutralityTitle: "Kudzikama Kwakanyanya Kwaratidzwa",
+    highNeutralityMsg: "Mutsika dzekuChina, kuramba wakadzikama kunoreva kuremekedzana (Mianzi). Usamanikidze kubvuma izvozvi. Taura zvakapfava.",
+    frictionSensitiveTitle: "Kupokana paNyaya Inonetsa",
+    frictionSensitiveMsg: "Manzwiro asiri panyore aonekwa panzwi riri kunetsa. Dzivisa kupokana. Podza hasha wobva waenda pazvinangwa zvinowiriranwa.",
+    recordingRequest: "Chikumbiro cheKurekodha",
+    recordingRequestDesc: "anoda kurekodha musangano uyu. Unobvuma here?",
+    allow: "Bvuma",
+    deny: "Ramba",
+    communalHarmonyHighAdvice: "Hukama hwekuwadzana huri kubudirira. Focus panyaya dzekubatana. Kuremekedzana kuri kunzwikwa zvakanyanya.",
+    warmConnectionStableAdvice: "Hukama huri kufamba zvakanaka. Cultivate hushamwari (Ubuntu) nekubvunza zvemutsa, utano, uye kuremekedzana.",
+    relationalWarmthFadingAdvice: "Hukama hwava kutonhora kana kuomesa. Nonocha. Koshesa kuvaka hukama pane kungoita zvekutengeserana. Bvunza mibvunzo yetsika.",
+    faceSavingHarmonyHighAdvice: "Hukama hwakanaka hweGuanxi hwamira. Kuremekedzana (Mianzi) kuri kuitwa. Ramba uchingotaura zvine tsika nekutsungirira.",
+    politePoiseEstablishedAdvice: "Kuremekedzana Kwadzikama. Remekedza kumbomira kutaura. Dzivisa kupokana panyaya dzebasa.",
+    harmonyDisruptedAdvice: "Kuwadzana kwavhiringika. Misa hurukuro izvozvi. Ratidza kuremekedza kukuru. Usataure zvikanganiso pachena.",
+    synergyAchievedAdvice: "Kudyidzana kwakanaka kwazvo. Kukurukurirana kuri kufamba zvakanaka. Ramba wakateerera nemoyo wese.",
+    communicationProductiveAdvice: "Hukama hwakagadzikana. Balance kutaura kwako nekupa vamwe mukana wekutaurawo.",
+    frictionAlertAdvice: "Pane mukana wekusanzwisisana. Tarisa zvaunofunga, shandisa mashoko akareruka, uye bvunza mibvunzo yakajeka."
+  },
+  zh: {
+    you: '您',
+    gathering: '正在收集情绪反馈数据...',
+    scans: '次扫描',
+    current: '当前',
+    live: '直播',
+    aiCoach: '沟通教练',
+    sessionDuration: '通话时长',
+    emotionDistribution: '情绪分布',
+    emotionTurns: " 的情绪走势",
+    ubuntuResonance: "乌班图共鸣指数",
+    guanxiMianzi: "关系与面子平衡度",
+    interculturalSynergy: "跨文化协同度",
+    communalHarmonyHigh: "社群和谐度高 🇿🇼",
+    warmConnectionStable: "热情连接稳定",
+    relationalWarmthFading: "关系热度正在消退",
+    faceSavingHarmonyHigh: "顾及面子和谐度高 🇨🇳",
+    politePoiseEstablished: "礼貌性平衡已建立",
+    harmonyDisrupted: "和谐受损",
+    synergyAchieved: "达成跨文化协同 🌐",
+    communicationProductive: "沟通顺畅高效",
+    frictionAlert: "摩擦预警",
+    highNeutralityTitle: "检测到高度中性表现",
+    highNeutralityMsg: "在中国的商业文化中，长时间保持中立情绪通常代表面子（Mianzi）顾虑。此时避免强求明确的表态，建议采用柔和的跟进策略。",
+    frictionSensitiveTitle: "敏感话题引发情绪摩擦",
+    frictionSensitiveMsg: "检测到敏感词伴随负面表情。请避免直接交锋，适当降温，并将对话焦点转移到共同的目标上。",
+    recordingRequest: "录制请求",
+    recordingRequestDesc: "希望录制此视频会话以用于分析。您是否同意？",
+    allow: "允许",
+    deny: "拒绝",
+    communalHarmonyHighAdvice: "社区联系非常紧密。专注于故事分享与集体价值。彼此深深感受到相互尊重的存在。",
+    warmConnectionStableAdvice: "人际连接积极。通过展示对家庭、健康和相互尊重的关心，来培养社区温度（Ubuntu）。",
+    relationalWarmthFadingAdvice: "连接有些紧张或冷淡。请放慢节奏。将建立关系置于商业交易之上。提出尊重性的开放式问题。",
+    faceSavingHarmonyHighAdvice: "已建立极佳的关系。双方均维持了相互的面子（Mianzi）。保持尊重、委婉和耐心的沟通。",
+    politePoiseEstablishedAdvice: "礼貌性的含蓄状态正在发挥作用。尊重对话中的停顿。避免对抗性谈判，允许委婉间接的表达。",
+    harmonyDisruptedAdvice: "和谐受损。立即暂停。表达最大程度的尊重。不要直接指出对方的错误，提供挽回面子的退路。",
+    synergyAchievedAdvice: "高度积极的共鸣。沟通流畅且充满共情。请继续保持积极倾听。",
+    communicationProductiveAdvice: "融洽关系稳定。在阐述方案的同时，留出空间倾听对方的意见。",
+    frictionAlertAdvice: "存在潜在的沟通鸿沟。检查假设，简化词汇，并提出开放性的澄清问题。"
+  }
+};
 
 const S = {
   // ── Layout
@@ -214,8 +338,10 @@ const EMO_COLORS = {
 };
 
 function LiveTurnGraph({ timeline }) {
+  const { lang } = useLang();
+  const lt = LOCAL_T[lang] || LOCAL_T.en;
   if (!timeline || timeline.length < 2) {
-    return <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '16px 0', fontFamily: 'var(--mono)' }}>Gathering emotional response data...</div>;
+    return <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '16px 0', fontFamily: 'var(--mono)' }}>{lt.gathering}</div>;
   }
 
   const W = 188, H = 80, pad = 6;
@@ -284,6 +410,8 @@ function LiveTurnGraph({ timeline }) {
 }
 
 export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataUpdate, onVideoReady }) {
+  const { lang, t } = useLang();
+  const lt = LOCAL_T[lang] || LOCAL_T.en;
   const { 
     remoteName, isConnected, remoteVideoRef, localVideoRef, endCall, 
     faceStream, remoteStream, sendData, peerTranscripts, 
@@ -354,11 +482,6 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
     return () => clearTimeout(timer);
   }, [peerTranscripts]);
 
-  // Live Coaching Engine
-  const [coachingToast, setCoachingToast] = useState(null);
-  const neutralDurationRef = useRef(0);
-  const lastCoachingTimeRef = useRef(Date.now());
-
   useEffect(() => {
     if (!isConnected || !sessionInfo.ctx) return;
     const interval = setInterval(() => {
@@ -373,8 +496,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
 
       if (sessionInfo.ctx === 'ZW-CN' && neutralDurationRef.current >= 30000) {
         setCoachingToast({
-          title: "High Neutrality Detected",
-          msg: "In Chinese business culture, prolonged neutrality often indicates Face-saving (Mianzi). Avoid pushing for a hard 'yes' right now. Use soft follow-ups.",
+          type: 'neutrality',
           color: "#8899bb",
           icon: "🎭"
         });
@@ -395,8 +517,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
     if (curEmoRef.current === 'angry' || curEmoRef.current === 'sad') {
       if (last.includes('price') || last.includes('cost') || last.includes('timeline') || last.includes('delay') || last.includes('wait')) {
         setCoachingToast({
-          title: "Friction on Sensitive Topic",
-          msg: "Negative emotion detected alongside a constraint keyword. Avoid direct confrontation. De-escalate and shift focus to shared goals.",
+          type: 'friction',
           color: "#ff3b30",
           icon: "⚠️"
         });
@@ -407,24 +528,19 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
   }, [peerTranscripts]);
 
 
-  // Session Recording
-  const [isRecording, setIsRecording] = useState(false);
-  const [waitingConsent, setWaitingConsent] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
-
   const recordBtnLabel = isMobile ? (
-    isRecording ? 'Stop' : isResetting ? 'Reset' : waitingConsent ? 'Wait' : 'Rec'
+    isRecording ? t('recordOnMobile') : isResetting ? t('recordResetMobile') : waitingConsent ? t('recordWaitMobile') : t('recordOffMobile')
   ) : (
-    isRecording ? 'Stop Recording' : isResetting ? 'Resetting...' : waitingConsent ? 'Waiting...' : 'Record Session'
+    isRecording ? t('recordOn') : isResetting ? t('recordReset') : waitingConsent ? t('recordWait') : t('recordOff')
   );
 
   const coachBtnLabel = isMobile ? (
-    `Coach: ${speechEnabled ? 'ON' : 'OFF'}`
+    speechEnabled ? t('coachOnMobile') : t('coachOffMobile')
   ) : (
-    `AI Coach: ${speechEnabled ? 'ON' : 'OFF'}`
+    speechEnabled ? t('coachOn') : t('coachOff')
   );
 
-  const endBtnLabel = isMobile ? 'End' : 'End Session';
+  const endBtnLabel = t('endSession');
 
   const mediaRecorderRef = useRef(null);
   const recordedChunks = useRef([]);
@@ -670,52 +786,52 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
   const isCn = String(sessionInfo.ctx || '').toLowerCase().includes('china') || String(sessionInfo.ctx || '').toLowerCase().includes('cn');
   
   let alignmentScore = 50;
-  let alignmentTitle = "Intercultural Synergy";
-  let alignmentStatus = "Communication Productive";
-  let alignmentAdvice = "Rapport is stable. Balance presentation with space for their input.";
+  let alignmentTitle = lt.interculturalSynergy;
+  let alignmentStatus = lt.communicationProductive;
+  let alignmentAdvice = lt.communicationProductiveAdvice;
   let alignmentThemeColor = "#3dffa0";
   
   if (isZw) {
     alignmentScore = Math.min(100, Math.max(10, Math.round(((emoCounts.happy * 1.2 + emoCounts.neutral * 0.8) / (totalCounts || 1)) * 100)));
-    alignmentTitle = "Ubuntu Resonance Index";
+    alignmentTitle = lt.ubuntuResonance;
     alignmentThemeColor = "#3dffa0"; // green
     if (alignmentScore >= 80) {
-      alignmentStatus = "Communal Harmony High 🇿🇼";
-      alignmentAdvice = "Communal connection is thriving. Focus on storytelling and collective value. Respectful presence is deeply felt.";
+      alignmentStatus = lt.communalHarmonyHigh;
+      alignmentAdvice = lt.communalHarmonyHighAdvice;
     } else if (alignmentScore >= 50) {
-      alignmentStatus = "Warm Connection Stable";
-      alignmentAdvice = "Relational connection is positive. Cultivate communal warmth (Ubuntu) by showing interest in family, health, and mutual respect.";
+      alignmentStatus = lt.warmConnectionStable;
+      alignmentAdvice = lt.warmConnectionStableAdvice;
     } else {
-      alignmentStatus = "Relational Warmth Fading";
-      alignmentAdvice = "Connection is tense or cold. Slow down. Prioritize relationship-building over transaction. Ask respectful open questions.";
+      alignmentStatus = lt.relationalWarmthFading;
+      alignmentAdvice = lt.relationalWarmthFadingAdvice;
     }
   } else if (isCn) {
     alignmentScore = Math.min(100, Math.max(10, Math.round(((emoCounts.neutral * 1.1 + emoCounts.happy * 0.7) / (totalCounts || 1)) * 100)));
-    alignmentTitle = "Guanxi & Mianzi Poise";
+    alignmentTitle = lt.guanxiMianzi;
     alignmentThemeColor = "#5b9cf6"; // blue/neutral
     if (alignmentScore >= 80) {
-      alignmentStatus = "Face-Saving Harmony High 🇨🇳";
-      alignmentAdvice = "Excellent Guanxi established. Mutual face-saving (Mianzi) is maintained. Keep communication respectful, indirect, and patient.";
+      alignmentStatus = lt.faceSavingHarmonyHigh;
+      alignmentAdvice = lt.faceSavingHarmonyHighAdvice;
     } else if (alignmentScore >= 50) {
-      alignmentStatus = "Polite Poise Established";
-      alignmentAdvice = "Polite reserve is active. Respect pauses. Avoid confrontational negotiation; allow indirect expressions.";
+      alignmentStatus = lt.politePoiseEstablished;
+      alignmentAdvice = lt.politePoiseEstablishedAdvice;
     } else {
-      alignmentStatus = "Harmony Disrupted";
-      alignmentAdvice = "Friction detected. Pause immediately. Express utmost respect. Do not call out errors directly; offer face-saving ways out.";
+      alignmentStatus = lt.harmonyDisrupted;
+      alignmentAdvice = lt.harmonyDisruptedAdvice;
     }
   } else {
     alignmentScore = Math.min(100, Math.max(10, Math.round(((emoCounts.happy * 1.0 + emoCounts.neutral * 0.8) / (totalCounts || 1)) * 100)));
-    alignmentTitle = "Intercultural Synergy";
+    alignmentTitle = lt.interculturalSynergy;
     alignmentThemeColor = "#007aff"; // blue
     if (alignmentScore >= 80) {
-      alignmentStatus = "Synergy Achieved 🌐";
-      alignmentAdvice = "High positive resonance. Communication is fluid and empathetic. Continue active listening.";
+      alignmentStatus = lt.synergyAchieved;
+      alignmentAdvice = lt.synergyAchievedAdvice;
     } else if (alignmentScore >= 50) {
-      alignmentStatus = "Communication Productive";
-      alignmentAdvice = "Rapport is stable. Balance presentation with space for their input.";
+      alignmentStatus = lt.communicationProductive;
+      alignmentAdvice = lt.communicationProductiveAdvice;
     } else {
-      alignmentStatus = "Friction Alert";
-      alignmentAdvice = "Potential communication gap. Check assumptions, simplify terms, and ask open clarifying questions.";
+      alignmentStatus = lt.frictionAlert;
+      alignmentAdvice = lt.frictionAlertAdvice;
     }
   }
 
@@ -1186,7 +1302,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                     <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM12 4L9.91 6.09 12 8.18V4zm-8.27-.27L2.3 5.16 7.13 10H3v4h3l4 4V12.87l6.63 6.63c-.88.63-1.87 1.09-2.96 1.34v2.01c1.63-.35 3.1-.1.97 4.39 1.42.42 2.69-.37 3.73-1.12l2.8 2.8 1.43-1.41L3.73 3.73z" />
                   </svg>
-                  <span>Click to Unmute Peer</span>
+                  <span>{t('clickToUnmute')}</span>
                 </div>
               )}
               <svg
@@ -1209,7 +1325,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                     <path d="M5 26c0-4.97 4.03-9 9-9s9 4.03 9 9" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round"/>
                   </svg>
                 </div>
-                <div style={S.orbTxt}>Waiting for peer…</div>
+                <div style={S.orbTxt}>{t('waitingPeer')}</div>
               </div>
             </div>
 
@@ -1231,7 +1347,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                         background: curE.c,
                         boxShadow: `0 0 8px ${curE.c}`
                       }} />
-                      {curE.n.toUpperCase()}
+                      {t(curEmo).toUpperCase()}
                     </span>
                   </div>
                   
@@ -1242,7 +1358,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                       Context: {isZw ? 'ZW CNN Ensemble' : isCn ? 'CN CNN Ensemble' : 'Standard TFJS'}
                     </span>
                     <span className="scans-count-text">
-                      {detCount} scans
+                      {detCount} {t('scans')}
                     </span>
                   </div>
                 </div>
@@ -1286,7 +1402,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                 muted
                 playsInline
               />
-              <div style={S.localLabel}>You</div>
+              <div style={S.localLabel}>{lt.you}</div>
             </div>
 
             {/* Video Overlays (Subtitles) */}
@@ -1326,7 +1442,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
               justifyContent: 'center',
               gap: '4px'
             }}>
-              <span style={{ fontSize: '9px', fontFamily: 'var(--sans)', fontWeight: '600', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Duration</span>
+              <span style={{ fontSize: '9px', fontFamily: 'var(--sans)', fontWeight: '600', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('duration')}</span>
               <span style={{ fontSize: '14px', fontFamily: 'var(--mono)', fontWeight: '700', color: 'var(--primary-text)' }}>{timerStr}</span>
             </div>
 
@@ -1343,7 +1459,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
               justifyContent: 'center',
               gap: '4px'
             }}>
-              <span style={{ fontSize: '9px', fontFamily: 'var(--sans)', fontWeight: '600', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Context</span>
+              <span style={{ fontSize: '9px', fontFamily: 'var(--sans)', fontWeight: '600', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{t('culturalCtx')}</span>
               <span style={{ fontSize: '11px', fontFamily: 'var(--mono)', fontWeight: '700', color: 'var(--primary-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '85px', textAlign: 'center' }}>{sessionInfo.ctx}</span>
             </div>
 
@@ -1360,7 +1476,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
               justifyContent: 'center',
               gap: '4px'
             }}>
-              <span style={{ fontSize: '9px', fontFamily: 'var(--sans)', fontWeight: '600', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Scans</span>
+              <span style={{ fontSize: '9px', fontFamily: 'var(--sans)', fontWeight: '600', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{lt.scans}</span>
               <span style={{ fontSize: '14px', fontFamily: 'var(--mono)', fontWeight: '700', color: 'var(--primary-text)' }}>{detCount}</span>
             </div>
           </div>
@@ -1368,7 +1484,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           {/* Slim Emotion Progress Rows */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', background: 'var(--surf)', border: '1px solid var(--border)', borderRadius: '16px', padding: '14px' }}>
             <span style={{ fontSize: '9px', fontFamily: 'var(--mono)', fontWeight: '600', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>
-              Emotion Distribution
+              {lt.emotionDistribution}
             </span>
             {(() => {
               const total = getEmoTotal();
@@ -1392,7 +1508,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                 return (
                   <div key={k} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '10px', fontFamily: 'var(--sans)', fontWeight: '600', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{v.n}</span>
+                      <span style={{ fontSize: '10px', fontFamily: 'var(--sans)', fontWeight: '600', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{t(k)}</span>
                       <span style={{ fontSize: '10px', fontFamily: 'var(--mono)', fontWeight: '700', color: 'var(--primary-text)' }}>{pct}%</span>
                     </div>
                     <div style={{ height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
@@ -1410,7 +1526,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           
           {/* Timer Card */}
           <div className="cv-side-card cv-timer-wrap">
-            <div style={S.statLbl}>Session Duration</div>
+            <div style={S.statLbl}>{lt.sessionDuration}</div>
             <div className="cv-timer-val">{timerStr}</div>
             <div style={{ ...S.ctxBadge, display: 'inline-block', marginTop: '10px' }}>{sessionInfo.ctx}</div>
           </div>
@@ -1448,18 +1564,18 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
 
           {/* AI Insights Card */}
           <div className="cv-side-card" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <div style={S.hudLabel}>{remoteName}'s Emotion Turns</div>
+            <div style={S.hudLabel}>{remoteName}{lt.emotionTurns}</div>
             <div className="cv-hud" style={S.hud}>
               <LiveTurnGraph timeline={getTimeline()} />
               <div style={S.hudDivider} />
               <div style={S.statsRow}>
                 <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--sans)' }}>Scans</div>
+                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--sans)' }}>{lt.scans}</div>
                   <div style={{ fontSize: '20px', fontWeight: '800', color: 'white', fontFamily: 'var(--mono)', lineHeight: 1 }}>{detCount}</div>
                 </div>
                 <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--sans)' }}>Current</div>
-                  <div style={{ fontSize: '20px', fontWeight: '800', color: curE.c, fontFamily: 'var(--mono)', lineHeight: 1 }}>{curE.n.toUpperCase()}</div>
+                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--sans)' }}>{lt.current}</div>
+                  <div style={{ fontSize: '20px', fontWeight: '800', color: curE.c, fontFamily: 'var(--mono)', lineHeight: 1 }}>{t(curEmo).toUpperCase()}</div>
                 </div>
               </div>
               <div style={S.hudDivider} />
@@ -1486,7 +1602,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                     return (
                       <div key={k} className="emo-item">
                         <div style={S.emoHead}>
-                          <span className="emo-name" style={{ fontSize: '10px', fontFamily: 'var(--sans)', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{v.n}</span>
+                          <span className="emo-name" style={{ fontSize: '10px', fontFamily: 'var(--sans)', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{t(k)}</span>
                           <span className="emo-pct" style={{ fontSize: '11px', fontFamily: 'var(--mono)', fontWeight: '700', color: '#ffffff' }}>{pct}%</span>
                         </div>
                         <div style={S.emoTrack}>
@@ -1506,7 +1622,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                   <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#34c759', animation: 'ping 1.8s ease-out infinite' }} />
                 )}
               </div>
-              {modelsLoaded ? 'AI Engine Active' : 'Loading Models…'}
+              {modelsLoaded ? t('aiActive') : t('aiLoading')}
             </div>
 
 
@@ -1516,7 +1632,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
 
       {/* ── TOP BAR ── */}
       {isMobile ? (
-        <div className="cv-topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '38px', height: 'auto', padding: '4px 12px', background: 'rgba(10, 13, 20, 0.88)', borderBottom: '1px solid var(--border)', backdropFilter: 'blur(12px)', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 50 }}>
+        <div className="cv-topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '44px', height: 'auto', padding: '4px 12px', background: 'rgba(10, 13, 20, 0.88)', borderBottom: '1px solid var(--border)', backdropFilter: 'blur(12px)', position: 'absolute', top: 0, left: 0, right: 0, zIndex: 50 }}>
           {/* Left Column */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center' }}>
             <span style={{ fontSize: '11px', fontWeight: '600', color: 'var(--primary-text)', fontFamily: 'var(--sans)', lineHeight: '1.2' }}>
@@ -1528,52 +1644,55 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           </div>
 
           {/* Right Column */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: '2px' }}>
-            {isConnected && (
-              <div style={{
-                background: '#e85b5b',
-                color: '#ffffff',
-                fontFamily: 'var(--mono)',
-                fontSize: '8px',
-                fontWeight: '700',
-                padding: '1px 5px',
-                borderRadius: '3px',
-                letterSpacing: '0.05em',
-                lineHeight: '1.2',
-              }}>
-                LIVE
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <LangSwitcher />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: '2px' }}>
+              {isConnected && (
+                <div style={{
+                  background: '#e85b5b',
+                  color: '#ffffff',
+                  fontFamily: 'var(--mono)',
+                  fontSize: '8px',
+                  fontWeight: '700',
+                  padding: '1px 5px',
+                  borderRadius: '3px',
+                  letterSpacing: '0.05em',
+                  lineHeight: '1.2',
+                }}>
+                  {lt.live}
+                </div>
+              )}
+              {/* Emotion Pills */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-end', maxWidth: '100px' }}>
+                {(() => {
+                  const activeEmotion = curEmoRef.current || 'neutral';
+                  const label = t(activeEmotion) || 'Neutral';
+                  let colors = { bg: 'rgba(100,116,150,0.2)', text: '#8892aa', border: 'rgba(100,116,150,0.2)' };
+                  if (activeEmotion === 'happy') {
+                    colors = { bg: 'rgba(245,166,35,0.15)', text: '#f5a623', border: 'rgba(245,166,35,0.2)' };
+                  } else if (activeEmotion === 'sad') {
+                    colors = { bg: 'rgba(79,142,247,0.12)', text: '#4f8ef7', border: 'rgba(79,142,247,0.2)' };
+                  } else if (activeEmotion === 'angry') {
+                    colors = { bg: 'rgba(232,91,91,0.12)', text: '#e85b5b', border: 'rgba(232,91,91,0.2)' };
+                  } else if (activeEmotion === 'surprised') {
+                    colors = { bg: 'rgba(0,212,160,0.1)', text: '#00d4a0', border: 'rgba(0,212,160,0.2)' };
+                  }
+                  return (
+                    <span style={{
+                      fontFamily: 'var(--mono)',
+                      fontSize: '8px',
+                      padding: '2px 5px',
+                      borderRadius: '3px',
+                      background: colors.bg,
+                      color: colors.text,
+                      border: `1px solid ${colors.border}`,
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {label.toUpperCase()}
+                    </span>
+                  );
+                })()}
               </div>
-            )}
-            {/* Emotion Pills */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'flex-end', maxWidth: '100px' }}>
-              {(() => {
-                const activeEmotion = curEmoRef.current || 'neutral';
-                const label = EMO[activeEmotion]?.n || 'Neutral';
-                let colors = { bg: 'rgba(100,116,150,0.2)', text: '#8892aa', border: 'rgba(100,116,150,0.2)' };
-                if (activeEmotion === 'happy') {
-                  colors = { bg: 'rgba(245,166,35,0.15)', text: '#f5a623', border: 'rgba(245,166,35,0.2)' };
-                } else if (activeEmotion === 'sad') {
-                  colors = { bg: 'rgba(79,142,247,0.12)', text: '#4f8ef7', border: 'rgba(79,142,247,0.2)' };
-                } else if (activeEmotion === 'angry') {
-                  colors = { bg: 'rgba(232,91,91,0.12)', text: '#e85b5b', border: 'rgba(232,91,91,0.2)' };
-                } else if (activeEmotion === 'surprised') {
-                  colors = { bg: 'rgba(0,212,160,0.1)', text: '#00d4a0', border: 'rgba(0,212,160,0.2)' };
-                }
-                return (
-                  <span style={{
-                    fontFamily: 'var(--mono)',
-                    fontSize: '8px',
-                    padding: '2px 5px',
-                    borderRadius: '3px',
-                    background: colors.bg,
-                    color: colors.text,
-                    border: `1px solid ${colors.border}`,
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {label.toUpperCase()}
-                  </span>
-                );
-              })()}
             </div>
           </div>
         </div>
@@ -1589,52 +1708,59 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             {isConnected && (
               <div style={S.livePill}>
                 <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#ff3b30', animation: 'ping 1.4s cubic-bezier(0,0,0.2,1) infinite' }} />
-                LIVE
+                {lt.live}
               </div>
             )}
           </div>
           <div className="cv-desktop-timer-hide" style={S.timer}>{timerStr}</div>
-          <div className="cv-desktop-timer-hide" style={S.ctxBadge}>{sessionInfo.ctx}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', pointerEvents: 'all' }}>
+            <div className="cv-desktop-timer-hide" style={{ ...S.ctxBadge, margin: 0 }}>{sessionInfo.ctx}</div>
+            <LangSwitcher />
+          </div>
         </div>
       )}
 
       {/* ── COACHING TOAST ── */}
-      {coachingToast && (
-        <div style={{
-          position: 'absolute', top: '76px', left: '50%', transform: 'translateX(-50%)', zIndex: 40,
-          background: 'rgba(20,20,30,0.85)', backdropFilter: 'blur(30px)',
-          border: `1px solid ${coachingToast.color}55`, borderRadius: '14px',
-          padding: '16px 20px', width: '380px', maxWidth: '90%',
-          boxShadow: `0 24px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1), 0 0 20px ${coachingToast.color}22`,
-          display: 'flex', gap: '14px', alignItems: 'flex-start',
-          animation: 'fadeInDown 0.5s cubic-bezier(0.34,1.56,0.64,1)',
-        }}>
-          <button 
-            onClick={() => setCoachingToast(null)}
-            style={{
-              position: 'absolute', top: '10px', right: '10px',
-              background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)',
-              cursor: 'pointer', fontSize: '18px', fontWeight: 'bold',
-              padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              lineHeight: 1, borderRadius: '50%', width: '20px', height: '20px',
-              transition: 'color 0.2s, background-color 0.2s'
-            }}
-            className="toast-close-btn"
-          >
-            &times;
-          </button>
-          <div style={{ fontSize: '24px' }}>{coachingToast.icon}</div>
-          <div>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: coachingToast.color, marginBottom: '4px', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              {coachingToast.title}
-              <span style={{ fontSize: '8px', background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', color: '#1a1a2e', padding: '2px 5px', borderRadius: '4px', letterSpacing: '0' }}>AI COACH</span>
-            </div>
-            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.5', paddingRight: '12px' }}>
-              {coachingToast.msg}
+      {coachingToast && (() => {
+        const toastTitle = coachingToast.type === 'neutrality' ? lt.highNeutralityTitle : lt.frictionSensitiveTitle;
+        const toastMsg = coachingToast.type === 'neutrality' ? lt.highNeutralityMsg : lt.frictionSensitiveMsg;
+        return (
+          <div style={{
+            position: 'absolute', top: '76px', left: '50%', transform: 'translateX(-50%)', zIndex: 40,
+            background: 'rgba(20,20,30,0.85)', backdropFilter: 'blur(30px)',
+            border: `1px solid ${coachingToast.color}55`, borderRadius: '14px',
+            padding: '16px 20px', width: '380px', maxWidth: '90%',
+            boxShadow: `0 24px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1), 0 0 20px ${coachingToast.color}22`,
+            display: 'flex', gap: '14px', alignItems: 'flex-start',
+            animation: 'fadeInDown 0.5s cubic-bezier(0.34,1.56,0.64,1)',
+          }}>
+            <button 
+              onClick={() => setCoachingToast(null)}
+              style={{
+                position: 'absolute', top: '10px', right: '10px',
+                background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.4)',
+                cursor: 'pointer', fontSize: '18px', fontWeight: 'bold',
+                padding: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                lineHeight: 1, borderRadius: '50%', width: '20px', height: '20px',
+                transition: 'color 0.2s, background-color 0.2s'
+              }}
+              className="toast-close-btn"
+            >
+              &times;
+            </button>
+            <div style={{ fontSize: '24px' }}>{coachingToast.icon}</div>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: '700', color: coachingToast.color, marginBottom: '4px', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {toastTitle}
+                <span style={{ fontSize: '8px', background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)', color: '#1a1a2e', padding: '2px 5px', borderRadius: '4px', letterSpacing: '0' }}>{lt.aiCoach}</span>
+              </div>
+              <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', lineHeight: '1.5', paddingRight: '12px' }}>
+                {toastMsg}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ── BOTTOM CONTROL BAR ── */}
       <div className="cv-botbar" style={S.botBar}>
@@ -1708,11 +1834,11 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(255,59,48,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
                <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: '#ff3b30' }} />
             </div>
-            <h3 style={{ color: 'white', margin: '0 0 10px', fontSize: '20px', fontWeight: '700' }}>Recording Request</h3>
-            <p style={{ color: 'rgba(255,255,255,0.7)', margin: '0 0 24px', fontSize: '15px', lineHeight: '1.5' }}>{remoteName} wants to record this session for analysis. Do you consent?</p>
+            <h3 style={{ color: 'white', margin: '0 0 10px', fontSize: '20px', fontWeight: '700' }}>{lt.recordingRequest}</h3>
+            <p style={{ color: 'rgba(255,255,255,0.7)', margin: '0 0 24px', fontSize: '15px', lineHeight: '1.5' }}>{remoteName} {lt.recordingRequestDesc}</p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <button style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'white', cursor: 'pointer', fontWeight: '600' }} onClick={() => { sendData({ type: 'record_deny' }); setRecordConsentReq(false); }}>Deny</button>
-              <button style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#ff3b30', color: 'white', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => { sendData({ type: 'record_allow' }); setRecordConsentReq(false); }}>Allow</button>
+              <button style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'white', cursor: 'pointer', fontWeight: '600' }} onClick={() => { sendData({ type: 'record_deny' }); setRecordConsentReq(false); }}>{lt.deny}</button>
+              <button style={{ flex: 1, padding: '12px', borderRadius: '12px', border: 'none', background: '#ff3b30', color: 'white', fontWeight: 'bold', cursor: 'pointer' }} onClick={() => { sendData({ type: 'record_allow' }); setRecordConsentReq(false); }}>{lt.allow}</button>
             </div>
           </div>
         </div>

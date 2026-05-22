@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLang, LangSwitcher } from '../context/LangContext';
 
 const EMO_COLORS = {
   happy:   { color: '#3dffa0', label: 'Happy'   },
@@ -9,17 +10,79 @@ const EMO_COLORS = {
 
 const MIN_DURATION = 60; // sessions < 1 min are test calls
 
-function fmt(secs) {
+function fmt(secs, lang) {
   const m = Math.floor(secs / 60), s = secs % 60;
+  if (lang === 'zh') return `${m}分 ${s}秒`;
   return `${m}m ${s}s`;
 }
 
+const LOCAL_T = {
+  en: {
+    showing: 'Showing',
+    greaterThanMin: '(≥ 1 minute)',
+    empathyPercent: 'Empathy %',
+    empathyTrendTitle: 'Empathy Score Trend',
+    empathyTrendDesc: '% of positive emotions (happy + neutral) per session · hover a dot for details',
+    empathyPercentLabel: 'Empathy %',
+    legendPositive: '≥ 70% — Positive engagement',
+    legendNeutral: '50–69% — Neutral / mixed',
+    legendFriction: '< 50% — High friction',
+    sessionHistory: 'Session History',
+    loading: 'Loading...',
+    noSessionsTitle: 'No meaningful sessions yet.',
+    noSessionsSub: 'Sessions shorter than 1 minute are excluded as test calls.',
+    sessionRow: 'Session',
+    atSeparator: ' at ',
+    dominantLabel: 'DOMINANT',
+    empathyLabel: 'EMPATHY',
+  },
+  sn: {
+    showing: 'Kuratidza',
+    greaterThanMin: '(≥ miniti 1)',
+    empathyPercent: 'Kanzwisiso %',
+    empathyTrendTitle: 'Maitiro eChiyero Chekanzwisiso',
+    empathyTrendDesc: '% yezvakakanaka manzwiro (kufara + pakati) pamusangano wega wega · baya pabhodhi kuti uone zvakawanda',
+    empathyPercentLabel: 'Kanzwisiso %',
+    legendPositive: '≥ 70% — Kukurukurirana Kwakanaka',
+    legendNeutral: '50–69% — Kazhinji Zviri Pakati',
+    legendFriction: '< 50% — Kupokana Kukuru Kwaratidzwa',
+    sessionHistory: 'Nhoroondo yeMisangano',
+    loading: 'Kurodha...',
+    noSessionsTitle: 'Hapana misangano inokosha yakaitwa.',
+    noSessionsSub: 'Misangano isingasviki miniti imwe chete inosarudzwa semusangano wekuedza.',
+    sessionRow: 'Musangano',
+    atSeparator: ' na ',
+    dominantLabel: 'KUTUNGAMIRA',
+    empathyLabel: 'KANZWISISO',
+  },
+  zh: {
+    showing: '显示',
+    greaterThanMin: '(≥ 1分钟)',
+    empathyPercent: '共情度 %',
+    empathyTrendTitle: '共情温度趋势',
+    empathyTrendDesc: '每次会话中积极情绪（快乐 + 中立）的百分比 · 悬停圆点以查看详情',
+    empathyPercentLabel: '共情度 %',
+    legendPositive: '≥ 70% — 良性共情互动',
+    legendNeutral: '50–69% — 表现基本中立',
+    legendFriction: '< 50% — 检测到潜在的高沟通摩擦力',
+    sessionHistory: '历史通话记录',
+    loading: '加载中...',
+    noSessionsTitle: '暂无有效通话记录。',
+    noSessionsSub: '时长少于1分钟的通话将被作为测试呼叫排除。',
+    sessionRow: '会话',
+    atSeparator: ' ',
+    dominantLabel: '主导情绪',
+    empathyLabel: '共情度',
+  }
+};
+
 function EmpathyLineGraph({ sessions }) {
   const [hovered, setHovered] = useState(null);
+  const { t, lang } = useLang();
 
   if (sessions.length < 2) return (
     <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--dim)', fontSize: '13px' }}>
-      Complete at least 2 meaningful calls to see your trend line.
+      {t('completeTwoCalls')}
     </div>
   );
 
@@ -92,10 +155,10 @@ function EmpathyLineGraph({ sessions }) {
               {scores[hovered]}%
             </div>
             <div style={{ fontSize: '10px', color: 'var(--muted)', marginTop: '2px' }}>
-              Empathy · Session {hovered + 1}
+              {t('empathyTrend')} {hovered + 1}
             </div>
             <div style={{ fontSize: '10px', color: 'var(--dim)', marginTop: '1px' }}>
-              {new Date(sessions[hovered].ts).toLocaleDateString()}
+              {new Date(sessions[hovered].ts).toLocaleDateString(lang)}
             </div>
           </div>
         )}
@@ -116,6 +179,7 @@ function EmpathyLineGraph({ sessions }) {
 export default function Dashboard({ onBack, session }) {
   const [allSessions, setAllSessions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { t, lang } = useLang();
   const userId = session?.user?.id;
 
   useEffect(() => {
@@ -144,6 +208,7 @@ export default function Dashboard({ onBack, session }) {
   });
   const empScore = (totalPos + totalNeg) > 0 ? Math.round((totalPos / (totalPos + totalNeg)) * 100) : 0;
   const empColor = empScore >= 70 ? '#3dffa0' : empScore >= 50 ? '#8899bb' : '#ff6b6b';
+  const isZh = lang === 'zh';
 
   // Chronological order for the chart (up to last 12)
   const chartSessions = sessions.slice(0, 12).reverse();
@@ -169,31 +234,39 @@ export default function Dashboard({ onBack, session }) {
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
           <div>
-            <h1 style={{ margin: '0 0 6px', fontSize: '32px', fontWeight: '800', color: 'var(--txt)', letterSpacing: '-1px' }}>Analytics</h1>
+            <h1 style={{ margin: '0 0 6px', fontSize: '32px', fontWeight: '800', color: 'var(--txt)', letterSpacing: '-1px' }}>{t('analytics')}</h1>
             <p style={{ margin: 0, color: 'var(--muted)', fontSize: '14px' }}>
-              Showing <strong style={{ color: 'var(--txt)' }}>{totalCalls}</strong> meaningful call{totalCalls !== 1 ? 's' : ''} (≥ 1 minute)
+              {LOCAL_T[lang].showing}{isZh ? '' : ' '}
+              <strong style={{ color: 'var(--txt)' }}>{totalCalls}</strong>{isZh ? '' : ' '}
+              {totalCalls === 1 ? t('meaningfulCall') : t('meaningfulCalls')}{isZh ? '' : ' '}
+              {LOCAL_T[lang].greaterThanMin}
               {allSessions.length > totalCalls && (
                 <span style={{ color: 'var(--dim)' }}>
-                  {' · '}{allSessions.length - totalCalls} short test call{allSessions.length - totalCalls !== 1 ? 's' : ''} hidden
+                  {' · '}{allSessions.length - totalCalls}{isZh ? '' : ' '}
+                  {(allSessions.length - totalCalls) === 1 ? t('shortTestCall') : t('shortTestCalls')}{isZh ? '' : ' '}
+                  {t('hidden')}
                 </span>
               )}
             </p>
           </div>
-          <button onClick={onBack} style={{
-            background: 'var(--surf)', border: '1px solid var(--bd2)',
-            color: 'var(--txt)', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', fontWeight: '600', fontSize: '14px'
-          }}>← Back</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <LangSwitcher />
+            <button onClick={onBack} style={{
+              background: 'var(--surf)', border: '1px solid var(--bd2)',
+              color: 'var(--txt)', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', fontWeight: '600', fontSize: '14px'
+            }}>{t('backToLobby')}</button>
+          </div>
         </div>
 
         {/* Metric Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '32px' }}>
           {[
-            { label: 'Meaningful Sessions', val: totalCalls, icon: '📞' },
-            { label: 'Avg Duration', val: totalCalls ? fmt(avgDur) : '—', icon: '⏱️' },
+            { label: t('meaningfulSessions'), val: totalCalls, icon: '📞' },
+            { label: t('avgDuration'), val: totalCalls ? fmt(avgDur, lang) : '—', icon: '⏱️' },
             {
-              label: 'Overall Empathy Score', val: totalCalls ? `${empScore}%` : '—', icon: '✨',
+              label: t('overallEmpathyScore'), val: totalCalls ? `${empScore}%` : '—', icon: '✨',
               color: empColor,
-              sub: empScore >= 70 ? 'Positive engagement' : empScore >= 50 ? 'Mostly neutral' : 'High friction detected'
+              sub: empScore >= 70 ? t('positiveEngagement') : empScore >= 50 ? t('mostlyNeutral') : t('highFriction')
             },
           ].map((m, i) => (
             <div key={i} style={cardStyle}>
@@ -211,14 +284,14 @@ export default function Dashboard({ onBack, session }) {
         <div style={{ ...cardStyle, marginBottom: '32px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
             <div>
-              <h3 style={{ margin: '0 0 4px', color: 'var(--txt)', fontSize: '16px', fontWeight: '700' }}>Empathy Score Trend</h3>
+              <h3 style={{ margin: '0 0 4px', color: 'var(--txt)', fontSize: '16px', fontWeight: '700' }}>{LOCAL_T[lang].empathyTrendTitle}</h3>
               <p style={{ margin: 0, fontSize: '12px', color: 'var(--muted)' }}>
-                % of positive emotions (happy + neutral) per session · hover a dot for details
+                {LOCAL_T[lang].empathyTrendDesc}
               </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
               <div style={{ width: '24px', height: '2px', background: 'var(--green)', borderRadius: '1px' }} />
-              <span style={{ fontSize: '11px', color: 'var(--muted)' }}>Empathy %</span>
+              <span style={{ fontSize: '11px', color: 'var(--muted)' }}>{LOCAL_T[lang].empathyPercentLabel}</span>
             </div>
           </div>
 
@@ -227,9 +300,9 @@ export default function Dashboard({ onBack, session }) {
           {chartSessions.length >= 2 && (
             <div style={{ display: 'flex', gap: '20px', marginTop: '16px', flexWrap: 'wrap' }}>
               {[
-                { color: '#3dffa0', label: '≥ 70% — Positive engagement' },
-                { color: '#8899bb', label: '50–69% — Neutral / mixed' },
-                { color: '#ff6b6b', label: '< 50% — High friction' },
+                { color: '#3dffa0', label: LOCAL_T[lang].legendPositive },
+                { color: '#8899bb', label: LOCAL_T[lang].legendNeutral },
+                { color: '#ff6b6b', label: LOCAL_T[lang].legendFriction },
               ].map(r => (
                 <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: r.color, flexShrink: 0 }} />
@@ -241,14 +314,14 @@ export default function Dashboard({ onBack, session }) {
         </div>
 
         {/* Session History */}
-        <h3 style={{ margin: '0 0 16px', color: 'var(--txt)', fontSize: '16px', fontWeight: '700' }}>Session History</h3>
+        <h3 style={{ margin: '0 0 16px', color: 'var(--txt)', fontSize: '16px', fontWeight: '700' }}>{LOCAL_T[lang].sessionHistory}</h3>
         {loading ? (
-          <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>Loading...</div>
+          <div style={{ color: 'var(--muted)', padding: '40px', textAlign: 'center' }}>{LOCAL_T[lang].loading}</div>
         ) : sessions.length === 0 ? (
           <div style={{ ...cardStyle, textAlign: 'center', color: 'var(--muted)', padding: '48px 24px', fontSize: '14px', lineHeight: 1.7 }}>
             <div style={{ fontSize: '32px', marginBottom: '12px' }}>📞</div>
-            No meaningful sessions yet.<br />
-            <span style={{ fontSize: '12px', color: 'var(--dim)' }}>Sessions shorter than 1 minute are excluded as test calls.</span>
+            {LOCAL_T[lang].noSessionsTitle}<br />
+            <span style={{ fontSize: '12px', color: 'var(--dim)' }}>{LOCAL_T[lang].noSessionsSub}</span>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -276,24 +349,24 @@ export default function Dashboard({ onBack, session }) {
                       {sessions.length - idx}
                     </div>
                     <div>
-                      <div style={{ color: 'var(--txt)', fontWeight: '600', fontSize: '14px' }}>{s.ctx || 'ZW-CN'} Session</div>
+                      <div style={{ color: 'var(--txt)', fontWeight: '600', fontSize: '14px' }}>{s.ctx || 'ZW-CN'} {LOCAL_T[lang].sessionRow}</div>
                       <div style={{ color: 'var(--muted)', fontSize: '12px', marginTop: '2px' }}>
-                        {d.toLocaleDateString()} at {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {d.toLocaleDateString(lang)} {LOCAL_T[lang].atSeparator} {d.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ color: 'var(--dim)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>Duration</div>
-                      <div style={{ color: 'var(--txt)', fontWeight: '600', fontSize: '13px' }}>{fmt(s.duration)}</div>
+                      <div style={{ color: 'var(--dim)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>{t('durationLabel')}</div>
+                      <div style={{ color: 'var(--txt)', fontWeight: '600', fontSize: '13px' }}>{fmt(s.duration, lang)}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ color: 'var(--dim)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>Dominant</div>
-                      <div style={{ color: EMO_COLORS[topEmoKey].color, fontWeight: '700', fontSize: '13px', textTransform: 'capitalize' }}>{topEmoKey}</div>
+                      <div style={{ color: 'var(--dim)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>{LOCAL_T[lang].dominantLabel}</div>
+                      <div style={{ color: EMO_COLORS[topEmoKey].color, fontWeight: '700', fontSize: '13px' }}>{t(topEmoKey)}</div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ color: 'var(--dim)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>Empathy</div>
+                      <div style={{ color: 'var(--dim)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '2px' }}>{LOCAL_T[lang].empathyLabel}</div>
                       <div style={{ color: posScore >= 70 ? '#3dffa0' : posScore >= 50 ? '#8899bb' : '#ff6b6b', fontWeight: '700', fontSize: '13px' }}>{posScore}%</div>
                     </div>
                   </div>

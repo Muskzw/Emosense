@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useFaceAPI, EMO } from '../hooks/useFaceAPI';
+import { useLang, LangSwitcher } from '../context/LangContext';
 
 export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
+  const { lang, t } = useLang();
   const { startCamera, faceStream, localVideoRef, isConnected } = webRTC;
   const svgRef = useRef(null);
   const canvasRef = useRef(null);
@@ -101,7 +103,11 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
         if (!isMounted.current) return;
         setWaitingForHost(false);
         if (!active) {
-          setJoinError("Host hasn't started yet — try again.");
+          setJoinError(
+            lang === 'zh' ? '主持人尚未开始——请稍后重试。' :
+            (lang === 'sn' ? 'Muridzi wetirailer haasati atanga — edzai zvakare.' :
+            "Host hasn't started yet — try again.")
+          );
           setJoiningState(false);
           return;
         }
@@ -109,7 +115,11 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
         console.error('Status check error:', err);
         if (!isMounted.current) return;
         setWaitingForHost(false);
-        setJoinError("Failed to connect to server. Try again.");
+        setJoinError(
+          lang === 'zh' ? '无法连接到服务器，请重试。' :
+          (lang === 'sn' ? 'Kukundikana kubata server. Edzai zvakare.' :
+          "Failed to connect to server. Try again.")
+        );
         setJoiningState(false);
         return;
       }
@@ -122,7 +132,11 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
         if (!webRTC.isConnected) {
           setWaitingForStream(false);
           setJoiningState(false);
-          setJoinError('Could not reach the host — check your network and try again.');
+          setJoinError(
+            lang === 'zh' ? '无法连接到主持人——请检查您的网络并重试。' :
+            (lang === 'sn' ? 'Hapana kubatana nemuridzi wetirailer — tarisai network moedza zvakare.' :
+            'Could not reach the host — check your network and try again.')
+          );
         }
       }, 30000);
     } else {
@@ -454,10 +468,10 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
       <div className="mr-top">
         <button className="mr-back" onClick={onBack}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-          Leave
+          {t('leave')}
         </button>
-        <div className="mr-title">Equipment Check</div>
-        <div style={{ width: '84px' }} /> {/* Spacer */}
+        <div className="mr-title">{t('equipmentCheck')}</div>
+        <LangSwitcher />
       </div>
 
       {/* MAIN CONTENT */}
@@ -517,7 +531,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           <div className="mr-emo-glass" style={{ border: `1px solid ${eConf.c}44` }}>
             <div className="mr-emo-dot" style={{ background: eConf.c, color: eConf.c }} />
             <div className="mr-emo-text" style={{ color: eConf.c }}>
-              AI Sensor: {eConf.n}
+              {t('aiSensor')}: {t(eConf.n.toLowerCase()) || eConf.n}
             </div>
           </div>
 
@@ -526,7 +540,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
             <div className="mr-loading">
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#ffb347', fontWeight: '700', fontSize: '16px' }}>
                 <div className="mr-spinner" />
-                {!modelsLoaded ? "Initializing Base Neural Networks..." : `Activating ${sessionInfo.ctx} Cultural AI Models...`}
+                {!modelsLoaded ? t('initializingBase') : t('activatingCultural')}
               </div>
             </div>
           )}
@@ -536,7 +550,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
             <div className="mr-loading" style={{ background: 'rgba(10,10,15,0.85)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: '#5b9cf6', fontWeight: '700', fontSize: '16px' }}>
                 <div className="mr-spinner" style={{ borderColor: '#5b9cf6', borderTopColor: 'transparent' }} />
-                Waiting for host to start session...
+                {t('waitingForHost')}
               </div>
             </div>
           )}
@@ -547,9 +561,9 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           
           <div className="mr-mic-wrap">
             <div className="mr-mic-header">
-              <span>Microphone</span>
+              <span>{t('mic')}</span>
               <span style={{ color: micLevel > 10 ? '#3dffa0' : 'rgba(255,255,255,0.4)' }}>
-                {micLevel > 10 ? 'Detecting' : 'Silent'}
+                {micLevel > 10 ? t('micDetecting') : t('micSilent')}
               </span>
             </div>
             <div className="mr-mic-bar">
@@ -563,14 +577,14 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
               />
             </div>
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '4px' }}>
-              Ensure your face is clearly visible and audio is picking up.
+              {t('micHint')}
             </div>
           </div>
 
           <div className="mr-action-wrap">
             {modelError && (
               <div style={{ color: '#ff6b6b', fontSize: '13px', fontWeight: '600', marginBottom: '8px', textAlign: 'center' }}>
-                ⚠ AI models failed to load. Check your connection.
+                {t('modelLoadError')}
               </div>
             )}
             {waitingForHost ? (
@@ -580,7 +594,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
                 setJoinError('');
                 onBack();
               }}>
-                Cancel Request
+                {t('cancelRequest')}
               </button>
             ) : (
               <button 
@@ -589,16 +603,16 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
                 disabled={!isReady || !faceStream || joiningState}
               >
                 {joiningState ? (
-                  <><div className="mr-spinner" style={{ width: '18px', height: '18px', borderWidth: '2px', borderColor: 'rgba(255,255,255,0.5)', borderTopColor: 'white' }} /> Connecting...</>
+                  <><div className="mr-spinner" style={{ width: '18px', height: '18px', borderWidth: '2px', borderColor: 'rgba(255,255,255,0.5)', borderTopColor: 'white' }} /> {t('connecting')}</>
                 ) : (
-                  <>{isHost ? 'Start Session' : 'Join Session'} <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></>
+                  <>{isHost ? t('startSession') : t('joinSession')} <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></>
                 )}
               </button>
             )}
             
             {joinError && (
               <div style={{ color: '#ff6b6b', fontSize: '13px', fontWeight: '600', marginTop: '4px' }}>
-                ⚠ {joinError}
+                {joinError}
               </div>
             )}
           </div>

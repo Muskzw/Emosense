@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabase';
+import { useLang, LangSwitcher } from '../context/LangContext';
 import { LogIn, UserPlus, Mail, Lock, User, Loader2, AlertCircle, CheckCircle2, Building2, Briefcase, MapPin } from 'lucide-react';
 
 const InputRow = ({ label, icon: Icon, type, value, onChange, placeholder, required, options, disabled }) => (
@@ -8,7 +9,7 @@ const InputRow = ({ label, icon: Icon, type, value, onChange, placeholder, requi
     <div style={{ position: 'relative' }}>
       {type === 'select' ? (
         <select className="fi" value={value} onChange={onChange} disabled={disabled} style={{ paddingLeft: '40px' }}>
-          {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
       ) : (
         <input
@@ -37,6 +38,7 @@ const GoogleIcon = () => (
 );
 
 export default function Auth() {
+  const { lang, t } = useLang();
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
@@ -56,7 +58,11 @@ export default function Auth() {
 
     try {
       if (isSignUp) {
-        if (!fullName.trim()) { setError('Please enter your full name.'); setLoading(false); return; }
+        if (!fullName.trim()) { 
+          setError(lang === 'zh' ? '请输入您的姓名。' : (lang === 'sn' ? 'Nyorai zita renyu rizere ndapota.' : 'Please enter your full name.')); 
+          setLoading(false); 
+          return; 
+        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -71,7 +77,7 @@ export default function Auth() {
           },
         });
         if (error) throw error;
-        setMessage('Account created! Check your email for a confirmation link.');
+        setMessage(lang === 'zh' ? '账户已创建！请检查您的邮箱以获取确认链接。' : (lang === 'sn' ? 'Account yakagadzirwa! Tarisa email yako kuti uwane link yekusimbisa.' : 'Account created! Check your email for a confirmation link.'));
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -102,18 +108,23 @@ export default function Auth() {
 
   return (
     <div className="screen active" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '20px' }}>
-      <div className="lob-card" style={{ maxWidth: '440px', width: '100%', maxHeight: '90svh', overflowY: 'auto' }}>
+      <div className="lob-card" style={{ position: 'relative', maxWidth: '440px', width: '100%', maxHeight: '90svh', overflowY: 'auto' }}>
+        
+        {/* Floating Language Switcher */}
+        <div style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10 }}>
+          <LangSwitcher />
+        </div>
 
         {/* Header */}
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'center', paddingRight: '60px', paddingLeft: '60px' }}>
           <div className="lob-mark" style={{ margin: '0 auto 16px', width: '48px', height: '48px' }}>
             {isSignUp ? <UserPlus size={22} color="var(--green)" /> : <LogIn size={22} color="var(--green)" />}
           </div>
           <h1 className="lob-title" style={{ fontSize: '22px' }}>
-            {isSignUp ? 'Create Professional Profile' : 'Welcome Back'}
+            {isSignUp ? t('authCreateProfile') : t('authWelcome')}
           </h1>
           <p className="lob-sub" style={{ marginTop: '6px' }}>
-            {isSignUp ? 'Join the EmoSense cross-cultural network' : 'Sign in to continue your sessions'}
+            {isSignUp ? t('authCreateProfileSub') : t('authWelcomeSub')}
           </p>
         </div>
 
@@ -122,10 +133,10 @@ export default function Auth() {
           {isSignUp && (
             <>
               <InputRow
-                label="Full Name"
+                label={t('fullName')}
                 icon={User}
                 type="text"
-                placeholder="e.g. Tinashe Moyo"
+                placeholder={t('namePlaceholder')}
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 required
@@ -133,29 +144,33 @@ export default function Auth() {
               />
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <InputRow
-                  label="Organization"
+                  label={t('organization')}
                   icon={Building2}
                   type="text"
-                  placeholder="Company name"
+                  placeholder={t('orgPlaceholder')}
                   value={org}
                   onChange={(e) => setOrg(e.target.value)}
                   disabled={loading}
                 />
                 <InputRow
-                  label="Role"
+                  label={t('role')}
                   icon={Briefcase}
                   type="text"
-                  placeholder="e.g. Director"
+                  placeholder={t('rolePlaceholder')}
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                   disabled={loading}
                 />
               </div>
               <InputRow
-                label="Primary Location"
+                label={t('location')}
                 icon={MapPin}
                 type="select"
-                options={['Zimbabwe', 'China', 'Other']}
+                options={[
+                  { value: 'Zimbabwe', label: lang === 'zh' ? '津巴布韦' : 'Zimbabwe' },
+                  { value: 'China', label: lang === 'zh' ? '中国' : 'China' },
+                  { value: 'Other', label: lang === 'zh' ? '其他' : (lang === 'sn' ? 'Zvimwe' : 'Other') }
+                ]}
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 disabled={loading}
@@ -164,7 +179,7 @@ export default function Auth() {
           )}
           
           <InputRow
-            label="Email Address"
+            label={t('email')}
             icon={Mail}
             type="email"
             placeholder="name@company.com"
@@ -174,7 +189,7 @@ export default function Auth() {
             disabled={loading}
           />
           <InputRow
-            label="Password"
+            label={t('password')}
             icon={Lock}
             type="password"
             placeholder="••••••••"
@@ -205,14 +220,14 @@ export default function Auth() {
               ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
               : isSignUp ? <UserPlus size={18} /> : <LogIn size={18} />
             }
-            <span>{loading ? 'Please wait...' : isSignUp ? 'Create Account' : 'Sign In'}</span>
+            <span>{loading ? t('pleaseWait') : isSignUp ? t('createAccount') : t('signIn')}</span>
           </button>
         </form>
 
         {/* Divider */}
         <div style={{ display: 'flex', alignItems: 'center', margin: '24px 0 16px' }}>
           <div style={{ flex: 1, height: '1px', background: 'var(--border)', opacity: 0.5 }}></div>
-          <span style={{ margin: '0 12px', fontSize: '13px', color: 'var(--text-dim)', fontWeight: '500' }}>or</span>
+          <span style={{ margin: '0 12px', fontSize: '13px', color: 'var(--text-dim)', fontWeight: '500' }}>{t('or')}</span>
           <div style={{ flex: 1, height: '1px', background: 'var(--border)', opacity: 0.5 }}></div>
         </div>
 
@@ -242,7 +257,7 @@ export default function Auth() {
           onMouseOut={(e) => { if (!loading) e.currentTarget.style.background = 'var(--b2)' }}
         >
           <GoogleIcon />
-          Continue with Google
+          {t('continueGoogle')}
         </button>
 
         {/* Toggle */}
@@ -252,7 +267,7 @@ export default function Auth() {
             onClick={() => { setIsSignUp(!isSignUp); setError(null); setMessage(''); }}
             style={{ background: 'none', border: 'none', color: 'var(--blue)', fontSize: '13px', cursor: 'pointer', fontWeight: '500', fontFamily: 'inherit' }}
           >
-            {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+            {isSignUp ? t('haveAccount') : t('noAccount')}
           </button>
         </div>
 
