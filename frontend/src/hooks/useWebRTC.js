@@ -62,15 +62,18 @@ export function useWebRTC(onRemoteEnd, localName) {
         ? 3000                                         // Vite dev server ≠ backend port
         : (window.location.port                        // production: co-located port
             ? parseInt(window.location.port)
-            : (isSecure ? 443 : 80));
+            : '');                                     // Omit port to let proxy implicitly handle HTTPS (443) / HTTP (80)
 
       const peerOpts = {
         host: host,
-        port: port,
         path: '/peerjs',
         secure: isSecure,
         config: { iceServers }
       };
+
+      if (port) {
+        peerOpts.port = port;
+      }
 
       console.log('[WebRTC] Connecting to PeerJS at', host, port);
 

@@ -35,6 +35,9 @@ const app    = express();
 const server = http.createServer(app);
 const PORT   = process.env.PORT || 3000;
 
+// Trust proxy for proper secure WebSocket detection behind reverse proxies
+app.enable('trust proxy');
+
 // ── MIDDLEWARE ─────────────────────────────────────────
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS
