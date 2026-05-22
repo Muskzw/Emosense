@@ -1106,6 +1106,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             <div style={S.remoteFill}>
               <video
                 ref={remoteVideoBgRef}
+                className="remote-bg-vid"
                 style={{
                   position: 'absolute',
                   inset: 0,

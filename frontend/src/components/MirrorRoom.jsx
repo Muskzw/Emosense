@@ -269,6 +269,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           gap: 12px;
           box-shadow: 0 10px 30px rgba(0,0,0,0.4);
           transition: all 0.3s ease;
+          z-index: 10;
         }
 
         .mr-emo-dot {
