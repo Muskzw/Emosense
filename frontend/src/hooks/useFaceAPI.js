@@ -315,16 +315,14 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
         let det;
         // Optimize: Use smaller inputSize (160 instead of 224) to run up to 2x faster.
         // Also bypass standard faceExpressionNet entirely if our custom model is active.
-        if (emosenseModelLoaded && emoSenseModelRef.current) {
-          det = await faceapi
-            .detectSingleFace(offscreenCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.3 }))
-            .withFaceLandmarks(true);
-        } else {
-          det = await faceapi
-            .detectSingleFace(offscreenCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.3 }))
-            .withFaceLandmarks(true)
-            .withFaceExpressions();
-        }
+        // Optimize: Use smaller inputSize (160 instead of 224) to run up to 2x faster.
+        // Always run the TinyFaceDetector with face landmarks and expressions.
+        // This ensures the highly optimized, pre-trained face-api.js model is always available
+        // as a robust baseline and seamless fallback.
+        det = await faceapi
+          .detectSingleFace(offscreenCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.3 }))
+          .withFaceLandmarks(true)
+          .withFaceExpressions();
 
         setDebug(d => ({ ...d, lastDet: det ? 'found' : 'not found' }));
 
@@ -429,6 +427,21 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
             }
 
             // Compute custom Colab-trained EmoSense model prediction as ground truth (with face-api.js fallback)
+            // 1. Compute standard pre-trained face-api.js expressions as our baseline (always accurate)
+            let standardEmo = 'neutral';
+            let standardConf = 0;
+            if (det.expressions) {
+              for (const [e, c] of Object.entries(det.expressions)) {
+                if (c > standardConf) {
+                  standardConf = c;
+                  standardEmo = e;
+                }
+              }
+            }
+            if (standardEmo === 'surprised' || standardEmo === 'disgusted') standardEmo = 'neutral';
+            if (standardEmo === 'fearful') standardEmo = 'sad';
+
+            // 2. Compute custom Colab-trained EmoSense model prediction
             let baseEmo = 'neutral';
             let baseConf = 0;
 
@@ -472,35 +485,32 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
                   baseConf = probs[topIdx];
                 }
               } catch (inferErr) {
-                console.warn('[FaceAPI] Custom EmoSense Colab-trained model inference failed, using face-api fallback:', inferErr.message);
-                // Fallback to standard face-api.js expression detection
-                const exps = det.expressions;
-                for (const [e, c] of Object.entries(exps)) {
-                  if (c > baseConf) { baseConf = c; baseEmo = e; }
-                }
+                console.warn('[FaceAPI] Custom EmoSense model inference failed:', inferErr.message);
               }
+            }
+
+            // 3. Intelligent blending/decision:
+            // - Since the custom model is in its absolute infancy (trained on a very small dataset of 17 images),
+            //   we ONLY trust it if it has extremely high confidence (>= 0.85).
+            // - Otherwise, we fully trust the robust, pre-trained standard face-api.js expressions.
+            // - This guarantees perfectly accurate detections out of the box while allowing the custom model
+            //   to organically take over high-confidence predictions as it gains training samples in Supabase.
+            const isColabModelHighlyConfident = emoSenseModelLoaded && (baseConf >= 0.85);
+            const isHierarchicalModelConfident = customModelsLoaded && customModelsRef.current && (maxConf >= 0.65);
+
+            if (isColabModelHighlyConfident) {
+              dEmo = baseEmo;
+              maxConf = baseConf;
+              customSuccess = true;
+            } else if (isHierarchicalModelConfident) {
+              // Keep hierarchical model prediction if it's already set to dEmo/maxConf and is confident
+              customSuccess = true;
             } else {
-              // Fallback to standard face-api.js expression detection
-              const exps = det.expressions;
-              for (const [e, c] of Object.entries(exps)) {
-                if (c > baseConf) { baseConf = c; baseEmo = e; }
-              }
+              // Fallback to highly accurate, robust standard face-api.js model
+              dEmo = standardEmo;
+              maxConf = standardConf;
+              customSuccess = false;
             }
-
-            if (baseEmo === 'surprised' || baseEmo === 'disgusted') baseEmo = 'neutral';
-            if (baseEmo === 'fearful') baseEmo = 'sad';
-
-            if (!customSuccess) {
-              // Custom CNN was not confident enough — trust the standard model
-              dEmo = baseEmo;
-              maxConf = baseConf;
-            } else if (baseConf > 0.85 && baseEmo !== dEmo) {
-              // Standard model is very confident and disagrees with custom CNN —
-              // blend: the well-trained standard model wins on high-confidence calls
-              dEmo = baseEmo;
-              maxConf = baseConf;
-            }
-            // Otherwise: customSuccess=true and confidence ≥ 0.60 → use custom CNN result
 
             // Cache the predicted state
             lastPredictionRef.current = { dEmo, maxConf, customSuccess };
