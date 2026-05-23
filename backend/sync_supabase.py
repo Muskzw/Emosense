@@ -12,6 +12,7 @@ Usage:
 
 import os
 import base64
+import sys
 import hashlib
 from pathlib import Path
 
@@ -20,23 +21,31 @@ def load_db_url():
     # 1. Check environment variables first (for cloud runners/GitHub Actions)
     import os
     env_url = os.environ.get('DATABASE_URL')
+    db_url = None
     if env_url:
-        return env_url
+        db_url = env_url
+    else:
+        # 2. Fallback to local .env file
+        env_path = Path(__file__).resolve().parent / '.env'
+        if not env_path.exists():
+            print(f"Error: .env file not found at {env_path}")
+            return None
 
-    # 2. Fallback to local .env file
-    env_path = Path(__file__).resolve().parent / '.env'
-    if not env_path.exists():
-        print(f"Error: .env file not found at {env_path}")
+        with open(env_path, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith('DATABASE_URL='):
+                    db_url = line.split('=', 1)[1]
+                    break
+
+    if not db_url:
         return None
 
-    db_url = None
-    with open(env_path, 'r') as f:
-        for line in f:
-            line = line.strip()
-            if line.startswith('DATABASE_URL='):
-                # Split at first '=' and strip quotes
-                db_url = line.split('=', 1)[1].strip().strip("'\"")
-                break
+    # 3. Clean and sanitize the URL (removes quotes, whitespaces, or accidental prefix key)
+    db_url = db_url.strip().strip("'\"")
+    if db_url.startswith("DATABASE_URL="):
+        db_url = db_url.split("DATABASE_URL=", 1)[1].strip().strip("'\"")
+        
     return db_url
 
 def main():
