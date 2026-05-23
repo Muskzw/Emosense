@@ -101,7 +101,7 @@ def main():
         cur = conn.cursor()
     except Exception as e:
         print(f"Fatal Connection Error: {e}")
-        return
+        sys.exit(1)
 
     # Check if table exists
     try:
@@ -111,10 +111,10 @@ def main():
             print("Please start the Node.js server first to initialize the tables.")
             cur.close()
             conn.close()
-            return
+            sys.exit(1)
     except Exception as e:
         print(f"Error checking table: {e}")
-        return
+        sys.exit(1)
 
     # Retrieve all collected samples
     print("Fetching collected samples from 'collected_samples'...")
@@ -129,7 +129,12 @@ def main():
         print(f"Database query failed: {e}")
         cur.close()
         conn.close()
-        return
+        sys.exit(1)
+
+    # Local dataset base directory (matches what data_pipeline.py uses)
+    base_dir = Path(__file__).resolve().parent / 'emosense-dataset'
+    # Always create the base directory on startup so downstream scripts don't crash
+    base_dir.mkdir(parents=True, exist_ok=True)
 
     total_records = len(rows)
     print(f"Found {total_records} total samples in the cloud database.")
@@ -138,11 +143,8 @@ def main():
         print("No samples to synchronize. Exiting.")
         cur.close()
         conn.close()
-        return
+        sys.exit(0)
 
-    # Local dataset base directory (matches what data_pipeline.py uses)
-    base_dir = Path(__file__).resolve().parent / 'emosense-dataset'
-    
     synced_count = 0
     skipped_count = 0
     error_count = 0
