@@ -21,9 +21,22 @@ np.float = float
 import tensorflow as tf
 import tensorflowjs as tfjs
 
-keras_path = "/home/elon/Downloads/emosense_model.keras"
-output_dir = "/home/elon/Documents/Emosense/frontend/public/models/emosense-model"
-temp_saved_model_dir = "/home/elon/Documents/Emosense/temp_saved_model_base"
+from pathlib import Path
+
+# Resolve paths dynamically relative to the repository root
+project_root = Path(__file__).resolve().parent
+
+# Direct Keras weights path (GHA training output / local root fallback)
+keras_path_root = project_root / 'emosense_model.keras'
+keras_path_downloads = Path('/home/elon/Downloads/emosense_model.keras')
+
+if keras_path_root.exists():
+    keras_path = str(keras_path_root)
+else:
+    keras_path = str(keras_path_downloads)
+
+output_dir = str(project_root / 'frontend' / 'public' / 'models' / 'emosense-model')
+temp_saved_model_dir = str(project_root / 'temp_saved_model_base')
 
 print("--- EmoSense Colab-Trained Model Conversion Tool ---")
 print(f"TensorFlow version: {tf.__version__}")
