@@ -446,7 +446,10 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
 
                   const cropped = tf.slice(fullTensor, [startY, startX, 0], [sizeY, sizeX, 3]);
                   const resized = tf.image.resizeBilinear(cropped, [96, 96]);
-                  const normalized = tf.cast(resized, 'float32').div(255.0);
+                  // Do NOT divide by 255.0 here. The custom EmoSense Keras model has a built-in
+                  // Rescaling(1./255) layer as its first layer. Dividing here causes a
+                  // double-normalization bug, sending almost completely black (zero) images to the CNN.
+                  const normalized = tf.cast(resized, 'float32');
                   return normalized.expandDims(0); // [1, 96, 96, 3]
                 });
 
