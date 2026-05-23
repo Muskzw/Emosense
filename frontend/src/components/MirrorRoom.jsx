@@ -40,15 +40,13 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
     if (!faceStream) {
       startCamera();
     } else {
-      if (localVideoRef.current) {
-        const video = localVideoRef.current;
-        video.srcObject = faceStream;
-        video.play().catch(e => console.warn('[MirrorRoom] Autoplay was prevented:', e));
+      if (localVideoRef.current && localVideoRef.current.srcObject !== faceStream) {
+        localVideoRef.current.srcObject = faceStream;
+        localVideoRef.current.play().catch(e => console.warn('[MirrorRoom] Autoplay was prevented:', e));
       }
-      if (localVideoBgRef.current) {
-        const videoBg = localVideoBgRef.current;
-        videoBg.srcObject = faceStream;
-        videoBg.play().catch(e => console.warn('[MirrorRoom] Background Autoplay was prevented:', e));
+      if (localVideoBgRef.current && localVideoBgRef.current.srcObject !== faceStream) {
+        localVideoBgRef.current.srcObject = faceStream;
+        localVideoBgRef.current.play().catch(e => console.warn('[MirrorRoom] Background Autoplay was prevented:', e));
       }
     }
   }, [faceStream, startCamera]);

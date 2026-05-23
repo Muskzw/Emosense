@@ -688,9 +688,11 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
     const video = localVideoRef.current;
     const videoBg = localVideoBgRef.current;
     if (video && webRTC.faceStream) {
-      video.srcObject = webRTC.faceStream;
-      video.play().catch(e => console.warn('[CallView] Local PiP play was prevented:', e));
-      if (videoBg) {
+      if (video.srcObject !== webRTC.faceStream) {
+        video.srcObject = webRTC.faceStream;
+        video.play().catch(e => console.warn('[CallView] Local PiP play was prevented:', e));
+      }
+      if (videoBg && videoBg.srcObject !== webRTC.faceStream) {
         videoBg.srcObject = webRTC.faceStream;
         videoBg.play().catch(e => console.warn('[CallView] Local PiP Bg play was prevented:', e));
       }
@@ -702,9 +704,11 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
     const video = remoteVideoRef.current;
     const videoBg = remoteVideoBgRef.current;
     if (video && remoteStream && isConnected) {
-      console.log('[CallView] Attaching remote stream:', remoteStream.id);
-      video.srcObject = remoteStream;
-      if (videoBg) {
+      if (video.srcObject !== remoteStream) {
+        console.log('[CallView] Attaching remote stream:', remoteStream.id);
+        video.srcObject = remoteStream;
+      }
+      if (videoBg && videoBg.srcObject !== remoteStream) {
         videoBg.srcObject = remoteStream;
         videoBg.muted = true;
       }

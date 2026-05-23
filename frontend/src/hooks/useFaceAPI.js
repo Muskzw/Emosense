@@ -320,7 +320,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
         // This ensures the highly optimized, pre-trained face-api.js model is always available
         // as a robust baseline and seamless fallback.
         det = await faceapi
-          .detectSingleFace(offscreenCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.3 }))
+          .detectSingleFace(offscreenCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.2 }))
           .withFaceLandmarks(true)
           .withFaceExpressions();
 
@@ -492,13 +492,19 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
             // 3. Intelligent blending/decision:
             // - Since the custom model is in its absolute infancy (trained on a very small dataset of 17 images),
             //   we ONLY trust it if it has extremely high confidence (>= 0.85).
-            // - Otherwise, we fully trust the robust, pre-trained standard face-api.js expressions.
+            // - However, if the robust standard model is highly confident in a non-neutral emotion (happy, sad, angry),
+            //   we prioritize it to prevent the infant model's overfitted/neutral bias from freezing the UI.
             // - This guarantees perfectly accurate detections out of the box while allowing the custom model
             //   to organically take over high-confidence predictions as it gains training samples in Supabase.
+            const isStandardDominant = standardConf >= 0.75 && standardEmo !== 'neutral';
             const isColabModelHighlyConfident = emosenseModelLoaded && (baseConf >= 0.85);
             const isHierarchicalModelConfident = customModelsLoaded && customModelsRef.current && (maxConf >= 0.65);
 
-            if (isColabModelHighlyConfident) {
+            if (isStandardDominant) {
+              dEmo = standardEmo;
+              maxConf = standardConf;
+              customSuccess = false;
+            } else if (isColabModelHighlyConfident) {
               dEmo = baseEmo;
               maxConf = baseConf;
               customSuccess = true;
