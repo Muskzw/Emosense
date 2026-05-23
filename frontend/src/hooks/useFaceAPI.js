@@ -90,6 +90,9 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
   
   const customModelsRef = useRef(null);
   const localCanvasRef  = useRef(null);
+  
+  const emoSenseModelRef = useRef(null);
+  const [emosenseModelLoaded, setEmosenseModelLoaded] = useState(false);
 
   // ── Load face-api.js base models (once) ────────────────────────
   useEffect(() => {
@@ -117,6 +120,18 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
           faceapi.nets.faceLandmark68TinyNet.loadFromUri(M),
           faceapi.nets.faceExpressionNet.loadFromUri(M),
         ]);
+        
+        try {
+          const customBaseModel = await faceapi.tf.loadGraphModel('/models/emosense-model/model.json');
+          if (customBaseModel) {
+            emoSenseModelRef.current = customBaseModel;
+            setEmosenseModelLoaded(true);
+            console.log('[FaceAPI] Custom EmoSense Colab-trained model loaded successfully ✓');
+          }
+        } catch (tfjsErr) {
+          console.warn('[FaceAPI] Custom EmoSense Colab-trained model not found or failed to load. Using face-api fallback.', tfjsErr.message);
+        }
+        
         setModelsLoaded(true);
         console.log('[FaceAPI] Base models loaded ✓');
       } catch (e) {
@@ -391,13 +406,62 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
             }
           }
 
-          // Always compute face-api.js standard expression result as ground truth
-          const exps = det.expressions;
+          // Compute custom Colab-trained EmoSense model prediction as ground truth (with face-api.js fallback)
           let baseEmo = 'neutral';
           let baseConf = 0;
-          for (const [e, c] of Object.entries(exps)) {
-            if (c > baseConf) { baseConf = c; baseEmo = e; }
+
+          if (emosenseModelLoaded && emoSenseModelRef.current && tf) {
+            try {
+              const baseResult = tf.tidy(() => {
+                const fullTensor = tf.browser.fromPixels(offscreenCanvas);
+                const { x, y, width, height } = det.detection.box;
+                const startY = Math.max(0, Math.floor(y));
+                const startX = Math.max(0, Math.floor(x));
+                const sizeY = Math.min(offscreenCanvas.height - startY, Math.floor(height));
+                const sizeX = Math.min(offscreenCanvas.width - startX, Math.floor(width));
+
+                if (sizeY <= 0 || sizeX <= 0) return null;
+
+                const cropped = tf.slice(fullTensor, [startY, startX, 0], [sizeY, sizeX, 3]);
+                const resized = tf.image.resizeBilinear(cropped, [96, 96]);
+                const normalized = tf.cast(resized, 'float32').div(255.0);
+                return normalized.expandDims(0); // [1, 96, 96, 3]
+              });
+
+              if (baseResult) {
+                const predictions = emoSenseModelRef.current.predict(baseResult);
+                const probs = await predictions.data();
+                tf.dispose(predictions);
+                baseResult.dispose();
+
+                // Sort out class labels dynamically based on model outputs
+                // Our model has 3 outputs. Folder names in alphabetical order:
+                // happy, neutral, sad -> ['happy', 'neutral', 'sad']
+                let emotions = ['happy', 'neutral', 'sad'];
+                if (probs.length === 4) {
+                  emotions = ['happy', 'neutral', 'sad', 'angry'];
+                }
+                
+                const topIdx = probs.indexOf(Math.max(...probs));
+                baseEmo = emotions[topIdx] || 'neutral';
+                baseConf = probs[topIdx];
+              }
+            } catch (inferErr) {
+              console.warn('[FaceAPI] Custom EmoSense Colab-trained model inference failed, using face-api fallback:', inferErr.message);
+              // Fallback to standard face-api.js expression detection
+              const exps = det.expressions;
+              for (const [e, c] of Object.entries(exps)) {
+                if (c > baseConf) { baseConf = c; baseEmo = e; }
+              }
+            }
+          } else {
+            // Fallback to standard face-api.js expression detection
+            const exps = det.expressions;
+            for (const [e, c] of Object.entries(exps)) {
+              if (c > baseConf) { baseConf = c; baseEmo = e; }
+            }
           }
+
           if (baseEmo === 'surprised' || baseEmo === 'disgusted') baseEmo = 'neutral';
           if (baseEmo === 'fearful') baseEmo = 'sad';
 
