@@ -13,6 +13,8 @@ env:
 jobs:
   retrain-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: 1. Check out repository
