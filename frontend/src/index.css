@@ -625,6 +625,7 @@ button:active, .btn:active, .end-btn:active, .cv-btn:active, .lob-btn:active, .c
     z-index: 30 !important;
     background: #0a0a0f !important;
     -webkit-mask-image: -webkit-radial-gradient(white, black) !important;
+    mask-image: radial-gradient(white, black) !important;
     isolation: isolate !important;
   }
   .cv-pip .local-bg-vid {
