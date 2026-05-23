@@ -15,8 +15,15 @@ import base64
 import hashlib
 from pathlib import Path
 
-# ── PARSE BACKEND .ENV ────────────────────────────────────────────────────────
+# ── PARSE BACKEND .ENV / ENVIRONMENT VARIABLES ─────────────────────────────────
 def load_db_url():
+    # 1. Check environment variables first (for cloud runners/GitHub Actions)
+    import os
+    env_url = os.environ.get('DATABASE_URL')
+    if env_url:
+        return env_url
+
+    # 2. Fallback to local .env file
     env_path = Path(__file__).resolve().parent / '.env'
     if not env_path.exists():
         print(f"Error: .env file not found at {env_path}")
