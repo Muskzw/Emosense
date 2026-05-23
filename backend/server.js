@@ -189,6 +189,18 @@ const initDb = async () => {
         status TEXT DEFAULT 'waiting'
       )
     `);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS collected_samples (
+        id SERIAL PRIMARY KEY,
+        ts TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        image_b64 TEXT NOT NULL,
+        emotion VARCHAR(20) NOT NULL,
+        confidence NUMERIC NOT NULL,
+        culture VARCHAR(10) NOT NULL,
+        session_hash VARCHAR(50),
+        consent BOOLEAN DEFAULT TRUE
+      )
+    `);
     await pool.query(`ALTER TABLE room_codes ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'waiting'`);
     await pool.query(`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_id TEXT`);
     // Clean up expired codes on startup
@@ -409,22 +421,99 @@ app.get('/api/rooms/:code/status', async (req, res) => {
   }
 });
 
-// ── DATA COLLECTION PROXY ────────────────────────────
-// Proxies requests from the frontend to the Python backend
-// This allows Ngrok to handle both signaling and data collection seamlessly
+// ── DATA COLLECTION ENDPOINT (Supabase + Local Python Proxy) ──────────
+// Resolves Render 500 errors by writing directly to Supabase Postgres.
+// In local development, also dual-writes to the local Python server if online.
 app.post('/api/collect', async (req, res) => {
+  const { image_b64, emotion, confidence, culture, session_hash, consent } = req.body;
+
+  // 1. Consent check (ZW Data Protection Act compliance)
+  if (!consent) {
+    return res.status(400).json({ error: 'Consent required' });
+  }
+
+  // 2. Validate emotion class
+  const validEmotions = ['happy', 'neutral', 'sad', 'angry'];
+  const emoLower = String(emotion || '').toLowerCase();
+  if (!validEmotions.includes(emoLower)) {
+    return res.status(400).json({ error: `Invalid emotion. Must be one of: ${validEmotions.join(', ')}` });
+  }
+
+  // 3. Validate confidence threshold (minimum 0.65 to filter noise)
+  const confNum = parseFloat(confidence || 0);
+  if (confNum < 0.65) {
+    return res.json({ ok: false, reason: 'Confidence too low (<0.65)' });
+  }
+
+  // 4. Validate image presence
+  if (!image_b64) {
+    return res.status(400).json({ error: 'Missing image_b64 string' });
+  }
+
+  // 5. Clean culture value
+  let cultUpper = String(culture || 'INT').toUpperCase();
+  if (!['ZW', 'CN', 'INT'].includes(cultUpper)) {
+    cultUpper = 'INT';
+  }
+
+  const sessHash = String(session_hash || 'anon_unknown').slice(0, 50);
+
+  let savedInSupabase = false;
+  let dbError = null;
+
+  // 6. Write to Supabase/Postgres
+  try {
+    const query = `
+      INSERT INTO collected_samples (image_b64, emotion, confidence, culture, session_hash, consent)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING id
+    `;
+    const dbRes = await pool.query(query, [image_b64, emoLower, confNum, cultUpper, sessHash, true]);
+    console.log(`[Supabase Collect] Saved sample ID: ${dbRes.rows[0].id} (Emotion: ${emoLower}, Culture: ${cultUpper})`);
+    savedInSupabase = true;
+  } catch (err) {
+    console.error('[Supabase Collect] Database error:', err.message);
+    dbError = err.message;
+    // We do NOT crash the request if Supabase fails to keep the UI resilient
+  }
+
+  // 7. Dual-write: Proxy to local Python backend (port 5000) if running
   try {
     const pythonRes = await fetch('http://127.0.0.1:5000/api/collect', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(req.body)
     });
-    if (!pythonRes.ok) throw new Error('Python server error');
-    const data = await pythonRes.json();
-    res.json(data);
-  } catch (err) {
-    console.error('[Proxy Error] Could not reach Python server:', err.message);
-    res.status(500).json({ error: 'Data collection backend offline' });
+    
+    if (pythonRes.ok) {
+      const pyData = await pythonRes.json();
+      console.log('[Supabase Collect] Successfully dual-wrote to local Python pipeline.');
+      // Return the actual Python response which might trigger local retraining check
+      return res.json({
+        ...pyData,
+        saved_in_supabase: savedInSupabase,
+        supabase_error: dbError
+      });
+    } else {
+      console.warn('[Supabase Collect] Local Python pipeline returned non-200 response.');
+    }
+  } catch (pyErr) {
+    // Expected in production on Render when the Python backend is not running.
+    console.log('[Supabase Collect] Local Python pipeline offline. Production cloud save only.');
+  }
+
+  // If local Python is offline or errored, return the standard successful cloud save response
+  if (savedInSupabase) {
+    res.json({
+      ok: true,
+      saved_in_supabase: true,
+      retrain_triggered: false
+    });
+  } else {
+    res.status(500).json({
+      error: 'Failed to write sample to either cloud database or local pipeline',
+      details: dbError
+    });
   }
 });
 
