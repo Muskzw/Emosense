@@ -66,6 +66,10 @@ def main():
 
     print("\nLoading dataset directories into memory...")
     try:
+        # Force a stable and deterministic class name order: Index 0=angry, 1=happy, 2=neutral, 3=sad
+        # This ignores other auxiliary folders like logs/ or rejected/ completely.
+        class_names = ['angry', 'happy', 'neutral', 'sad']
+        
         train_ds = tf.keras.utils.image_dataset_from_directory(
             str(base_dir),
             validation_split=0.2,
@@ -73,7 +77,8 @@ def main():
             seed=123,
             image_size=IMAGE_SIZE,
             batch_size=BATCH_SIZE,
-            label_mode='categorical'
+            label_mode='categorical',
+            class_names=class_names
         )
         
         val_ds = tf.keras.utils.image_dataset_from_directory(
@@ -83,7 +88,8 @@ def main():
             seed=123,
             image_size=IMAGE_SIZE,
             batch_size=BATCH_SIZE,
-            label_mode='categorical'
+            label_mode='categorical',
+            class_names=class_names
         )
         
         class_names = train_ds.class_names

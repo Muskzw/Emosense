@@ -457,11 +457,11 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
                   baseResult.dispose();
 
                   // Sort out class labels dynamically based on model outputs
-                  // Our model has 3 outputs. Folder names in alphabetical order:
-                  // happy, neutral, sad -> ['happy', 'neutral', 'sad']
+                  // 3 classes: alphabetical -> ['happy', 'neutral', 'sad']
+                  // 4 classes: alphabetical/explicit -> ['angry', 'happy', 'neutral', 'sad']
                   let emotions = ['happy', 'neutral', 'sad'];
                   if (probs.length === 4) {
-                    emotions = ['happy', 'neutral', 'sad', 'angry'];
+                    emotions = ['angry', 'happy', 'neutral', 'sad'];
                   }
                   
                   const topIdx = probs.indexOf(Math.max(...probs));
