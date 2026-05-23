@@ -13,8 +13,8 @@ for attr in ['object', 'bool', 'float', 'complex', 'str', 'int']:
     if attr in np.__dict__.get('__former_attrs__', {}):
         del np.__former_attrs__[attr]
 
-np.object = object
-np.bool = bool
+np.object = np.object_
+np.bool = np.bool_
 np.int = int
 np.float = float
 
