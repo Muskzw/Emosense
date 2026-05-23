@@ -93,6 +93,9 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
   
   const emoSenseModelRef = useRef(null);
   const [emosenseModelLoaded, setEmosenseModelLoaded] = useState(false);
+  
+  const frameCountRef = useRef(0);
+  const lastPredictionRef = useRef({ dEmo: 'neutral', maxConf: 0.8, customSuccess: false });
 
   // ── Load face-api.js base models (once) ────────────────────────
   useEffect(() => {
@@ -309,173 +312,196 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
       const startTime = Date.now();
 
       try {
-        const det = await faceapi
-          .detectSingleFace(offscreenCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.25 }))
-          .withFaceLandmarks(true)
-          .withFaceExpressions();
+        let det;
+        // Optimize: Use smaller inputSize (160 instead of 224) to run up to 2x faster.
+        // Also bypass standard faceExpressionNet entirely if our custom model is active.
+        if (emosenseModelLoaded && emoSenseModelRef.current) {
+          det = await faceapi
+            .detectSingleFace(offscreenCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.3 }))
+            .withFaceLandmarks(true);
+        } else {
+          det = await faceapi
+            .detectSingleFace(offscreenCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.3 }))
+            .withFaceLandmarks(true)
+            .withFaceExpressions();
+        }
 
         setDebug(d => ({ ...d, lastDet: det ? 'found' : 'not found' }));
 
         if (active && det) {
-          let dEmo = 'neutral';
-          let maxConf = 0;
-          let customSuccess = false;
+          // Frame throttling: only run heavy deep learning expression inference every 5th frame (approx. every 150ms).
+          // The face landmarks and mesh drawing continue to run at full 60 FPS, making the UI feel buttery smooth!
+          frameCountRef.current += 1;
+          const shouldPredictExpression = frameCountRef.current % 5 === 0;
 
-          // Run custom hierarchical CNN if loaded
-          const tf = faceapi.tf;
-          if (customModelsLoaded && customModelsRef.current && tf) {
-            try {
-              const { m1, m2, m3, culture } = customModelsRef.current;
+          let dEmo = lastPredictionRef.current.dEmo;
+          let maxConf = lastPredictionRef.current.maxConf;
+          let customSuccess = lastPredictionRef.current.customSuccess;
 
-              const processed = tf.tidy(() => {
-                const fullTensor = tf.browser.fromPixels(offscreenCanvas);
-                const { x, y, width, height } = det.detection.box;
-                const startY = Math.max(0, Math.floor(y));
-                const startX = Math.max(0, Math.floor(x));
-                const sizeY = Math.min(offscreenCanvas.height - startY, Math.floor(height));
-                const sizeX = Math.min(offscreenCanvas.width - startX, Math.floor(width));
+          if (shouldPredictExpression) {
+            dEmo = 'neutral';
+            maxConf = 0;
+            customSuccess = false;
 
-                if (sizeY <= 0 || sizeX <= 0) return null;
+            // Run custom hierarchical CNN if loaded
+            const tf = faceapi.tf;
+            if (customModelsLoaded && customModelsRef.current && tf) {
+              try {
+                const { m1, m2, m3, culture } = customModelsRef.current;
 
-                const cropped = tf.slice(fullTensor, [startY, startX, 0], [sizeY, sizeX, 3]);
-                const resized = tf.image.resizeBilinear(cropped, [96, 96]);
-                const normalized = tf.cast(resized, 'float32').div(255.0);
+                const processed = tf.tidy(() => {
+                  const fullTensor = tf.browser.fromPixels(offscreenCanvas);
+                  const { x, y, width, height } = det.detection.box;
+                  const startY = Math.max(0, Math.floor(y));
+                  const startX = Math.max(0, Math.floor(x));
+                  const sizeY = Math.min(offscreenCanvas.height - startY, Math.floor(height));
+                  const sizeX = Math.min(offscreenCanvas.width - startX, Math.floor(width));
 
-                if (culture === 'ZW') {
-                  const gray = tf.image.rgbToGrayscale(normalized);
-                  return gray.expandDims(0); // [1, 96, 96, 1]
-                } else {
-                  return normalized.expandDims(0); // [1, 96, 96, 3]
-                }
-              });
+                  if (sizeY <= 0 || sizeX <= 0) return null;
 
-              if (processed) {
-                const p1 = m1.predict(processed);
-                const p1Data = await p1.data();
+                  const cropped = tf.slice(fullTensor, [startY, startX, 0], [sizeY, sizeX, 3]);
+                  const resized = tf.image.resizeBilinear(cropped, [96, 96]);
+                  const normalized = tf.cast(resized, 'float32').div(255.0);
 
-                if (culture === 'ZW') {
-                  // ZW: Level 1 (down_up): Class 0 = 'down', Class 1 = 'up'
-                  const classIdx = p1Data[0] > p1Data[1] ? 0 : 1;
-                  if (classIdx === 0) {
-                    // 'down' (Class 0) → Route to happy_neutral
-                    const p2 = m2.predict(processed);
-                    const p2Data = await p2.data();
-                    const class2Idx = p2Data[0] > p2Data[1] ? 0 : 1;
-                    dEmo = class2Idx === 0 ? 'happy' : 'neutral';
-                    maxConf = p2Data[class2Idx];
-                    tf.dispose(p2);
+                  if (culture === 'ZW') {
+                    const gray = tf.image.rgbToGrayscale(normalized);
+                    return gray.expandDims(0); // [1, 96, 96, 1]
                   } else {
-                    // 'up' (Class 1) → Route to anger_sad: Class 0 = 'anger' (angry), Class 1 = 'sad'
-                    const p3 = m3.predict(processed);
-                    const p3Data = await p3.data();
-                    const class2Idx = p3Data[0] > p3Data[1] ? 0 : 1;
-                    dEmo = class2Idx === 0 ? 'angry' : 'sad';
-                    maxConf = p3Data[class2Idx];
-                    tf.dispose(p3);
+                    return normalized.expandDims(0); // [1, 96, 96, 3]
                   }
-                } else {
-                  // CN: Level 1 (up_down): Class 0 = 'down', Class 1 = 'up'
-                  const classIdx = p1Data[0] > p1Data[1] ? 0 : 1;
-                  if (classIdx === 1) {
-                    // 'up' → Route to happy_neutral: Class 0 = 'happiness' (happy), Class 1 = 'neutral'
-                    const p2 = m2.predict(processed);
-                    const p2Data = await p2.data();
-                    const class2Idx = p2Data[0] > p2Data[1] ? 0 : 1;
-                    dEmo = class2Idx === 0 ? 'happy' : 'neutral';
-                    maxConf = p2Data[class2Idx];
-                    tf.dispose(p2);
-                  } else {
-                    // 'down' → Route to anger_sad: Class 0 = 'anger' (angry), Class 1 = 'sadness' (sad)
-                    const p3 = m3.predict(processed);
-                    const p3Data = await p3.data();
-                    const class2Idx = p3Data[0] > p3Data[1] ? 0 : 1;
-                    dEmo = class2Idx === 0 ? 'angry' : 'sad';
-                    maxConf = p3Data[class2Idx];
-                    tf.dispose(p3);
-                  }
-                }
+                });
 
-                tf.dispose(p1);
-                processed.dispose();
-                // Only trust custom CNN result if confidence is high enough.
-                // Below 0.60, the standard face-api.js model is more reliable.
-                customSuccess = maxConf >= 0.60;
+                if (processed) {
+                  const p1 = m1.predict(processed);
+                  const p1Data = await p1.data();
+
+                  if (culture === 'ZW') {
+                    // ZW: Level 1 (down_up): Class 0 = 'down', Class 1 = 'up'
+                    const classIdx = p1Data[0] > p1Data[1] ? 0 : 1;
+                    if (classIdx === 0) {
+                      // 'down' (Class 0) → Route to happy_neutral
+                      const p2 = m2.predict(processed);
+                      const p2Data = await p2.data();
+                      const class2Idx = p2Data[0] > p2Data[1] ? 0 : 1;
+                      dEmo = class2Idx === 0 ? 'happy' : 'neutral';
+                      maxConf = p2Data[class2Idx];
+                      tf.dispose(p2);
+                    } else {
+                      // 'up' (Class 1) → Route to anger_sad: Class 0 = 'anger' (angry), Class 1 = 'sad'
+                      const p3 = m3.predict(processed);
+                      const p3Data = await p3.data();
+                      const class2Idx = p3Data[0] > p3Data[1] ? 0 : 1;
+                      dEmo = class2Idx === 0 ? 'angry' : 'sad';
+                      maxConf = p3Data[class2Idx];
+                      tf.dispose(p3);
+                    }
+                  } else {
+                    // CN: Level 1 (up_down): Class 0 = 'down', Class 1 = 'up'
+                    const classIdx = p1Data[0] > p1Data[1] ? 0 : 1;
+                    if (classIdx === 1) {
+                      // 'up' → Route to happy_neutral: Class 0 = 'happiness' (happy), Class 1 = 'neutral'
+                      const p2 = m2.predict(processed);
+                      const p2Data = await p2.data();
+                      const class2Idx = p2Data[0] > p2Data[1] ? 0 : 1;
+                      dEmo = class2Idx === 0 ? 'happy' : 'neutral';
+                      maxConf = p2Data[class2Idx];
+                      tf.dispose(p2);
+                    } else {
+                      // 'down' → Route to anger_sad: Class 0 = 'anger' (angry), Class 1 = 'sadness' (sad)
+                      const p3 = m3.predict(processed);
+                      const p3Data = await p3.data();
+                      const class2Idx = p3Data[0] > p3Data[1] ? 0 : 1;
+                      dEmo = class2Idx === 0 ? 'angry' : 'sad';
+                      maxConf = p3Data[class2Idx];
+                      tf.dispose(p3);
+                    }
+                  }
+
+                  tf.dispose(p1);
+                  processed.dispose();
+                  // Only trust custom CNN result if confidence is high enough.
+                  // Below 0.60, the standard face-api.js model is more reliable.
+                  customSuccess = maxConf >= 0.60;
+                }
+              } catch (customErr) {
+                console.warn('[FaceAPI] Custom CNN execution failed, falling back to face-api.js expressions:', customErr);
               }
-            } catch (customErr) {
-              console.warn('[FaceAPI] Custom CNN execution failed, falling back to face-api.js expressions:', customErr);
             }
-          }
 
-          // Compute custom Colab-trained EmoSense model prediction as ground truth (with face-api.js fallback)
-          let baseEmo = 'neutral';
-          let baseConf = 0;
+            // Compute custom Colab-trained EmoSense model prediction as ground truth (with face-api.js fallback)
+            let baseEmo = 'neutral';
+            let baseConf = 0;
 
-          if (emosenseModelLoaded && emoSenseModelRef.current && tf) {
-            try {
-              const baseResult = tf.tidy(() => {
-                const fullTensor = tf.browser.fromPixels(offscreenCanvas);
-                const { x, y, width, height } = det.detection.box;
-                const startY = Math.max(0, Math.floor(y));
-                const startX = Math.max(0, Math.floor(x));
-                const sizeY = Math.min(offscreenCanvas.height - startY, Math.floor(height));
-                const sizeX = Math.min(offscreenCanvas.width - startX, Math.floor(width));
+            if (emosenseModelLoaded && emoSenseModelRef.current && tf) {
+              try {
+                const baseResult = tf.tidy(() => {
+                  const fullTensor = tf.browser.fromPixels(offscreenCanvas);
+                  const { x, y, width, height } = det.detection.box;
+                  const startY = Math.max(0, Math.floor(y));
+                  const startX = Math.max(0, Math.floor(x));
+                  const sizeY = Math.min(offscreenCanvas.height - startY, Math.floor(height));
+                  const sizeX = Math.min(offscreenCanvas.width - startX, Math.floor(width));
 
-                if (sizeY <= 0 || sizeX <= 0) return null;
+                  if (sizeY <= 0 || sizeX <= 0) return null;
 
-                const cropped = tf.slice(fullTensor, [startY, startX, 0], [sizeY, sizeX, 3]);
-                const resized = tf.image.resizeBilinear(cropped, [96, 96]);
-                const normalized = tf.cast(resized, 'float32').div(255.0);
-                return normalized.expandDims(0); // [1, 96, 96, 3]
-              });
+                  const cropped = tf.slice(fullTensor, [startY, startX, 0], [sizeY, sizeX, 3]);
+                  const resized = tf.image.resizeBilinear(cropped, [96, 96]);
+                  const normalized = tf.cast(resized, 'float32').div(255.0);
+                  return normalized.expandDims(0); // [1, 96, 96, 3]
+                });
 
-              if (baseResult) {
-                const predictions = emoSenseModelRef.current.predict(baseResult);
-                const probs = await predictions.data();
-                tf.dispose(predictions);
-                baseResult.dispose();
+                if (baseResult) {
+                  const predictions = emoSenseModelRef.current.predict(baseResult);
+                  const probs = await predictions.data();
+                  tf.dispose(predictions);
+                  baseResult.dispose();
 
-                // Sort out class labels dynamically based on model outputs
-                // Our model has 3 outputs. Folder names in alphabetical order:
-                // happy, neutral, sad -> ['happy', 'neutral', 'sad']
-                let emotions = ['happy', 'neutral', 'sad'];
-                if (probs.length === 4) {
-                  emotions = ['happy', 'neutral', 'sad', 'angry'];
+                  // Sort out class labels dynamically based on model outputs
+                  // Our model has 3 outputs. Folder names in alphabetical order:
+                  // happy, neutral, sad -> ['happy', 'neutral', 'sad']
+                  let emotions = ['happy', 'neutral', 'sad'];
+                  if (probs.length === 4) {
+                    emotions = ['happy', 'neutral', 'sad', 'angry'];
+                  }
+                  
+                  const topIdx = probs.indexOf(Math.max(...probs));
+                  baseEmo = emotions[topIdx] || 'neutral';
+                  baseConf = probs[topIdx];
                 }
-                
-                const topIdx = probs.indexOf(Math.max(...probs));
-                baseEmo = emotions[topIdx] || 'neutral';
-                baseConf = probs[topIdx];
+              } catch (inferErr) {
+                console.warn('[FaceAPI] Custom EmoSense Colab-trained model inference failed, using face-api fallback:', inferErr.message);
+                // Fallback to standard face-api.js expression detection
+                const exps = det.expressions;
+                for (const [e, c] of Object.entries(exps)) {
+                  if (c > baseConf) { baseConf = c; baseEmo = e; }
+                }
               }
-            } catch (inferErr) {
-              console.warn('[FaceAPI] Custom EmoSense Colab-trained model inference failed, using face-api fallback:', inferErr.message);
+            } else {
               // Fallback to standard face-api.js expression detection
               const exps = det.expressions;
               for (const [e, c] of Object.entries(exps)) {
                 if (c > baseConf) { baseConf = c; baseEmo = e; }
               }
             }
-          } else {
-            // Fallback to standard face-api.js expression detection
-            const exps = det.expressions;
-            for (const [e, c] of Object.entries(exps)) {
-              if (c > baseConf) { baseConf = c; baseEmo = e; }
+
+            if (baseEmo === 'surprised' || baseEmo === 'disgusted') baseEmo = 'neutral';
+            if (baseEmo === 'fearful') baseEmo = 'sad';
+
+            if (!customSuccess) {
+              // Custom CNN was not confident enough — trust the standard model
+              dEmo = baseEmo;
+              maxConf = baseConf;
+            } else if (baseConf > 0.85 && baseEmo !== dEmo) {
+              // Standard model is very confident and disagrees with custom CNN —
+              // blend: the well-trained standard model wins on high-confidence calls
+              dEmo = baseEmo;
+              maxConf = baseConf;
             }
-          }
+            // Otherwise: customSuccess=true and confidence ≥ 0.60 → use custom CNN result
 
-          if (baseEmo === 'surprised' || baseEmo === 'disgusted') baseEmo = 'neutral';
-          if (baseEmo === 'fearful') baseEmo = 'sad';
-
-          if (!customSuccess) {
-            // Custom CNN was not confident enough — trust the standard model
-            dEmo = baseEmo;
-            maxConf = baseConf;
-          } else if (baseConf > 0.85 && baseEmo !== dEmo) {
-            // Standard model is very confident and disagrees with custom CNN —
-            // blend: the well-trained standard model wins on high-confidence calls
-            dEmo = baseEmo;
-            maxConf = baseConf;
+            // Cache the predicted state
+            lastPredictionRef.current = { dEmo, maxConf, customSuccess };
           }
-          // Otherwise: customSuccess=true and confidence ≥ 0.60 → use custom CNN result
 
           // Micro-interactions on emotion change
           if (dEmo !== lastEmoRef.current) {
