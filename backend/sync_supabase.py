@@ -56,7 +56,11 @@ def main():
     db_url = load_db_url()
     if not db_url:
         print("Fatal: Could not parse DATABASE_URL from .env")
-        return
+        sys.exit(1)
+
+    # Normalize connection string prefix (e.g. postgres:// to postgresql://)
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
 
     print("Connecting to Supabase PostgreSQL database...")
     try:
