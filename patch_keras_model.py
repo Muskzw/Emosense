@@ -1,10 +1,23 @@
+import sys
 import json
 import zipfile
 import shutil
 import os
+from pathlib import Path
 
-keras_path = "/home/elon/Downloads/emosense_model.keras"
-temp_path = "/home/elon/Downloads/emosense_model_temp.keras"
+# Resolve paths dynamically relative to the repository root
+project_root = Path(__file__).resolve().parent
+
+# Check repository root first, then fallback to local Downloads folder
+keras_path_root = project_root / 'emosense_model.keras'
+keras_path_downloads = Path('/home/elon/Downloads/emosense_model.keras')
+
+if keras_path_root.exists():
+    keras_path = str(keras_path_root)
+else:
+    keras_path = str(keras_path_downloads)
+
+temp_path = str(project_root / 'emosense_model_temp.keras')
 
 print("--- EmoSense Keras Model Compatibility Patcher ---")
 
