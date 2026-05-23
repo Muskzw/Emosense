@@ -495,7 +495,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
             // - Otherwise, we fully trust the robust, pre-trained standard face-api.js expressions.
             // - This guarantees perfectly accurate detections out of the box while allowing the custom model
             //   to organically take over high-confidence predictions as it gains training samples in Supabase.
-            const isColabModelHighlyConfident = emoSenseModelLoaded && (baseConf >= 0.85);
+            const isColabModelHighlyConfident = emosenseModelLoaded && (baseConf >= 0.85);
             const isHierarchicalModelConfident = customModelsLoaded && customModelsRef.current && (maxConf >= 0.65);
 
             if (isColabModelHighlyConfident) {
