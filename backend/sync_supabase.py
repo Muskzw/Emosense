@@ -53,7 +53,44 @@ def main():
 
     print("Connecting to Supabase PostgreSQL database...")
     try:
-        conn = psycopg2.connect(db_url)
+        # Robust manual parser to handle passwords containing '@' symbols
+        if db_url.startswith("postgresql://"):
+            clean_str = db_url[len("postgresql://"):]
+            if '@' in clean_str:
+                creds, connection_part = clean_str.rsplit('@', 1)
+                
+                # Parse user & password
+                if ':' in creds:
+                    user, password = creds.split(':', 1)
+                else:
+                    user = creds
+                    password = ""
+                
+                # Parse host, port, db
+                if '/' in connection_part:
+                    host_port, db = connection_part.split('/', 1)
+                else:
+                    host_port = connection_part
+                    db = "postgres"
+                    
+                if ':' in host_port:
+                    host, port = host_port.split(':', 1)
+                else:
+                    host = host_port
+                    port = "5432"
+                
+                conn = psycopg2.connect(
+                    user=user,
+                    password=password,
+                    host=host,
+                    port=port,
+                    database=db
+                )
+            else:
+                conn = psycopg2.connect(db_url)
+        else:
+            conn = psycopg2.connect(db_url)
+            
         cur = conn.cursor()
     except Exception as e:
         print(f"Fatal Connection Error: {e}")
