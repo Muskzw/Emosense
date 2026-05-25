@@ -38,6 +38,15 @@
   --sb: env(safe-area-inset-bottom, 0px);
   --sl: env(safe-area-inset-left, 0px);
   --sr: env(safe-area-inset-right, 0px);
+
+  /* ── Auth Animated Background Variables (Dark Default) ── */
+  --auth-bg: radial-gradient(circle at center, #0f111a 0%, #050608 100%);
+  --auth-grid: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  --auth-orb1: radial-gradient(circle, rgba(0, 122, 255, 0.18) 0%, transparent 70%);
+  --auth-orb2: radial-gradient(circle, rgba(61, 255, 160, 0.14) 0%, transparent 70%);
+  --auth-backlight: radial-gradient(circle, rgba(0, 122, 255, 0.08) 0%, transparent 70%);
+  --auth-card-border: 1px solid rgba(255, 255, 255, 0.08);
+  --auth-card-shadow: 0 24px 80px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 /* ── EmoSense Premium Light Palette (OS theme light fallback / explicit light theme) ── */
@@ -70,10 +79,67 @@ html[data-theme="light"] {
   --shadow: rgba(0, 0, 0, 0.08);
   --gb: rgba(39, 174, 96, 0.35);
   --gd: rgba(39, 174, 96, 0.12);
+
+  /* ── Auth Animated Background Variables (Light Theme) ── */
+  --auth-bg: radial-gradient(circle at center, #f4f6fa 0%, #e1e4eb 100%);
+  --auth-grid: linear-gradient(rgba(0, 0, 0, 0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.015) 1px, transparent 1px);
+  --auth-orb1: radial-gradient(circle, rgba(0, 122, 255, 0.08) 0%, transparent 75%);
+  --auth-orb2: radial-gradient(circle, rgba(39, 174, 96, 0.06) 0%, transparent 75%);
+  --auth-backlight: radial-gradient(circle, rgba(0, 122, 255, 0.04) 0%, transparent 70%);
+  --auth-card-border: 1px solid rgba(0, 0, 0, 0.06);
+  --auth-card-shadow: 0 24px 80px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 html[data-theme="dark"] {
   color-scheme: dark;
+  --auth-bg: radial-gradient(circle at center, #0f111a 0%, #050608 100%);
+  --auth-grid: linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  --auth-orb1: radial-gradient(circle, rgba(0, 122, 255, 0.18) 0%, transparent 70%);
+  --auth-orb2: radial-gradient(circle, rgba(61, 255, 160, 0.14) 0%, transparent 70%);
+  --auth-backlight: radial-gradient(circle, rgba(0, 122, 255, 0.08) 0%, transparent 70%);
+  --auth-card-border: 1px solid rgba(255, 255, 255, 0.08);
+  --auth-card-shadow: 0 24px 80px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Native prefers-color-scheme media query for zero JS delay theme loading */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg:          #f5f6fa;
+    --surf:        #ffffff;
+    --surf2:       #eef1f6;
+    --card-bg:     rgba(255, 255, 255, 0.9);
+    --bd:          #d0d7de;
+    --bd2:         rgba(0, 0, 0, 0.08);
+    --bd3:         rgba(0, 0, 0, 0.15);
+    --border:      #d0d7de;
+    --accent-blue: #007aff;
+    --accent-green: #27ae60;
+    --danger-live-red: #d11a2a;
+    --primary-text: #1a1f2c;
+    --muted-text:   #5c6479;
+    --hint-text:    #8f95a5;
+
+    --txt:   #1a1f2c;
+    --muted: #5c6479;
+    --dim:   #8f95a5;
+    --green: #27ae60;
+    --blue:  #007aff;
+    --red:   #d11a2a;
+    --amber: #f39c12;
+    --slate: #5c6479;
+    --input-bg: rgba(255, 255, 255, 0.8);
+    --shadow: rgba(0, 0, 0, 0.08);
+    --gb: rgba(39, 174, 96, 0.35);
+    --gd: rgba(39, 174, 96, 0.12);
+
+    --auth-bg: radial-gradient(circle at center, #f4f6fa 0%, #e1e4eb 100%);
+    --auth-grid: linear-gradient(rgba(0, 0, 0, 0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.015) 1px, transparent 1px);
+    --auth-orb1: radial-gradient(circle, rgba(0, 122, 255, 0.08) 0%, transparent 75%);
+    --auth-orb2: radial-gradient(circle, rgba(39, 174, 96, 0.06) 0%, transparent 75%);
+    --auth-backlight: radial-gradient(circle, rgba(0, 122, 255, 0.04) 0%, transparent 70%);
+    --auth-card-border: 1px solid rgba(0, 0, 0, 0.06);
+    --auth-card-shadow: 0 24px 80px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}

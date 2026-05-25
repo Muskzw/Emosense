@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabase';
 import { useLang, LangSwitcher } from '../context/LangContext';
+import { useTheme } from '../hooks/useTheme';
 import { LogIn, UserPlus, Mail, Lock, User, Loader2, AlertCircle, CheckCircle2, Building2, Briefcase, MapPin } from 'lucide-react';
 
 const InputRow = ({ label, icon: Icon, type, value, onChange, placeholder, required, options, disabled }) => (
@@ -39,6 +40,8 @@ const GoogleIcon = () => (
 
 export default function Auth() {
   const { lang, t } = useLang();
+  const theme = useTheme();
+  const isDark = theme === 'dark';
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
@@ -106,12 +109,22 @@ export default function Auth() {
     }
   };
 
+  const styles = {
+    screenBg: 'var(--auth-bg)',
+    gridImage: 'var(--auth-grid)',
+    orb1Bg: 'var(--auth-orb1)',
+    orb2Bg: 'var(--auth-orb2)',
+    backlightBg: 'var(--auth-backlight)',
+    cardBorder: 'var(--auth-card-border)',
+    cardShadow: 'var(--auth-card-shadow)',
+  };
+
   return (
     <div className="screen active" style={{
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'radial-gradient(circle at center, #0f111a 0%, #050608 100%)',
+      background: styles.screenBg,
       padding: '20px',
       position: 'relative',
       overflow: 'hidden',
@@ -123,10 +136,7 @@ export default function Auth() {
       <div style={{
         position: 'absolute',
         inset: 0,
-        backgroundImage: `
-          linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px)
-        `,
+        backgroundImage: styles.gridImage,
         backgroundSize: '45px 45px',
         backgroundPosition: 'center',
         opacity: 0.85,
@@ -142,7 +152,7 @@ export default function Auth() {
         width: '60vw',
         height: '60vw',
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(0, 122, 255, 0.18) 0%, transparent 70%)',
+        background: styles.orb1Bg,
         filter: 'blur(100px)',
         pointerEvents: 'none',
         zIndex: 1,
@@ -157,7 +167,7 @@ export default function Auth() {
         width: '60vw',
         height: '60vw',
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(61, 255, 160, 0.14) 0%, transparent 70%)',
+        background: styles.orb2Bg,
         filter: 'blur(100px)',
         pointerEvents: 'none',
         zIndex: 1,
@@ -169,7 +179,7 @@ export default function Auth() {
         position: 'absolute',
         width: '550px',
         height: '550px',
-        background: 'radial-gradient(circle, rgba(0, 122, 255, 0.08) 0%, transparent 70%)',
+        background: styles.backlightBg,
         filter: 'blur(120px)',
         pointerEvents: 'none',
         zIndex: 1,
@@ -224,8 +234,8 @@ export default function Auth() {
         maxHeight: '90svh',
         overflowY: 'auto',
         zIndex: 5,
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        boxShadow: '0 24px 80px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+        border: styles.cardBorder,
+        boxShadow: styles.cardShadow,
         transition: 'max-width 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
       }}>
         
