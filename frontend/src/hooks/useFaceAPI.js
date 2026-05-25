@@ -101,6 +101,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
   
   const frameCountRef = useRef(0);
   const lastPredictionRef = useRef({ dEmo: 'neutral', maxConf: 0.8, customSuccess: false });
+  const predictionHistoryRef = useRef([]);
 
   // ── Load face-api.js base models (once) ────────────────────────
   useEffect(() => {
@@ -409,7 +410,10 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
                       // 'up' (Class 1) → Route to anger_sad: Class 0 = 'anger' (angry), Class 1 = 'sad'
                       const p3 = m3.predict(processed);
                       const p3Data = await p3.data();
-                      const class2Idx = p3Data[0] > p3Data[1] ? 0 : 1;
+                      // Apply sensitivity multipliers inside the submodel prediction: Class 0 (angry) x 1.35, Class 1 (sad) x 1.35
+                      const adjustedAnger = p3Data[0] * 1.35;
+                      const adjustedSad = p3Data[1] * 1.35;
+                      const class2Idx = adjustedAnger > adjustedSad ? 0 : 1;
                       dEmo = class2Idx === 0 ? 'angry' : 'sad';
                       maxConf = p3Data[class2Idx];
                       tf.dispose(p3);
@@ -430,7 +434,10 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
                       // 'down' → Route to anger_sad: Class 0 = 'anger' (angry), Class 1 = 'sadness' (sad)
                       const p3 = m3.predict(processed);
                       const p3Data = await p3.data();
-                      const class2Idx = p3Data[0] > p3Data[1] ? 0 : 1;
+                      // Apply sensitivity multipliers inside the submodel prediction: Class 0 (angry) x 1.35, Class 1 (sad) x 1.35
+                      const adjustedAnger = p3Data[0] * 1.35;
+                      const adjustedSad = p3Data[1] * 1.35;
+                      const class2Idx = adjustedAnger > adjustedSad ? 0 : 1;
                       dEmo = class2Idx === 0 ? 'angry' : 'sad';
                       maxConf = p3Data[class2Idx];
                       tf.dispose(p3);
@@ -553,6 +560,27 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
               maxConf = standardConf;
               customSuccess = false;
             }
+
+            // Temporal smoothing filter to eliminate emotion flickering and boost subjective accuracy
+            predictionHistoryRef.current.push(dEmo);
+            if (predictionHistoryRef.current.length > 7) {
+              predictionHistoryRef.current.shift();
+            }
+
+            // Find the majority vote (mode) in the history window
+            const votes = {};
+            predictionHistoryRef.current.forEach(e => {
+              votes[e] = (votes[e] || 0) + 1;
+            });
+            let dominantEmo = dEmo;
+            let maxVotes = 0;
+            for (const [e, count] of Object.entries(votes)) {
+              if (count > maxVotes) {
+                maxVotes = count;
+                dominantEmo = e;
+              }
+            }
+            dEmo = dominantEmo;
 
             // Cache the predicted state
             lastPredictionRef.current = { dEmo, maxConf, customSuccess };
