@@ -444,10 +444,10 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
 
         @media (max-width: 768px) {
           .mr-main {
-            padding: 10px 16px;
+            padding: 24px 16px 20px;
             justify-content: flex-start;
             overflow-y: auto;
-            gap: 12px;
+            gap: 16px;
           }
           .mr-video-container {
             aspect-ratio: 4/3;
@@ -455,7 +455,7 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
             max-height: none;
             border-radius: 24px;
             animation: none;
-            margin: 0 auto;
+            margin: 16px auto;
           }
           .mr-controls {
             flex-direction: column;

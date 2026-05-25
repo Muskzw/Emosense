@@ -908,9 +908,9 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
 
           .cv-video-card {
             width: 100% !important;
-            max-width: 100% !important;
+            max-width: min(960px, 66vw) !important;
             height: auto !important;
-            max-height: 100% !important;
+            max-height: calc(100vh - 240px) !important;
             aspect-ratio: 16/9 !important;
             background: rgba(10,10,15,0.75) !important;
             backdrop-filter: blur(20px) !important;
@@ -925,7 +925,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           }
 
           .cv-sidebar {
-            width: 210px !important;
+            width: 280px !important;
             flex-shrink: 0 !important;
             display: flex !important;
             flex-direction: column !important;
@@ -934,6 +934,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             height: 100% !important;
             max-height: 100% !important;
             scrollbar-width: none !important;
+            padding-top: 60px !important; /* Elegant vertical padding to clear top-right language flags */
           }
           .cv-sidebar::-webkit-scrollbar {
             display: none !important;
@@ -943,12 +944,12 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             backdrop-filter: blur(40px) saturate(180%) !important;
             border: 1px solid rgba(255,255,255,0.1) !important;
             border-radius: 16px !important;
-            padding: 12px !important; /* Made compact to fit exactly 210px sidebars */
+            padding: 20px !important; /* Expanded padding for clean breathing room */
             box-shadow: 0 8px 32px rgba(0,0,0,0.2) !important;
           }
           .cv-pip {
             position: absolute !important;
-            bottom: 110px !important; /* Pos bottom-left above control bar */
+            bottom: 24px !important; /* Pos in bottom-left corner of video card */
             left: 24px !important;
             right: auto !important;
             top: auto !important;
@@ -1033,7 +1034,17 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             padding: 0 !important;
           }
           .cv-desktop-timer-hide { display: none !important; }
-          .cv-ai-status { position: static !important; margin-top: auto; }
+          .cv-ai-status {
+            position: absolute !important;
+            top: 14px !important;
+            right: 14px !important;
+            margin: 0 !important;
+            z-index: 10 !important;
+            font-size: 11px !important;
+            padding: 5px 10px !important;
+            background: rgba(255, 255, 255, 0.06) !important;
+            border: 1px solid rgba(255, 255, 255, 0.12) !important;
+          }
           .remote-stats-overlay {
             position: absolute !important;
             top: 24px !important;
@@ -1043,6 +1054,38 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             flex-direction: column !important;
             gap: 8px !important;
             pointer-events: none !important;
+          }
+          
+          /* Overrides for Desktop Badges to enhance dimensions exclusively on desktop view */
+          .emotion-badge {
+            padding: 6px 14px !important;
+            font-size: 12px !important;
+          }
+          .stat-indicator-dot {
+            width: 10px !important;
+            height: 10px !important;
+          }
+          .cv-timer-val {
+            font-size: 34px !important;
+          }
+          .stat-lbl-desktop {
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            color: rgba(255, 255, 255, 0.5) !important;
+            letter-spacing: 0.08em !important;
+            text-transform: uppercase !important;
+          }
+          .alignment-gauge-title {
+            font-size: 11.5px !important;
+          }
+          .alignment-gauge-value {
+            font-size: 24px !important;
+          }
+          .alignment-desc div:first-child {
+            font-size: 13px !important;
+          }
+          .alignment-desc div:last-child {
+            font-size: 12px !important;
           }
         }
 
@@ -1520,13 +1563,13 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
               return Object.entries(EMO).map(([k, v]) => {
                 const pct = pcts[k] || 0;
                 return (
-                  <div key={k} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '10px', fontFamily: 'var(--sans)', fontWeight: '600', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{t(k)}</span>
-                      <span style={{ fontSize: '10px', fontFamily: 'var(--mono)', fontWeight: '700', color: 'var(--primary-text)' }}>{pct}%</span>
+                  <div key={k} className="emo-item">
+                    <div style={S.emoHead}>
+                      <span className="emo-name" style={{ fontSize: '10px', fontFamily: 'var(--sans)', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{t(k)}</span>
+                      <span className="emo-pct" style={{ fontSize: '11px', fontFamily: 'var(--mono)', fontWeight: '700', color: '#ffffff' }}>{pct}%</span>
                     </div>
-                    <div style={{ height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${pct}%`, background: v.c, transition: 'width 0.3s ease, background 0.3s ease', borderRadius: '2px' }} />
+                    <div style={S.emoTrack}>
+                      <div style={{ height: '100%', width: `${pct}%`, background: v.c, transition: 'width 0.3s ease, background 0.3s ease', borderRadius: '999px' }} />
                     </div>
                   </div>
                 );
@@ -1538,13 +1581,6 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
         {/* RIGHT: SIDEBAR */}
         <aside className="cv-sidebar">
           
-          {/* Timer Card */}
-          <div className="cv-side-card cv-timer-wrap">
-            <div style={S.statLbl}>{lt.sessionDuration}</div>
-            <div className="cv-timer-val">{timerStr}</div>
-            <div style={{ ...S.ctxBadge, display: 'inline-block', marginTop: '10px' }}>{sessionInfo.ctx}</div>
-          </div>
-
           {/* Cultural Alignment Card */}
           <div className="alignment-gauge-container">
             <div className="alignment-gauge-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
@@ -1628,18 +1664,6 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                 })()}
               </div>
             </div>
-
-            <div className="cv-ai-status" style={S.aiStatus}>
-              <div style={{ position: 'relative', width: '8px', height: '8px', flexShrink: 0 }}>
-                <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: modelsLoaded ? '#34c759' : '#ffb347' }} />
-                {modelsLoaded && (
-                  <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#34c759', animation: 'ping 1.8s ease-out infinite' }} />
-                )}
-              </div>
-              {modelsLoaded ? t('aiActive') : t('aiLoading')}
-            </div>
-
-
           </div>
         </aside>
       </div>
@@ -1719,6 +1743,26 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                 <path d="M2.5 14c0-3.04 2.46-5.5 5.5-5.5s5.5 2.46 5.5 5.5" stroke="rgba(255,255,255,0.8)" strokeWidth="1.2" strokeLinecap="round"/>
               </svg>
             </div>
+            
+            {/* AI models active badge next to human icon on desktop */}
+            <div className="cv-ai-status-header" style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '5px 12px', borderRadius: '999px',
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.12)',
+              fontSize: '11px', fontWeight: '600', color: 'rgba(255,255,255,0.8)',
+              fontFamily: 'var(--mono)',
+              marginLeft: '12px',
+            }}>
+              <div style={{ position: 'relative', width: '6px', height: '6px', flexShrink: 0 }}>
+                <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: modelsLoaded ? '#34c759' : '#ffb347' }} />
+                {modelsLoaded && (
+                  <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#34c759', animation: 'ping 1.8s ease-out infinite' }} />
+                )}
+              </div>
+              {modelsLoaded ? t('aiActive') : t('aiLoading')}
+            </div>
+
             {isConnected && (
               <div style={S.livePill}>
                 <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#ff3b30', animation: 'ping 1.4s cubic-bezier(0,0,0.2,1) infinite' }} />
@@ -1726,9 +1770,9 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
               </div>
             )}
           </div>
-          <div className="cv-desktop-timer-hide" style={S.timer}>{timerStr}</div>
+          <div style={S.timer}>{timerStr}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', pointerEvents: 'all' }}>
-            <div className="cv-desktop-timer-hide" style={{ ...S.ctxBadge, margin: 0 }}>{sessionInfo.ctx}</div>
+            <div style={{ ...S.ctxBadge, margin: 0 }}>{sessionInfo.ctx}</div>
             <LangSwitcher />
           </div>
         </div>
