@@ -176,7 +176,7 @@ export default function Auth() {
         animation: 'cardGlow 10s infinite alternate ease-in-out',
       }} />
 
-      {/* Dynamic Keyframes Styling */}
+      {/* Dynamic Keyframes & Responsive Desktop Grid Styling */}
       <style>{`
         @keyframes pulseOrb1 {
           0% { transform: translate(0, 0) scale(1); opacity: 0.8; }
@@ -190,10 +190,34 @@ export default function Auth() {
           0% { transform: scale(0.9) translate(-50%, -50%); opacity: 0.6; }
           100% { transform: scale(1.1) translate(-50%, -50%); opacity: 1; }
         }
+
+        /* Responsive Desktop styles for Auth card */
+        @media (min-width: 768px) {
+          .auth-card-desktop {
+            max-width: ${isSignUp ? '800px' : '440px'} !important;
+            transition: max-width 0.45s cubic-bezier(0.16, 1, 0.3, 1) !important;
+          }
+          .auth-fields-grid {
+            display: ${isSignUp ? 'grid' : 'flex'} !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 20px 24px !important;
+            text-align: left !important;
+          }
+          .auth-header-desktop {
+            grid-column: span 2 !important;
+            margin-bottom: 8px !important;
+          }
+          .auth-actions-desktop {
+            grid-column: span 2 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+          }
+        }
       `}</style>
 
       {/* Glassmorphic Login/Registration Card */}
-      <div className="lob-card" style={{
+      <div className="lob-card auth-card-desktop" style={{
         position: 'relative',
         maxWidth: '440px',
         width: '100%',
@@ -202,6 +226,7 @@ export default function Auth() {
         zIndex: 5,
         border: '1px solid rgba(255, 255, 255, 0.08)',
         boxShadow: '0 24px 80px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+        transition: 'max-width 0.45s cubic-bezier(0.16, 1, 0.3, 1)',
       }}>
         
         {/* Floating Language Switcher */}
@@ -210,7 +235,7 @@ export default function Auth() {
         </div>
 
         {/* Header */}
-        <div style={{ textAlign: 'center', paddingRight: '60px', paddingLeft: '60px' }}>
+        <div className="auth-header-desktop" style={{ textAlign: 'center', paddingRight: '60px', paddingLeft: '60px' }}>
           <div className="lob-mark" style={{ margin: '0 auto 16px', width: '48px', height: '48px' }}>
             {isSignUp ? <UserPlus size={22} color="var(--green)" /> : <LogIn size={22} color="var(--green)" />}
           </div>
@@ -223,20 +248,45 @@ export default function Auth() {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleAuth} className="lob-fields" style={{ marginTop: '16px' }}>
-          {isSignUp && (
+        <form onSubmit={handleAuth} className="auth-fields-grid" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {isSignUp ? (
             <>
-              <InputRow
-                label={t('fullName')}
-                icon={User}
-                type="text"
-                placeholder={t('namePlaceholder')}
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                disabled={loading}
-              />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              {/* Left Column: Personal Details */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <InputRow
+                  label={t('fullName')}
+                  icon={User}
+                  type="text"
+                  placeholder={t('namePlaceholder')}
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+                <InputRow
+                  label={t('email')}
+                  icon={Mail}
+                  type="email"
+                  placeholder="name@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+                <InputRow
+                  label={t('password')}
+                  icon={Lock}
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              {/* Right Column: Professional & Location Details */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <InputRow
                   label={t('organization')}
                   icon={Building2}
@@ -255,115 +305,121 @@ export default function Auth() {
                   onChange={(e) => setRole(e.target.value)}
                   disabled={loading}
                 />
+                <InputRow
+                  label={t('location')}
+                  icon={MapPin}
+                  type="select"
+                  options={[
+                    { value: 'Zimbabwe', label: lang === 'zh' ? '津巴布韦' : 'Zimbabwe' },
+                    { value: 'China', label: lang === 'zh' ? '中国' : 'China' },
+                    { value: 'Other', label: lang === 'zh' ? '其他' : (lang === 'sn' ? 'Zvimwe' : 'Other') }
+                  ]}
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  disabled={loading}
+                />
               </div>
+            </>
+          ) : (
+            // Sign In: single column vertical layout
+            <>
               <InputRow
-                label={t('location')}
-                icon={MapPin}
-                type="select"
-                options={[
-                  { value: 'Zimbabwe', label: lang === 'zh' ? '津巴布韦' : 'Zimbabwe' },
-                  { value: 'China', label: lang === 'zh' ? '中国' : 'China' },
-                  { value: 'Other', label: lang === 'zh' ? '其他' : (lang === 'sn' ? 'Zvimwe' : 'Other') }
-                ]}
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
+                label={t('email')}
+                icon={Mail}
+                type="email"
+                placeholder="name@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={loading}
+              />
+              <InputRow
+                label={t('password')}
+                icon={Lock}
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
                 disabled={loading}
               />
             </>
           )}
-          
-          <InputRow
-            label={t('email')}
-            icon={Mail}
-            type="email"
-            placeholder="name@company.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            disabled={loading}
-          />
-          <InputRow
-            label={t('password')}
-            icon={Lock}
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={loading}
-          />
 
-          {/* Error */}
-          {error && (
-            <div style={{ display: 'flex', gap: '8px', color: 'var(--red)', fontSize: '12px', background: 'rgba(255,59,48,0.08)', padding: '10px 12px', borderRadius: '10px', border: '0.5px solid rgba(255,59,48,0.2)', alignItems: 'flex-start' }}>
-              <AlertCircle size={14} style={{ flexShrink: 0, marginTop: '1px' }} />
-              <span>{error}</span>
+          {/* Action buttons and notifications (span both columns on desktop) */}
+          <div className="auth-actions-desktop" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {/* Error */}
+            {error && (
+              <div style={{ display: 'flex', gap: '8px', color: 'var(--red)', fontSize: '12px', background: 'rgba(255,59,48,0.08)', padding: '10px 12px', borderRadius: '10px', border: '0.5px solid rgba(255,59,48,0.2)', alignItems: 'flex-start' }}>
+                <AlertCircle size={14} style={{ flexShrink: 0, marginTop: '1px' }} />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {/* Success */}
+            {message && (
+              <div style={{ display: 'flex', gap: '8px', color: 'var(--green)', fontSize: '12px', background: 'var(--gd)', padding: '10px 12px', borderRadius: '10px', border: '0.5px solid var(--gb)', alignItems: 'flex-start' }}>
+                <CheckCircle2 size={14} style={{ flexShrink: 0, marginTop: '1px' }} />
+                <span>{message}</span>
+              </div>
+            )}
+
+            <button type="submit" className="btn-start" disabled={loading} style={{ marginTop: '8px' }}>
+              {loading
+                ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
+                : isSignUp ? <UserPlus size={18} /> : <LogIn size={18} />
+              }
+              <span>{loading ? t('pleaseWait') : isSignUp ? t('createAccount') : t('signIn')}</span>
+            </button>
+
+            {/* Divider */}
+            <div style={{ display: 'flex', alignItems: 'center', margin: '12px 0 6px' }}>
+              <div style={{ flex: 1, height: '1px', background: 'var(--border)', opacity: 0.5 }}></div>
+              <span style={{ margin: '0 12px', fontSize: '13px', color: 'var(--text-dim)', fontWeight: '500' }}>{t('or')}</span>
+              <div style={{ flex: 1, height: '1px', background: 'var(--border)', opacity: 0.5 }}></div>
             </div>
-          )}
 
-          {/* Success */}
-          {message && (
-            <div style={{ display: 'flex', gap: '8px', color: 'var(--green)', fontSize: '12px', background: 'var(--gd)', padding: '10px 12px', borderRadius: '10px', border: '0.5px solid var(--gb)', alignItems: 'flex-start' }}>
-              <CheckCircle2 size={14} style={{ flexShrink: 0, marginTop: '1px' }} />
-              <span>{message}</span>
+            {/* Google OAuth Button */}
+            <button 
+              type="button" 
+              onClick={handleGoogleLogin} 
+              disabled={loading}
+              style={{ 
+                width: '100%', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                gap: '10px', 
+                background: 'var(--b2)', 
+                border: '1px solid var(--border)', 
+                padding: '12px', 
+                borderRadius: '12px', 
+                color: 'var(--text)', 
+                fontSize: '14px', 
+                fontWeight: '500', 
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s',
+                opacity: loading ? 0.7 : 1
+              }}
+              onMouseOver={(e) => { if (!loading) e.currentTarget.style.background = 'var(--b3)' }}
+              onMouseOut={(e) => { if (!loading) e.currentTarget.style.background = 'var(--b2)' }}
+            >
+              <GoogleIcon />
+              {t('continueGoogle')}
+            </button>
+
+            {/* Toggle */}
+            <div style={{ textAlign: 'center', paddingTop: '10px' }}>
+              <button
+                type="button"
+                onClick={() => { setIsSignUp(!isSignUp); setError(null); setMessage(''); }}
+                style={{ background: 'none', border: 'none', color: 'var(--blue)', fontSize: '13px', cursor: 'pointer', fontWeight: '500', fontFamily: 'inherit' }}
+              >
+                {isSignUp ? t('haveAccount') : t('noAccount')}
+              </button>
             </div>
-          )}
-
-          <button type="submit" className="btn-start" disabled={loading} style={{ marginTop: '8px' }}>
-            {loading
-              ? <Loader2 size={18} style={{ animation: 'spin 1s linear infinite' }} />
-              : isSignUp ? <UserPlus size={18} /> : <LogIn size={18} />
-            }
-            <span>{loading ? t('pleaseWait') : isSignUp ? t('createAccount') : t('signIn')}</span>
-          </button>
+          </div>
         </form>
-
-        {/* Divider */}
-        <div style={{ display: 'flex', alignItems: 'center', margin: '24px 0 16px' }}>
-          <div style={{ flex: 1, height: '1px', background: 'var(--border)', opacity: 0.5 }}></div>
-          <span style={{ margin: '0 12px', fontSize: '13px', color: 'var(--text-dim)', fontWeight: '500' }}>{t('or')}</span>
-          <div style={{ flex: 1, height: '1px', background: 'var(--border)', opacity: 0.5 }}></div>
-        </div>
-
-        {/* Google OAuth Button */}
-        <button 
-          type="button" 
-          onClick={handleGoogleLogin} 
-          disabled={loading}
-          style={{ 
-            width: '100%', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            gap: '10px', 
-            background: 'var(--b2)', 
-            border: '1px solid var(--border)', 
-            padding: '12px', 
-            borderRadius: '12px', 
-            color: 'var(--text)', 
-            fontSize: '14px', 
-            fontWeight: '500', 
-            cursor: loading ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s',
-            opacity: loading ? 0.7 : 1
-          }}
-          onMouseOver={(e) => { if (!loading) e.currentTarget.style.background = 'var(--b3)' }}
-          onMouseOut={(e) => { if (!loading) e.currentTarget.style.background = 'var(--b2)' }}
-        >
-          <GoogleIcon />
-          {t('continueGoogle')}
-        </button>
-
-        {/* Toggle */}
-        <div style={{ textAlign: 'center', paddingTop: '20px' }}>
-          <button
-            type="button"
-            onClick={() => { setIsSignUp(!isSignUp); setError(null); setMessage(''); }}
-            style={{ background: 'none', border: 'none', color: 'var(--blue)', fontSize: '13px', cursor: 'pointer', fontWeight: '500', fontFamily: 'inherit' }}
-          >
-            {isSignUp ? t('haveAccount') : t('noAccount')}
-          </button>
-        </div>
 
       </div>
     </div>
