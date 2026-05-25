@@ -107,8 +107,102 @@ export default function Auth() {
   };
 
   return (
-    <div className="screen active" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: '20px' }}>
-      <div className="lob-card" style={{ position: 'relative', maxWidth: '440px', width: '100%', maxHeight: '90svh', overflowY: 'auto' }}>
+    <div className="screen active" style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'radial-gradient(circle at center, #0f111a 0%, #050608 100%)',
+      padding: '20px',
+      position: 'relative',
+      overflow: 'hidden',
+      height: '100dvh',
+      boxSizing: 'border-box'
+    }}>
+      {/* Premium Ambient Background Effects */}
+      {/* 1. Neon Grid Lines Overlay */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        backgroundImage: `
+          linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px)
+        `,
+        backgroundSize: '45px 45px',
+        backgroundPosition: 'center',
+        opacity: 0.85,
+        pointerEvents: 'none',
+        zIndex: 1,
+      }} />
+
+      {/* 2. Floating Cyan/Blue Ambient Orb */}
+      <div style={{
+        position: 'absolute',
+        top: '-15%',
+        left: '-15%',
+        width: '60vw',
+        height: '60vw',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(0, 122, 255, 0.18) 0%, transparent 70%)',
+        filter: 'blur(100px)',
+        pointerEvents: 'none',
+        zIndex: 1,
+        animation: 'pulseOrb1 15s infinite alternate ease-in-out',
+      }} />
+
+      {/* 3. Floating Emerald/Green Ambient Orb */}
+      <div style={{
+        position: 'absolute',
+        bottom: '-15%',
+        right: '-15%',
+        width: '60vw',
+        height: '60vw',
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(61, 255, 160, 0.14) 0%, transparent 70%)',
+        filter: 'blur(100px)',
+        pointerEvents: 'none',
+        zIndex: 1,
+        animation: 'pulseOrb2 20s infinite alternate ease-in-out',
+      }} />
+
+      {/* 4. Ambient backlight glow directly behind card */}
+      <div style={{
+        position: 'absolute',
+        width: '550px',
+        height: '550px',
+        background: 'radial-gradient(circle, rgba(0, 122, 255, 0.08) 0%, transparent 70%)',
+        filter: 'blur(120px)',
+        pointerEvents: 'none',
+        zIndex: 1,
+        animation: 'cardGlow 10s infinite alternate ease-in-out',
+      }} />
+
+      {/* Dynamic Keyframes Styling */}
+      <style>{`
+        @keyframes pulseOrb1 {
+          0% { transform: translate(0, 0) scale(1); opacity: 0.8; }
+          100% { transform: translate(100px, 50px) scale(1.2); opacity: 1; }
+        }
+        @keyframes pulseOrb2 {
+          0% { transform: translate(0, 0) scale(1.15); opacity: 0.7; }
+          100% { transform: translate(-80px, -50px) scale(0.9); opacity: 0.95; }
+        }
+        @keyframes cardGlow {
+          0% { transform: scale(0.9) translate(-50%, -50%); opacity: 0.6; }
+          100% { transform: scale(1.1) translate(-50%, -50%); opacity: 1; }
+        }
+      `}</style>
+
+      {/* Glassmorphic Login/Registration Card */}
+      <div className="lob-card" style={{
+        position: 'relative',
+        maxWidth: '440px',
+        width: '100%',
+        maxHeight: '90svh',
+        overflowY: 'auto',
+        zIndex: 5,
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        boxShadow: '0 24px 80px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+      }}>
         
         {/* Floating Language Switcher */}
         <div style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10 }}>
