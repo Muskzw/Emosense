@@ -186,7 +186,7 @@ export default function Auth() {
         animation: 'cardGlow 10s infinite alternate ease-in-out',
       }} />
 
-      {/* Dynamic Keyframes & Responsive Desktop Grid Styling */}
+      {/* Dynamic Keyframes & Responsive Grid Styling */}
       <style>{`
         @keyframes pulseOrb1 {
           0% { transform: translate(0, 0) scale(1); opacity: 0.8; }
@@ -199,6 +199,15 @@ export default function Auth() {
         @keyframes cardGlow {
           0% { transform: scale(0.9) translate(-50%, -50%); opacity: 0.6; }
           100% { transform: scale(1.1) translate(-50%, -50%); opacity: 1; }
+        }
+
+        /* Hide scrollbars visually but still allow scroll functionality */
+        .auth-card-desktop {
+          -ms-overflow-style: none !important;
+          scrollbar-width: none !important;
+        }
+        .auth-card-desktop::-webkit-scrollbar {
+          display: none !important;
         }
 
         /* Responsive Desktop styles for Auth card */
@@ -222,6 +231,48 @@ export default function Auth() {
             display: flex !important;
             flex-direction: column !important;
             gap: 12px !important;
+          }
+        }
+
+        /* Mobile Responsive spacing and font scaling */
+        @media (max-width: 480px) {
+          .auth-card-desktop {
+            padding: 16px 20px !important;
+            border-radius: 20px !important;
+            max-height: 94svh !important;
+          }
+          .auth-header-desktop {
+            padding-left: 10px !important;
+            padding-right: 10px !important;
+          }
+          .lob-mark {
+            margin: 0 auto 12px !important;
+            width: 40px !important;
+            height: 40px !important;
+          }
+          .lob-title {
+            font-size: 20px !important;
+          }
+          .lob-sub {
+            font-size: 13px !important;
+            margin-top: 4px !important;
+          }
+          .auth-fields-grid {
+            gap: 12px !important;
+            margin-top: 12px !important;
+          }
+          .fi {
+            padding-top: 10px !important;
+            padding-bottom: 10px !important;
+            font-size: 14px !important;
+          }
+          .fl-l {
+            font-size: 12px !important;
+            margin-bottom: 4px !important;
+          }
+          .btn-start {
+            padding: 12px !important;
+            font-size: 14px !important;
           }
         }
       `}</style>
