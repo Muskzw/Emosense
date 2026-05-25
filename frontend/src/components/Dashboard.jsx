@@ -334,8 +334,10 @@ export default function Dashboard({ onBack, session }) {
                 <div key={s.id} style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px',
                   padding: '16px 20px', background: 'var(--surf2)', border: '1px solid var(--bd2)',
-                  borderRadius: '14px', transition: 'background 0.2s'
+                  borderRadius: '14px', transition: 'background 0.2s',
+                  animationDelay: `${idx * 0.06}s`
                 }}
+                  className="session-row"
                   onMouseEnter={e => e.currentTarget.style.background = 'var(--surf)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'var(--surf2)'}
                 >

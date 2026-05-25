@@ -375,7 +375,8 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
 
                   if (culture === 'ZW') {
                     // ZW: Level 1 (down_up): Class 0 = 'down', Class 1 = 'up'
-                    const classIdx = p1Data[0] > p1Data[1] ? 0 : 1;
+                    // Apply a sensitivity boost (1.3) to negative emotions routing (Class 1)
+                    const classIdx = p1Data[0] > (p1Data[1] * 1.3) ? 0 : 1;
                     if (classIdx === 0) {
                       // 'down' (Class 0) → Route to happy_neutral
                       const p2 = m2.predict(processed);
@@ -395,7 +396,8 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
                     }
                   } else {
                     // CN: Level 1 (up_down): Class 0 = 'down', Class 1 = 'up'
-                    const classIdx = p1Data[0] > p1Data[1] ? 0 : 1;
+                    // Apply a sensitivity boost (1.3) to negative emotions routing (Class 0)
+                    const classIdx = (p1Data[0] * 1.3) > p1Data[1] ? 0 : 1;
                     if (classIdx === 1) {
                       // 'up' → Route to happy_neutral: Class 0 = 'happiness' (happy), Class 1 = 'neutral'
                       const p2 = m2.predict(processed);
@@ -432,8 +434,13 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
             let standardConf = 0;
             if (det.expressions) {
               for (const [e, c] of Object.entries(det.expressions)) {
-                if (c > standardConf) {
-                  standardConf = c;
+                // Apply baseline sensitivity multiplier to angry and sad
+                let adjustedConf = c;
+                if (e === 'sad') adjustedConf = c * 1.6;
+                if (e === 'angry') adjustedConf = c * 1.6;
+
+                if (adjustedConf > standardConf) {
+                  standardConf = adjustedConf;
                   standardEmo = e;
                 }
               }
@@ -480,9 +487,18 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
                     emotions = ['angry', 'happy', 'neutral', 'sad'];
                   }
                   
-                  const topIdx = probs.indexOf(Math.max(...probs));
+                  // Apply sensitivity boost for angry and sad to improve effectiveness
+                  let adjustedProbs = [...probs];
+                  if (probs.length === 4) {
+                    adjustedProbs[0] = probs[0] * 1.45; // Boost angry
+                    adjustedProbs[3] = probs[3] * 1.45; // Boost sad
+                  } else if (probs.length === 3) {
+                    adjustedProbs[2] = probs[2] * 1.45; // Boost sad
+                  }
+                  
+                  const topIdx = adjustedProbs.indexOf(Math.max(...adjustedProbs));
                   baseEmo = emotions[topIdx] || 'neutral';
-                  baseConf = probs[topIdx];
+                  baseConf = probs[topIdx]; // Keep original confidence score for logs
                 }
               } catch (inferErr) {
                 console.warn('[FaceAPI] Custom EmoSense model inference failed:', inferErr.message);

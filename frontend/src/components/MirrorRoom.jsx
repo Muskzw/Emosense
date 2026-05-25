@@ -380,6 +380,11 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           gap: 10px;
         }
 
+        @keyframes mrBtnPulse {
+          0%, 100% { box-shadow: 0 10px 24px rgba(91,156,246,0.3), inset 0 1px 0 rgba(255,255,255,0.2); }
+          50% { box-shadow: 0 10px 32px 6px rgba(91,156,246,0.65), inset 0 1px 0 rgba(255,255,255,0.25); }
+        }
+
         .mr-btn-primary {
           background: linear-gradient(135deg, #5b9cf6 0%, #3a7bd5 100%);
           color: white;
@@ -397,8 +402,12 @@ export default function MirrorRoom({ webRTC, sessionInfo, onJoin, onBack }) {
           white-space: nowrap;
         }
 
+        .mr-btn-primary:not(:disabled) {
+          animation: mrBtnPulse 3s ease-in-out infinite;
+        }
+
         .mr-btn-primary:hover:not(:disabled) {
-          transform: translateY(-2px);
+          transform: translateY(-2px) scale(1.02);
           box-shadow: 0 15px 35px rgba(91,156,246,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
         }
 
