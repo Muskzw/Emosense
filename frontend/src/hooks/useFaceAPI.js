@@ -12,6 +12,11 @@ const CMAP = { happy: 'cg', neutral: 'cs', sad: 'cb', angry: 'cr' };
 
 // Dynamic script loader removed in favor of using built-in faceapi.tf
 
+// Module-level caches to survive React component unmounts/mounts
+let globalBaseModelsLoaded = false;
+let globalEmosenseModel = null;
+let globalCustomModels = {}; // maps culture code -> { m1, m2, m3, culture }
+
 const getCultureCode = (ctx) => {
   const s = String(ctx || '').toLowerCase();
   if (s.includes('china') || s.includes('chinese') || s.includes('cn')) return 'CN';
@@ -58,7 +63,7 @@ function mapVideoCoordinates(pt, video) {
 }
 
 export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx, optIn = false) {
-  const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [modelsLoaded, setModelsLoaded] = useState(globalBaseModelsLoaded);
   const [customModelsLoaded, setCustomModelsLoaded] = useState(false);
   const [modelError, setModelError]     = useState(false);
   const [curEmo, setCurEmo]             = useState('neutral');
@@ -92,7 +97,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
   const localCanvasRef  = useRef(null);
   
   const emoSenseModelRef = useRef(null);
-  const [emosenseModelLoaded, setEmosenseModelLoaded] = useState(false);
+  const [emosenseModelLoaded, setEmosenseModelLoaded] = useState(!!globalEmosenseModel);
   
   const frameCountRef = useRef(0);
   const lastPredictionRef = useRef({ dEmo: 'neutral', maxConf: 0.8, customSuccess: false });
@@ -101,6 +106,11 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
   useEffect(() => {
     (async () => {
       try {
+        if (globalBaseModelsLoaded) {
+          emoSenseModelRef.current = globalEmosenseModel;
+          return;
+        }
+
         // Force face-api.js internal TensorFlow.js to use WebGL backend
         if (faceapi.tf && typeof faceapi.tf.setBackend === 'function') {
           try {
@@ -128,6 +138,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
           const customBaseModel = await faceapi.tf.loadGraphModel('/models/emosense-model/model.json');
           if (customBaseModel) {
             emoSenseModelRef.current = customBaseModel;
+            globalEmosenseModel = customBaseModel;
             setEmosenseModelLoaded(true);
             console.log('[FaceAPI] Custom EmoSense Colab-trained model loaded successfully ✓');
           }
@@ -135,6 +146,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
           console.warn('[FaceAPI] Custom EmoSense Colab-trained model not found or failed to load. Using face-api fallback.', tfjsErr.message);
         }
         
+        globalBaseModelsLoaded = true;
         setModelsLoaded(true);
         console.log('[FaceAPI] Base models loaded ✓');
       } catch (e) {
@@ -150,6 +162,12 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
     if (!culture) {
       setCustomModelsLoaded(false);
       customModelsRef.current = null;
+      return;
+    }
+
+    if (globalCustomModels[culture]) {
+      customModelsRef.current = globalCustomModels[culture];
+      setCustomModelsLoaded(true);
       return;
     }
 
@@ -174,7 +192,9 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
         ]);
 
         if (active) {
-          customModelsRef.current = { m1, m2, m3, culture };
+          const loadedModels = { m1, m2, m3, culture };
+          globalCustomModels[culture] = loadedModels;
+          customModelsRef.current = loadedModels;
           setCustomModelsLoaded(true);
           console.log(`[FaceAPI] Custom ${culture} hierarchical models loaded successfully ✓`);
         }
