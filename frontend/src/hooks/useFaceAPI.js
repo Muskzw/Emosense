@@ -479,7 +479,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
             let baseEmo = 'neutral';
             let baseConf = 0;
 
-            if (emosenseModelLoaded && emoSenseModelRef.current && tf) {
+            if (emoSenseModelRef.current && tf) {
               try {
                 const baseResult = tf.tidy(() => {
                   const fullTensor = tf.browser.fromPixels(offscreenCanvas);
@@ -533,29 +533,21 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
             }
 
             // 3. Intelligent blending/decision:
-            // - Since the custom model is in its absolute infancy (trained on a very small dataset of 17 images),
-            //   we ONLY trust it if it has extremely high confidence (>= 0.85).
-            // - However, if the robust standard model is highly confident in a non-neutral emotion (happy, sad, angry),
-            //   we prioritize it to prevent the infant model's overfitted/neutral bias from freezing the UI.
-            // - This guarantees perfectly accurate detections out of the box while allowing the custom model
-            //   to organically take over high-confidence predictions as it gains training samples in Supabase.
-            const isStandardDominant = standardConf >= 0.75 && standardEmo !== 'neutral';
-            const isColabModelHighlyConfident = emosenseModelLoaded && (baseConf >= 0.85);
-            const isHierarchicalModelConfident = customModelsLoaded && customModelsRef.current && (maxConf >= 0.65);
+            // Prioritize our customized models over the generic biased standard model
+            const isHierarchicalModelActive = customModelsLoaded && customModelsRef.current && (maxConf >= 0.50);
+            const isColabModelActive = !!emoSenseModelRef.current && (baseConf >= 0.50);
 
-            if (isStandardDominant) {
-              dEmo = standardEmo;
-              maxConf = standardConf;
-              customSuccess = false;
-            } else if (isColabModelHighlyConfident) {
+            if (isHierarchicalModelActive) {
+              // High priority: Use custom cultural model specifically calibrated for ZW/CN
+              // dEmo and maxConf are already set to the hierarchical predictions
+              customSuccess = true;
+            } else if (isColabModelActive) {
+              // Medium priority: Use custom EmoSense Colab-trained model
               dEmo = baseEmo;
               maxConf = baseConf;
               customSuccess = true;
-            } else if (isHierarchicalModelConfident) {
-              // Keep hierarchical model prediction if it's already set to dEmo/maxConf and is confident
-              customSuccess = true;
             } else {
-              // Fallback to highly accurate, robust standard face-api.js model
+              // Fallback: Use standard face-api.js expressions model
               dEmo = standardEmo;
               maxConf = standardConf;
               customSuccess = false;
@@ -731,7 +723,7 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
       active = false;
       if (reqRef.current) clearTimeout(reqRef.current);
     };
-  }, [modelsLoaded, customModelsLoaded, sessionCtx]);
+  }, [modelsLoaded, customModelsLoaded, emosenseModelLoaded, sessionCtx]);
 
   return {
     modelsLoaded,
