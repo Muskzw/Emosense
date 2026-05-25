@@ -333,26 +333,24 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
       const startTime = Date.now();
 
       try {
+        frameCountRef.current += 1;
+        const shouldPredictExpression = frameCountRef.current % 5 === 0;
+
         let det;
         // Optimize: Use smaller inputSize (160 instead of 224) to run up to 2x faster.
-        // Also bypass standard faceExpressionNet entirely if our custom model is active.
-        // Optimize: Use smaller inputSize (160 instead of 224) to run up to 2x faster.
-        // Always run the TinyFaceDetector with face landmarks and expressions.
-        // This ensures the highly optimized, pre-trained face-api.js model is always available
+        // Also bypass standard faceExpressionNet entirely on 80% of frames.
+        // This ensures the highly optimized, pre-trained face-api.js model only runs heavy inference when needed
         // as a robust baseline and seamless fallback.
-        det = await faceapi
-          .detectSingleFace(offscreenCanvas, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.2 }))
-          .withFaceLandmarks(true)
-          .withFaceExpressions();
+        const detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.20 });
+        let detPromise = faceapi.detectSingleFace(offscreenCanvas, detectorOptions).withFaceLandmarks(true);
+        if (shouldPredictExpression) {
+          detPromise = detPromise.withFaceExpressions();
+        }
+        det = await detPromise;
 
         setDebug(d => ({ ...d, lastDet: det ? 'found' : 'not found' }));
 
         if (active && det) {
-          // Frame throttling: only run heavy deep learning expression inference every 5th frame (approx. every 150ms).
-          // The face landmarks and mesh drawing continue to run at full 60 FPS, making the UI feel buttery smooth!
-          frameCountRef.current += 1;
-          const shouldPredictExpression = frameCountRef.current % 5 === 0;
-
           let dEmo = lastPredictionRef.current.dEmo;
           let maxConf = lastPredictionRef.current.maxConf;
           let customSuccess = lastPredictionRef.current.customSuccess;
@@ -396,8 +394,8 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
 
                   if (culture === 'ZW') {
                     // ZW: Level 1 (down_up): Class 0 = 'down', Class 1 = 'up'
-                    // Apply a sensitivity boost (1.3) to negative emotions routing (Class 1)
-                    const classIdx = p1Data[0] > (p1Data[1] * 1.3) ? 0 : 1;
+                    // Unbiased routing: p1Data[0] vs p1Data[1]
+                    const classIdx = p1Data[0] > p1Data[1] ? 0 : 1;
                     if (classIdx === 0) {
                       // 'down' (Class 0) → Route to happy_neutral
                       const p2 = m2.predict(processed);
@@ -410,18 +408,16 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
                       // 'up' (Class 1) → Route to anger_sad: Class 0 = 'anger' (angry), Class 1 = 'sad'
                       const p3 = m3.predict(processed);
                       const p3Data = await p3.data();
-                      // Apply sensitivity multipliers inside the submodel prediction: Class 0 (angry) x 1.35, Class 1 (sad) x 1.35
-                      const adjustedAnger = p3Data[0] * 1.35;
-                      const adjustedSad = p3Data[1] * 1.35;
-                      const class2Idx = adjustedAnger > adjustedSad ? 0 : 1;
+                      // Unbiased submodel prediction comparison
+                      const class2Idx = p3Data[0] > p3Data[1] ? 0 : 1;
                       dEmo = class2Idx === 0 ? 'angry' : 'sad';
                       maxConf = p3Data[class2Idx];
                       tf.dispose(p3);
                     }
                   } else {
                     // CN: Level 1 (up_down): Class 0 = 'down', Class 1 = 'up'
-                    // Apply a sensitivity boost (1.3) to negative emotions routing (Class 0)
-                    const classIdx = (p1Data[0] * 1.3) > p1Data[1] ? 0 : 1;
+                    // Unbiased routing: p1Data[0] vs p1Data[1]
+                    const classIdx = p1Data[0] > p1Data[1] ? 0 : 1;
                     if (classIdx === 1) {
                       // 'up' → Route to happy_neutral: Class 0 = 'happiness' (happy), Class 1 = 'neutral'
                       const p2 = m2.predict(processed);
@@ -434,10 +430,8 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
                       // 'down' → Route to anger_sad: Class 0 = 'anger' (angry), Class 1 = 'sadness' (sad)
                       const p3 = m3.predict(processed);
                       const p3Data = await p3.data();
-                      // Apply sensitivity multipliers inside the submodel prediction: Class 0 (angry) x 1.35, Class 1 (sad) x 1.35
-                      const adjustedAnger = p3Data[0] * 1.35;
-                      const adjustedSad = p3Data[1] * 1.35;
-                      const class2Idx = adjustedAnger > adjustedSad ? 0 : 1;
+                      // Unbiased submodel prediction comparison
+                      const class2Idx = p3Data[0] > p3Data[1] ? 0 : 1;
                       dEmo = class2Idx === 0 ? 'angry' : 'sad';
                       maxConf = p3Data[class2Idx];
                       tf.dispose(p3);
@@ -461,10 +455,8 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
             let standardConf = 0;
             if (det.expressions) {
               for (const [e, c] of Object.entries(det.expressions)) {
-                // Apply baseline sensitivity multiplier to angry and sad
+                // Unbiased baseline mapping (no artificial negative boosting)
                 let adjustedConf = c;
-                if (e === 'sad') adjustedConf = c * 1.6;
-                if (e === 'angry') adjustedConf = c * 1.6;
 
                 if (adjustedConf > standardConf) {
                   standardConf = adjustedConf;
