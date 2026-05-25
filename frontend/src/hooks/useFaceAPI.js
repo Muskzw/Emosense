@@ -514,13 +514,13 @@ export function useFaceAPI(videoRef, svgRef, canvasRef, isConnected, sessionCtx,
                     emotions = ['angry', 'happy', 'neutral', 'sad'];
                   }
                   
-                  // Apply sensitivity boost for angry and sad to improve effectiveness
+                  // Apply balanced calibrations to prevent false positives and stabilize predictions
                   let adjustedProbs = [...probs];
                   if (probs.length === 4) {
-                    adjustedProbs[0] = probs[0] * 1.45; // Boost angry
-                    adjustedProbs[3] = probs[3] * 1.45; // Boost sad
+                    adjustedProbs[0] = probs[0] * 0.70; // Dampen angry to eliminate false positives
+                    adjustedProbs[3] = probs[3] * 1.10; // Moderate sad boost for stable tracking
                   } else if (probs.length === 3) {
-                    adjustedProbs[2] = probs[2] * 1.45; // Boost sad
+                    adjustedProbs[2] = probs[2] * 1.10; // Moderate sad boost
                   }
                   
                   const topIdx = adjustedProbs.indexOf(Math.max(...adjustedProbs));

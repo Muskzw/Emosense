@@ -252,11 +252,11 @@ const S = {
   emoRow: { display: 'flex', flexDirection: 'column', gap: '10px' },
   emoItem: { display: 'flex', flexDirection: 'column', gap: '5px' },
   emoHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  emoName: { fontSize: '12px', color: 'rgba(255,255,255,0.55)', fontWeight: '500' },
-  emoPct: { fontSize: '12px', color: 'white', fontWeight: '700' },
+  emoName: { fontSize: '12px', color: 'var(--muted-text)', fontWeight: '500' },
+  emoPct: { fontSize: '12px', color: 'var(--primary-text)', fontWeight: '700' },
   emoTrack: {
     height: '4px', borderRadius: '999px',
-    background: 'rgba(255,255,255,0.1)',
+    background: 'var(--bd2)',
     overflow: 'hidden',
   },
   hudDivider: { height: '1px', background: 'rgba(255,255,255,0.1)', margin: '14px 0' },
@@ -1071,7 +1071,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           .stat-lbl-desktop {
             font-size: 11px !important;
             font-weight: 700 !important;
-            color: rgba(255, 255, 255, 0.5) !important;
+            color: var(--muted-text) !important;
             letter-spacing: 0.08em !important;
             text-transform: uppercase !important;
           }
@@ -1113,7 +1113,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
         .alignment-gauge-title {
           font-size: 11px !important;
           font-weight: 800 !important;
-          color: rgba(255, 255, 255, 0.5) !important;
+          color: var(--muted-text) !important;
           letter-spacing: 0.05em !important;
           text-transform: uppercase !important;
           white-space: nowrap !important;
@@ -1130,11 +1130,11 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
         }
         .alignment-bar-outer {
           height: 10px;
-          background: rgba(255, 255, 255, 0.06);
+          background: var(--bd2);
           border-radius: 999px;
           overflow: hidden;
           position: relative;
-          border: 0.5px solid rgba(255, 255, 255, 0.1);
+          border: 0.5px solid var(--border);
         }
         .alignment-bar-inner {
           height: 100%;
@@ -1144,7 +1144,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
         .alignment-desc {
           font-size: 11.5px;
           line-height: 1.55;
-          color: rgba(255, 255, 255, 0.65);
+          color: var(--muted-text);
         }
         
         .remote-stats-overlay {
@@ -1565,8 +1565,8 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                 return (
                   <div key={k} className="emo-item">
                     <div style={S.emoHead}>
-                      <span className="emo-name" style={{ fontSize: '10px', fontFamily: 'var(--sans)', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{t(k)}</span>
-                      <span className="emo-pct" style={{ fontSize: '11px', fontFamily: 'var(--mono)', fontWeight: '700', color: '#ffffff' }}>{pct}%</span>
+                      <span className="emo-name" style={{ fontSize: '10px', fontFamily: 'var(--sans)', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{t(k)}</span>
+                      <span className="emo-pct" style={{ fontSize: '11px', fontFamily: 'var(--mono)', fontWeight: '700', color: 'var(--primary-text)' }}>{pct}%</span>
                     </div>
                     <div style={S.emoTrack}>
                       <div style={{ height: '100%', width: `${pct}%`, background: v.c, transition: 'width 0.3s ease, background 0.3s ease', borderRadius: '999px' }} />
@@ -1584,7 +1584,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
           {/* Cultural Alignment Card */}
           <div className="alignment-gauge-container">
             <div className="alignment-gauge-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-              <span className="alignment-gauge-title" style={{ fontSize: '9px', fontWeight: '800', color: 'rgba(255, 255, 255, 0.5)', letterSpacing: '0.05em', textTransform: 'uppercase', fontFamily: 'var(--sans)' }}>{alignmentTitle}</span>
+              <span className="alignment-gauge-title" style={{ fontSize: '9px', fontWeight: '800', color: 'var(--muted-text)', letterSpacing: '0.05em', textTransform: 'uppercase', fontFamily: 'var(--sans)' }}>{alignmentTitle}</span>
               <span className="alignment-gauge-value" style={{
                 background: `linear-gradient(135deg, ${alignmentThemeColor} 0%, #007aff 100%)`,
                 WebkitBackgroundClip: 'text',
@@ -1595,7 +1595,7 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
               }}>{alignmentScore}%</span>
             </div>
             
-            <div className="alignment-bar-outer" style={{ height: '8px', background: 'rgba(255, 255, 255, 0.06)', borderRadius: '999px', overflow: 'hidden', position: 'relative', border: '0.5px solid rgba(255, 255, 255, 0.1)', marginTop: '8px', marginBottom: '8px' }}>
+            <div className="alignment-bar-outer" style={{ height: '8px', background: 'var(--bd2)', borderRadius: '999px', overflow: 'hidden', position: 'relative', border: '0.5px solid var(--border)', marginTop: '8px', marginBottom: '8px' }}>
               <div className="alignment-bar-inner" style={{
                 height: '100%',
                 borderRadius: '999px',
@@ -1607,8 +1607,8 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
             </div>
 
             <div className="alignment-desc">
-              <div style={{ fontWeight: '700', color: '#ffffff', marginBottom: '4px', fontSize: '11px', fontFamily: 'var(--sans)' }}>{alignmentStatus}</div>
-              <div style={{ fontSize: '10.5px', lineHeight: '1.45', color: 'rgba(255, 255, 255, 0.6)', fontFamily: 'var(--sans)' }}>{alignmentAdvice}</div>
+              <div style={{ fontWeight: '700', color: 'var(--primary-text)', marginBottom: '4px', fontSize: '11px', fontFamily: 'var(--sans)' }}>{alignmentStatus}</div>
+              <div style={{ fontSize: '10.5px', lineHeight: '1.45', color: 'var(--muted-text)', fontFamily: 'var(--sans)' }}>{alignmentAdvice}</div>
             </div>
           </div>
 
@@ -1620,11 +1620,11 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
               <div style={S.hudDivider} />
               <div style={S.statsRow}>
                 <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--sans)' }}>{lt.scans}</div>
-                  <div style={{ fontSize: '20px', fontWeight: '800', color: 'white', fontFamily: 'var(--mono)', lineHeight: 1 }}>{detCount}</div>
+                  <div style={{ fontSize: '9px', color: 'var(--muted-text)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--sans)' }}>{lt.scans}</div>
+                  <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--primary-text)', fontFamily: 'var(--mono)', lineHeight: 1 }}>{detCount}</div>
                 </div>
                 <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                  <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--sans)' }}>{lt.current}</div>
+                  <div style={{ fontSize: '9px', color: 'var(--muted-text)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--sans)' }}>{lt.current}</div>
                   <div style={{ fontSize: '20px', fontWeight: '800', color: curE.c, fontFamily: 'var(--mono)', lineHeight: 1 }}>{t(curEmo).toUpperCase()}</div>
                 </div>
               </div>
@@ -1652,8 +1652,8 @@ export default function CallView({ onEnd, webRTC, sessionInfo, callSecs, onDataU
                     return (
                       <div key={k} className="emo-item">
                         <div style={S.emoHead}>
-                          <span className="emo-name" style={{ fontSize: '10px', fontFamily: 'var(--sans)', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{t(k)}</span>
-                          <span className="emo-pct" style={{ fontSize: '11px', fontFamily: 'var(--mono)', fontWeight: '700', color: '#ffffff' }}>{pct}%</span>
+                          <span className="emo-name" style={{ fontSize: '10px', fontFamily: 'var(--sans)', color: 'var(--muted-text)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{t(k)}</span>
+                          <span className="emo-pct" style={{ fontSize: '11px', fontFamily: 'var(--mono)', fontWeight: '700', color: 'var(--primary-text)' }}>{pct}%</span>
                         </div>
                         <div style={S.emoTrack}>
                           <div style={{ height: '100%', width: `${pct}%`, background: v.c, transition: 'width 0.3s ease, background 0.3s ease', borderRadius: '999px' }} />

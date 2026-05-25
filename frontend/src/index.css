@@ -793,13 +793,13 @@ button:active, .btn:active, .end-btn:active, .cv-btn:active, .lob-btn:active, .c
     display: flex !important;
     flex-direction: column !important;
     gap: 12px !important;
-    background: rgba(17, 21, 32, 0.75) !important;
+    background: var(--card-bg) !important;
     backdrop-filter: blur(24px) saturate(150%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid var(--bd2) !important;
     border-radius: 20px !important;
     margin: 12px 16px 24px 16px !important;
     padding: 16px !important;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5) !important;
+    box-shadow: 0 12px 36px var(--shadow) !important;
   }
 }
 
