@@ -265,8 +265,8 @@ export default function Dashboard({ onBack, session }) {
             { label: t('avgDuration'), val: totalCalls ? fmt(avgDur, lang) : '—', icon: '⏱️' },
             {
               label: t('overallEmpathyScore'), val: totalCalls ? `${empScore}%` : '—', icon: '✨',
-              color: empColor,
-              sub: empScore >= 70 ? t('positiveEngagement') : empScore >= 50 ? t('mostlyNeutral') : t('highFriction')
+              color: totalCalls ? empColor : 'var(--dim)',
+              sub: !totalCalls ? null : empScore >= 70 ? t('positiveEngagement') : empScore >= 50 ? t('mostlyNeutral') : t('highFriction')
             },
           ].map((m, i) => (
             <div key={i} style={cardStyle}>

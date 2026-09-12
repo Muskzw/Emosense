@@ -264,10 +264,11 @@ const translations = {
     ctaTitle: 'Try it now. Live. Secure. Reliable.',
     ctaSub: 'Open EmoSense, share the link, and experience cultural-aware AI in your next video call.',
     ctaBtn: 'Launch EmoSense',
-    footerCopy: 'Built for Zimbabwe × China · EMOSENSE GROUP PROJECT @ CUT 2026',
+    footerCopy: 'Built for Zimbabwe × China · © 2026 EmoSense',
     footerResearch: 'Research',
     footerDatasets: 'Datasets',
     footerApp: 'App',
+    footerBuiltBy: 'Powered by',
   },
   sn: {
     // Nav & Landing
@@ -525,10 +526,11 @@ const translations = {
     ctaTitle: 'Edza izvozvi. Live. Yakachengeteka. Yakavimbika.',
     ctaSub: 'Vhura EmoSense, tumira vamwe link, uye unzwisise tsika muvhidhiyo inotevera.',
     ctaBtn: 'Tanga EmoSense',
-    footerCopy: 'Yakagadzirirwa Zimbabwe × China · EMOSENSE GROUP PROJECT @ CUT 2026',
+    footerCopy: 'Yakagadzirirwa Zimbabwe × China · © 2026 EmoSense',
     footerResearch: 'Tsvakurudzo',
     footerDatasets: 'Data',
     footerApp: 'App',
+    footerBuiltBy: 'Inoshandiswa ne',
   },
   zh: {
     // Nav & Landing
@@ -786,10 +788,11 @@ const translations = {
     ctaTitle: '立即体验。实时。安全。可靠。',
     ctaSub: '启动 EmoSense，分享房间链接，在您的下一次视频会议中体验具备文化洞察力的情感 AI。',
     ctaBtn: '启动 EmoSense',
-    footerCopy: '专为津巴布韦 × 中国量身打造 · EMOSENSE CUT 2026年度合作项目',
+    footerCopy: '专为津巴布韦 × 中国量身打造 · © 2026 EmoSense',
     footerResearch: '研究报告',
     footerDatasets: '数据集',
     footerApp: '应用大厅',
+    footerBuiltBy: '技术支持：',
   },
 };
 

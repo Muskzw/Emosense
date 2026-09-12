@@ -311,12 +311,19 @@ const getHtmlContent = (t) => `<!-- NAV -->
 
 <!-- FOOTER -->
 <footer>
-  <div class="footer-logo">EmoSense</div>
-  <div class="footer-copy">${t('footerCopy')}</div>
-  <div class="footer-links">
-    <a href="#problem">${t('footerResearch')}</a>
-    <a href="#datasets">${t('footerDatasets')}</a>
-    <a href="launch">${t('footerApp')}</a>
+  <div class="footer-top">
+    <div class="footer-logo">EmoSense</div>
+    <div class="footer-links">
+      <a href="#problem">${t('footerResearch')}</a>
+      <a href="#datasets">${t('footerDatasets')}</a>
+      <a href="launch">${t('footerApp')}</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">${t('footerCopy')}</div>
+    <a class="footer-brand" href="https://techubgroup.co.zw" target="_blank" rel="noopener noreferrer">
+      ${t('footerBuiltBy')} <strong>Techub Group</strong>
+    </a>
   </div>
 </footer>`;
 

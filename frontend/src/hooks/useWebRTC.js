@@ -14,6 +14,7 @@ export function useWebRTC(onRemoteEnd, localName) {
   const [cameraError, setCameraError] = useState('');  // '' | 'denied' | 'insecure' | 'notfound' | 'error'
   
   const peerRef = useRef(null);
+  const peerInitStartedRef = useRef(false);
   const callRef = useRef(null);
   const connRef = useRef(null); // Keep track of data connection
   const remoteVideoRef = useRef(null);
@@ -27,7 +28,10 @@ export function useWebRTC(onRemoteEnd, localName) {
   }, [onRemoteEnd, localName]);
 
   useEffect(() => {
-    if (peerRef.current && !peerRef.current.destroyed) return; // Already initialized
+    if (peerInitStartedRef.current) return; // Guards against React StrictMode's double-invoke in dev,
+    peerInitStartedRef.current = true;      // which would otherwise open two PeerJS connections —
+                                             // peerRef.current can't be checked here since it's only
+                                             // assigned after the async ICE-config fetch below resolves.
 
     const initPeer = async () => {
       console.log('[WebRTC] Initializing Peer...');
