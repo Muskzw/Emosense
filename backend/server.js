@@ -243,8 +243,14 @@ app.get('/api/sessions', async (req, res) => {
     const { userId } = req.query;
     let result;
     if (userId) {
+      // Per-user history — used by the Dashboard for the signed-in user's own sessions.
       result = await pool.query('SELECT * FROM sessions WHERE user_id = $1 ORDER BY id DESC', [userId]);
     } else {
+      // Full unscoped dump of every user's sessions — admin-only.
+      const adminKey = req.get('x-admin-key');
+      if (!process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
       result = await pool.query('SELECT * FROM sessions ORDER BY id DESC');
     }
     res.json(result.rows);
