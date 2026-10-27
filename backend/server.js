@@ -203,6 +203,12 @@ const initDb = async () => {
     `);
     await pool.query(`ALTER TABLE room_codes ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'waiting'`);
     await pool.query(`ALTER TABLE sessions ADD COLUMN IF NOT EXISTS user_id TEXT`);
+    // Lock the tables against Supabase's public REST API (anon/authenticated keys).
+    // No policies are defined on purpose: only this server's direct DATABASE_URL
+    // connection (which bypasses RLS) may read or write them.
+    for (const table of ['sessions', 'room_codes', 'collected_samples']) {
+      await pool.query(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
+    }
     // Clean up expired codes on startup
     await pool.query(`DELETE FROM room_codes WHERE expires_at < $1`, [Date.now()]);
     console.log('[Postgres] Tables initialized.');
